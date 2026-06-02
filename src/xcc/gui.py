@@ -143,7 +143,7 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(self._section_title("Collect Context"))
 
         setup_card = self._card()
-        setup_card.setMinimumHeight(225)
+        setup_card.setMinimumHeight(215)
         setup_layout = self._card_layout(setup_card)
 
         setup_layout.addWidget(self._card_title("Setup"))
@@ -543,6 +543,8 @@ class XccMainWindow(QMainWindow):
     def _card_title(self, text: str) -> QLabel:
         label = QLabel(text)
         label.setObjectName("CardTitle")
+        label.setFixedHeight(18)
+        label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         return label
 
     def _card(self) -> QFrame:
@@ -553,7 +555,8 @@ class XccMainWindow(QMainWindow):
     def _card_layout(self, card: QFrame) -> QVBoxLayout:
         layout = QVBoxLayout(card)
         layout.setContentsMargins(24, 18, 24, 18)
-        layout.setSpacing(16)
+        layout.setSpacing(14)
+        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         return layout
 
     def _metric_capsule(self, label: str, value: str) -> QFrame:
@@ -667,6 +670,8 @@ class XccMainWindow(QMainWindow):
                 font-size: 13px;
                 font-weight: 800;
                 background: transparent;
+                padding: 0px;
+                margin: 0px;
             }
             #FieldLabel {
                 color: #D6D6D6;
