@@ -28,8 +28,11 @@ from PySide6.QtGui import QIntValidator
 from . import __version__
 from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS
 from pathlib import Path
-from .git_utils import is_git_repository
-
+from .clipboard import copy_to_clipboard
+from .collector import collect_files
+from .formatter import format_collection
+from .git_utils import get_changed_files, get_git_diff, is_git_repository
+from .scanner import scan_project_files
 
 class XccMainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -90,6 +93,7 @@ class XccMainWindow(QMainWindow):
 
         self.select_source_button.clicked.connect(self._select_source)
         self.mode_group.buttonClicked.connect(self._clear_source)
+        self.collect_button.clicked.connect(self._collect_and_copy)
     
     def _build_header(self) -> QWidget:
         header = QFrame()
@@ -319,6 +323,128 @@ class XccMainWindow(QMainWindow):
             self._set_status("Git repository selected.")
         else:
             self._set_status("Project folder selected.")
+
+    def _collect_and_copy(self) -> None:
+        try:
+            max_output_chars = self._read_max_output_chars()
+            mode = self._current_mode()
+            selected_paths, project_root = self._resolve_selected_paths(mode)
+
+            if not selected_paths:
+                self._set_status("No files selected or found.")
+                QMessageBox.warning(self, "XCC", "No files selected or found.")
+                return
+
+            files, errors = collect_files(selected_paths)
+
+            mode_name = {
+                "files": "Selected Files",
+                "folder": "Full Folder",
+                "git": "Git Changed Files",
+            }.get(mode, "Unknown")
+
+            git_diff = None
+            if mode == "git" and project_root is not None:
+                git_diff = get_git_diff(project_root)
+
+            result = format_collection(
+                files,
+                errors,
+                project_root=project_root,
+                compact=self.compact_checkbox.isChecked(),
+                mode_name=mode_name,
+                max_output_chars=max_output_chars,
+                git_diff=git_diff,
+            )
+
+            if not result.text.strip():
+                self._set_status("Nothing to copy.")
+                QMessageBox.warning(self, "XCC", "Nothing to copy.")
+                return
+
+            copy_to_clipboard(result.text)
+
+            output_chars = len(result.text)
+            output_tokens = output_chars // 4
+
+            self._update_metrics(
+                files=result.stats.files,
+                lines=result.stats.lines,
+                source_chars=result.stats.chars,
+                output_chars=output_chars,
+                output_tokens=output_tokens,
+                truncated=result.was_truncated,
+                errors=len(result.errors),
+            )
+
+            self._set_status("Copied to clipboard.")
+            QMessageBox.information(
+                self,
+                "XCC",
+                (
+                    "Copied context to clipboard.\n\n"
+                    f"Files: {result.stats.files}\n"
+                    f"Lines: {result.stats.lines}\n"
+                    f"Output Characters: {output_chars}\n"
+                    f"Output Tokens: {output_tokens}\n"
+                    f"Truncated: {'Yes' if result.was_truncated else 'No'}\n"
+                    f"Errors: {len(result.errors)}"
+                ),
+            )
+
+        except Exception as exc:
+            self._set_status("Error.")
+            QMessageBox.critical(self, "XCC", str(exc))
+
+    def _read_max_output_chars(self) -> int:
+        raw_value = self.max_chars_input.text().strip()
+
+        if not raw_value:
+            raise ValueError("Max output chars is required.")
+
+        value = int(raw_value)
+
+        if value <= 0:
+            raise ValueError("Max output chars must be greater than 0.")
+
+        return value
+
+    def _resolve_selected_paths(self, mode: str) -> tuple[list[Path], Path | None]:
+        if mode == "files":
+            return self.selected_paths, None
+
+        if self.project_root is None:
+            raise ValueError("Select a source folder first.")
+
+        if mode == "folder":
+            return scan_project_files(self.project_root), self.project_root
+
+        if not is_git_repository(self.project_root):
+            raise ValueError("Selected folder is not a Git repository.")
+
+        return get_changed_files(self.project_root), self.project_root
+
+    def _update_metrics(
+        self,
+        *,
+        files: int,
+        lines: int,
+        source_chars: int,
+        output_chars: int,
+        output_tokens: int,
+        truncated: bool,
+        errors: int,
+    ) -> None:
+        self._set_metric_value(self.files_metric, str(files))
+        self._set_metric_value(self.lines_metric, str(lines))
+        self._set_metric_value(self.source_chars_metric, str(source_chars))
+        self._set_metric_value(self.output_chars_metric, str(output_chars))
+        self._set_metric_value(self.tokens_metric, str(output_tokens))
+        self._set_metric_value(self.truncated_metric, "Yes" if truncated else "No")
+        self._set_metric_value(self.errors_metric, str(errors))
+
+    def _set_metric_value(self, metric: QFrame, value: str) -> None:
+        metric.value_label.setText(value)
 
     def _clear_source(self) -> None:
         self.selected_paths = []
