@@ -217,37 +217,58 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(setup_card)
 
         stats_card = self._card()
-        stats_card.setMinimumHeight(150)
+        stats_card.setMinimumHeight(210)
+
         stats_layout = QVBoxLayout(stats_card)
         stats_layout.setContentsMargins(24, 18, 24, 18)
         stats_layout.setSpacing(14)
 
         stats_layout.addWidget(self._card_title("Last Run"))
 
+        volume_label = QLabel("Volume")
+        volume_label.setObjectName("MetricGroupTitle")
+
+        output_label = QLabel("Output")
+        output_label.setObjectName("MetricGroupTitle")
+
+        health_label = QLabel("Health")
+        health_label.setObjectName("MetricGroupTitle")
+
         self.files_metric = self._metric_capsule("Files", "-")
         self.lines_metric = self._metric_capsule("Lines", "-")
         self.source_chars_metric = self._metric_capsule("Source Chars", "-")
+
         self.output_chars_metric = self._metric_capsule("Output Chars", "-")
         self.tokens_metric = self._metric_capsule("Output Tokens", "-")
+
         self.truncated_metric = self._metric_capsule("Truncated", "-")
         self.errors_metric = self._metric_capsule("Errors", "-")
 
-        metrics_row_1 = QHBoxLayout()
-        metrics_row_1.setSpacing(10)
-        metrics_row_1.addWidget(self.files_metric)
-        metrics_row_1.addWidget(self.lines_metric)
-        metrics_row_1.addWidget(self.source_chars_metric)
-        metrics_row_1.addWidget(self.output_chars_metric)
+        volume_row = QHBoxLayout()
+        volume_row.setSpacing(10)
+        volume_row.addWidget(self.files_metric)
+        volume_row.addWidget(self.lines_metric)
+        volume_row.addWidget(self.source_chars_metric)
+        volume_row.addStretch(1)
 
-        metrics_row_2 = QHBoxLayout()
-        metrics_row_2.setSpacing(10)
-        metrics_row_2.addWidget(self.tokens_metric)
-        metrics_row_2.addWidget(self.truncated_metric)
-        metrics_row_2.addWidget(self.errors_metric)
-        metrics_row_2.addStretch(1)
+        output_row = QHBoxLayout()
+        output_row.setSpacing(10)
+        output_row.addWidget(self.output_chars_metric)
+        output_row.addWidget(self.tokens_metric)
+        output_row.addStretch(1)
 
-        stats_layout.addLayout(metrics_row_1)
-        stats_layout.addLayout(metrics_row_2)
+        health_row = QHBoxLayout()
+        health_row.setSpacing(10)
+        health_row.addWidget(self.truncated_metric)
+        health_row.addWidget(self.errors_metric)
+        health_row.addStretch(1)
+
+        stats_layout.addWidget(volume_label)
+        stats_layout.addLayout(volume_row)
+        stats_layout.addWidget(output_label)
+        stats_layout.addLayout(output_row)
+        stats_layout.addWidget(health_label)
+        stats_layout.addLayout(health_row)
 
         layout.addWidget(stats_card)
 
@@ -531,11 +552,11 @@ class XccMainWindow(QMainWindow):
     def _metric_capsule(self, label: str, value: str) -> QFrame:
         capsule = QFrame()
         capsule.setObjectName("MetricCapsule")
-        capsule.setMinimumWidth(150)
-        capsule.setFixedHeight(56)
+        capsule.setMinimumWidth(170)
+        capsule.setFixedHeight(50)
 
         layout = QVBoxLayout(capsule)
-        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setContentsMargins(14, 6, 14, 6)
         layout.setSpacing(2)
 
         label_widget = QLabel(label)
@@ -594,13 +615,20 @@ class XccMainWindow(QMainWindow):
                 background: #121212;
                 border-right: 1px solid #2F2A1C;
                 padding: 10px;
+                outline: none;
             }
 
             #Sidebar::item {
                 padding: 12px 14px;
+                margin: 4px 0;
                 border-radius: 10px;
                 color: #C9C9C9;
                 background: transparent;
+            }
+
+            #Sidebar::item:hover {
+                background: #241F10;
+                color: #F5C542;
             }
 
             #Sidebar::item:selected {
@@ -609,9 +637,9 @@ class XccMainWindow(QMainWindow):
                 font-weight: 700;
             }
 
-            #Sidebar::item:hover {
-                background: #2A2412;
-                color: #F5C542;
+            #Sidebar::item:selected:hover {
+                background: #FFD95A;
+                color: #111111;
             }
 
             #SectionTitle {
@@ -740,12 +768,13 @@ class XccMainWindow(QMainWindow):
             }
 
             #MetricCapsule {
-                background: #1A1A1A;
-                border: 1px solid #6A5520;
+                background: #181818;
+                border: 1px solid #5E4A1A;
                 border-radius: 10px;
             }
 
             #MetricCapsule:hover {
+                background: #1E1B12;
                 border: 1px solid #F5C542;
             }
 
@@ -767,6 +796,13 @@ class XccMainWindow(QMainWindow):
                 border-top: 1px solid #2F2A1C;
                 padding-left: 16px;
                 color: #B8B8B8;
+            }
+            #MetricGroupTitle {
+                color: #D8D8D8;
+                font-size: 12px;
+                font-weight: 700;
+                background: transparent;
+                margin-top: 4px;
             }
             """
         )
