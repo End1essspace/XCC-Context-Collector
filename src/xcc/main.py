@@ -33,7 +33,13 @@ def main() -> None:
         return
 
     files, errors = collect_files(selected_paths)
-    result = format_collection(files, errors, project_root=project_root)
+    result = format_collection(
+        files,
+        errors,
+        project_root=project_root,
+        compact=True,
+        max_output_chars=120_000,
+    )
 
     if not result.text.strip():
         show_error("XCC", "Nothing to copy.")
