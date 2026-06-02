@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-
+from datetime import datetime
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QApplication,
@@ -44,6 +44,7 @@ class XccMainWindow(QMainWindow):
 
         self.selected_paths: list[Path] = []
         self.project_root: Path | None = None
+        self.history_entries: list[dict[str, object]] = []
 
         self._setup_ui()
         self._apply_theme()
@@ -65,10 +66,7 @@ class XccMainWindow(QMainWindow):
         self.pages = QStackedWidget()
 
         self.collect_page = self._build_collect_page()
-        self.history_page = self._build_placeholder_page(
-            "History",
-            "Last run history will appear here.",
-        )
+        self.history_page = self._build_history_page()
         self.settings_page = self._build_settings_page()
         self.about_page = self._build_about_page()
 
@@ -95,7 +93,44 @@ class XccMainWindow(QMainWindow):
         self.select_source_button.clicked.connect(self._select_source)
         self.mode_group.buttonClicked.connect(self._clear_source)
         self.collect_button.clicked.connect(self._collect_and_copy)
-    
+
+    def _build_history_page(self) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(28, 24, 28, 24)
+        layout.setSpacing(18)
+
+        layout.addWidget(self._section_title("History"))
+
+        history_card = self._card()
+        history_card.setMinimumHeight(260)
+
+        history_layout = self._card_layout(history_card)
+        history_layout.addWidget(self._card_title("Runtime History"))
+
+        self.history_list_container = QWidget()
+        self.history_list_container.setObjectName("TransparentWidget")
+
+        self.history_list_layout = QVBoxLayout(self.history_list_container)
+        self.history_list_layout.setContentsMargins(0, 0, 0, 0)
+        self.history_list_layout.setSpacing(10)
+
+        self.history_empty_label = QLabel(
+            "No runs yet.\nCollect context to see runtime history here."
+        )
+        self.history_empty_label.setObjectName("HistoryEmpty")
+        self.history_empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.history_empty_label.setMinimumHeight(140)
+
+        self.history_list_layout.addWidget(self.history_empty_label)
+
+        history_layout.addWidget(self.history_list_container)
+
+        layout.addWidget(history_card)
+        layout.addStretch(1)
+
+        return page
+
     def _build_header(self) -> QWidget:
         header = QFrame()
         header.setObjectName("Header")
@@ -422,6 +457,17 @@ class XccMainWindow(QMainWindow):
                 truncated=result.was_truncated,
                 errors=len(result.errors),
             )
+            self._add_history_entry(
+                mode_name=mode_name,
+                source=self._current_source_label(mode, project_root),
+                files=result.stats.files,
+                lines=result.stats.lines,
+                source_chars=result.stats.chars,
+                output_chars=output_chars,
+                output_tokens=output_tokens,
+                truncated=result.was_truncated,
+                errors=len(result.errors),
+            )
 
             self._show_success_feedback()
 
@@ -521,7 +567,17 @@ class XccMainWindow(QMainWindow):
         layout.addStretch(1)
 
         return page
+    
+    def _current_source_label(self, mode: str, project_root: Path | None) -> str:
+        if mode == "files":
+            count = len(self.selected_paths)
+            return f"{count} selected file{'s' if count != 1 else ''}"
 
+        if project_root is not None:
+            return str(project_root)
+
+        return "Unknown source"
+    
     def _build_about_page(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -582,6 +638,101 @@ class XccMainWindow(QMainWindow):
         layout.setSpacing(20)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         return layout
+    
+    def _add_history_entry(
+        self,
+        *,
+        mode_name: str,
+        source: str,
+        files: int,
+        lines: int,
+        source_chars: int,
+        output_chars: int,
+        output_tokens: int,
+        truncated: bool,
+        errors: int,
+    ) -> None:
+        entry = {
+            "time": datetime.now().strftime("%H:%M:%S"),
+            "mode_name": mode_name,
+            "source": source,
+            "files": files,
+            "lines": lines,
+            "source_chars": source_chars,
+            "output_chars": output_chars,
+            "output_tokens": output_tokens,
+            "truncated": truncated,
+            "errors": errors,
+        }
+
+        self.history_entries.insert(0, entry)
+        self._render_history_entries()
+        
+    def _render_history_entries(self) -> None:
+        while self.history_list_layout.count():
+            item = self.history_list_layout.takeAt(0)
+            widget = item.widget()
+
+            if widget is not None:
+                widget.deleteLater()
+
+        if not self.history_entries:
+            self.history_list_layout.addWidget(self.history_empty_label)
+            return
+
+        for entry in self.history_entries[:20]:
+            self.history_list_layout.addWidget(self._history_entry_widget(entry))
+
+        self.history_list_layout.addStretch(1)
+
+    def _history_entry_widget(self, entry: dict[str, object]) -> QWidget:
+        row = QFrame()
+        row.setObjectName("HistoryEntry")
+
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(14, 10, 14, 10)
+        layout.setSpacing(6)
+
+        top_row = QHBoxLayout()
+        top_row.setContentsMargins(0, 0, 0, 0)
+        top_row.setSpacing(8)
+
+        time_label = QLabel(str(entry["time"]))
+        time_label.setObjectName("HistoryTime")
+
+        mode_label = QLabel(str(entry["mode_name"]))
+        mode_label.setObjectName("HistoryModeCapsule")
+        mode_label.setFixedHeight(26)
+
+        top_row.addWidget(time_label)
+        top_row.addStretch(1)
+        top_row.addWidget(mode_label)
+
+        source_label = QLabel(str(entry["source"]))
+        source_label.setObjectName("HistorySource")
+        source_label.setWordWrap(False)
+
+        stats_label = QLabel(
+            f"Files {entry['files']} · "
+            f"Lines {entry['lines']} · "
+            f"Source {entry['source_chars']} chars · "
+            f"Output {entry['output_chars']} chars"
+        )
+        stats_label.setObjectName("HistoryStats")
+
+        health_label = QLabel(
+            f"Tokens {entry['output_tokens']} · "
+            f"Truncated {'Yes' if entry['truncated'] else 'No'} · "
+            f"Errors {entry['errors']}"
+        )
+        health_label.setObjectName("HistoryHealth")
+
+        layout.addLayout(top_row)
+        layout.addWidget(source_label)
+        layout.addWidget(stats_label)
+        layout.addWidget(health_label)
+
+        return row
 
     def _metric_capsule(self, label: str, value: str) -> QFrame:
         capsule = QFrame()
@@ -841,6 +992,57 @@ class XccMainWindow(QMainWindow):
                 margin-bottom: 2px;
             }
             #TransparentWidget {
+                background: transparent;
+            }
+            #HistoryEntry {
+                background: #181818;
+                border: 1px solid #4F3F18;
+                border-radius: 10px;
+            }
+
+            #HistoryEntry:hover {
+                background: #1E1B12;
+                border: 1px solid #F5C542;
+            }
+
+            #HistoryTime {
+                color: #F5C542;
+                font-size: 12px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #HistoryModeCapsule {
+                background: #101010;
+                border: 1px solid #6A5520;
+                border-radius: 8px;
+                padding: 3px 10px;
+                color: #F2F2F2;
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            #HistorySource {
+                color: #D6D6D6;
+                font-size: 12px;
+                background: transparent;
+            }
+
+            #HistoryStats {
+                color: #AFAFAF;
+                font-size: 11px;
+                background: transparent;
+            }
+
+            #HistoryHealth {
+                color: #8F8F8F;
+                font-size: 11px;
+                background: transparent;
+            }
+
+            #HistoryEmpty {
+                color: #8F8F8F;
+                font-size: 13px;
                 background: transparent;
             }
             """

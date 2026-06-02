@@ -49,15 +49,43 @@ Status: DONE
 - [x] graceful shutdown
 - [x] safe hotkey selected: Ctrl+Alt+X
 
-## v0.5 GUI
+## v0.5 PySide6 GUI
 
-Status: planned
+Status: IN PROGRESS
 
-- [ ] small main window
-- [ ] mode selector
-- [ ] extension settings
-- [ ] exclude settings
-- [ ] last run statistics
+Done:
+
+- [x] PySide6 dependency
+- [x] gui.py launcher
+- [x] main window
+- [x] black/yellow theme
+- [x] header
+- [x] sidebar navigation
+- [x] Collect page
+- [x] Settings placeholder
+- [x] History placeholder
+- [x] About placeholder
+- [x] Select Source works
+- [x] Full Folder mode works
+- [x] Selected Files mode works
+- [x] Git Changed Files mode works
+- [x] Collect & Copy works
+- [x] clipboard copy works
+- [x] metrics update after run
+- [x] success popup removed
+- [x] inline success feedback
+- [x] max chars validator
+- [x] Setup layout alignment
+- [x] Options row composition
+- [x] Sidebar hover polish
+- [x] Last Run visual hierarchy
+
+In progress:
+
+- [ ] History page runtime entries
+- [ ] Settings page basic controls
+- [ ] manual GUI test
+- [ ] test suite pass
 
 ## v1.0 Windows Release
 
