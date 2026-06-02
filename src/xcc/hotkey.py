@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import threading
-
 import keyboard
 
 from .main import main
-
-
-DEFAULT_HOTKEY = "ctrl+alt+x"
+from .config import DEFAULT_HOTKEY
 
 _is_running = False
 _lock = threading.Lock()

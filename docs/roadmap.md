@@ -48,7 +48,7 @@ Status: planned
 - [ ] quick collect popup
 - [ ] success notification
 
-## v0.4 GUI
+## v0.5 GUI
 
 - [ ] small main window
 - [ ] mode selector
