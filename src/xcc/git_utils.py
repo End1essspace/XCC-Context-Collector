@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-
+from .config import ALLOWED_EXTENSIONS, EXCLUDED_DIRS
+from .scanner import _is_inside_excluded_dir
 
 def is_git_repository(path: str | Path) -> bool:
     path = Path(path)
@@ -10,9 +11,17 @@ def is_git_repository(path: str | Path) -> bool:
     return (path / ".git").exists()
 
 
-def get_changed_files(path: str | Path) -> list[Path]:
+def get_changed_files(
+    path: str | Path,
+    *,
+    allowed_extensions: set[str] | None = None,
+    excluded_dirs: set[str] | None = None,
+) -> list[Path]:
     repo_path = Path(path)
-
+    
+    allowed_extensions = allowed_extensions or ALLOWED_EXTENSIONS
+    excluded_dirs = excluded_dirs or EXCLUDED_DIRS
+    
     result = subprocess.run(
         ["git", "status", "--porcelain"],
         cwd=repo_path,
@@ -35,6 +44,17 @@ def get_changed_files(path: str | Path) -> list[Path]:
         if not relative_path:
             continue
 
-        files.append(repo_path / relative_path)
+        full_path = repo_path / relative_path
+
+        if not full_path.exists() or not full_path.is_file():
+            continue
+
+        if _is_inside_excluded_dir(full_path, repo_path, excluded_dirs):
+            continue
+
+        if full_path.suffix.lower() not in allowed_extensions:
+            continue
+
+        files.append(full_path)
 
     return files
