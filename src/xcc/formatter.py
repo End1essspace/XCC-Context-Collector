@@ -7,6 +7,7 @@ from .models import CollectionResult, CollectionStats, FileContent
 from .optimizer import compact_text
 from .budget import apply_char_budget
 from .config import MAX_OUTPUT_CHARS
+from .file_size import sort_files_by_size
 from . import __version__
 
 def format_collection(
@@ -49,6 +50,8 @@ def format_collection(
                 "",
             ]
         )
+        
+    files = sort_files_by_size(files)
 
     for file in files:
         parts.append(format_file(file, project_root=project_root))
