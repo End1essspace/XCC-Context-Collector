@@ -872,18 +872,21 @@ class XccMainWindow(QMainWindow):
 
         layout.addWidget(self._section_title("Settings"))
 
-        subtitle = QLabel("Runtime configuration summary for the current GUI session.")
+        subtitle = QLabel("Runtime configuration and app behavior controls.")
         subtitle.setObjectName("PageSubtitle")
         layout.addWidget(subtitle)
 
         layout.addSpacing(6)
 
-        defaults_card = self._card()
-        defaults_layout = self._card_layout(defaults_card)
-        defaults_layout.setSpacing(12)
-        defaults_layout.addWidget(self._card_title("Runtime Defaults"))
+        panel = self._card()
+        panel.setObjectName("SettingsPanel")
 
-        defaults_layout.addWidget(
+        panel_layout = self._card_layout(panel)
+        panel_layout.setSpacing(18)
+        panel_layout.addWidget(self._card_title("Settings Panel"))
+
+        panel_layout.addWidget(self._settings_section_title("Runtime Defaults"))
+        panel_layout.addWidget(
             self._settings_tiles_row(
                 [
                     self._settings_tile("Default hotkey", DEFAULT_HOTKEY),
@@ -893,11 +896,7 @@ class XccMainWindow(QMainWindow):
             )
         )
 
-        session_card = self._card()
-        session_layout = self._card_layout(session_card)
-        session_layout.setSpacing(12)
-        session_layout.addWidget(self._card_title("Current Session"))
-
+        panel_layout.addWidget(self._settings_section_title("Current Session"))
         self.settings_current_mode = self._settings_tile(
             "Current mode",
             self._current_mode_name(),
@@ -911,7 +910,7 @@ class XccMainWindow(QMainWindow):
             self.max_chars_input.text().strip() or "Not set",
         )
 
-        session_layout.addWidget(
+        panel_layout.addWidget(
             self._settings_tiles_row(
                 [
                     self.settings_current_mode,
@@ -921,11 +920,29 @@ class XccMainWindow(QMainWindow):
             )
         )
 
-        persistence_card = self._card()
-        persistence_layout = self._card_layout(persistence_card)
-        persistence_layout.setSpacing(12)
-        persistence_layout.addWidget(self._card_title("Persistence"))
+        panel_layout.addWidget(self._settings_section_title("Startup Behavior"))
+        panel_layout.addWidget(
+            self._settings_tiles_row(
+                [
+                    self._settings_tile("Start with Windows", "Planned"),
+                    self._settings_tile("Start minimized", "Planned"),
+                    self._settings_tile("Start maximized", "Enabled"),
+                ]
+            )
+        )
 
+        panel_layout.addWidget(self._settings_section_title("Tray Behavior"))
+        panel_layout.addWidget(
+            self._settings_tiles_row(
+                [
+                    self._settings_tile("Close to tray", "Enabled"),
+                    self._settings_tile("Tray notification", "Enabled"),
+                    self._settings_tile("Double click restore", "Enabled"),
+                ]
+            )
+        )
+
+        panel_layout.addWidget(self._settings_section_title("Persistence"))
         self.settings_persistence_status = self._settings_tile(
             "Settings persistence",
             "Enabled",
@@ -939,7 +956,7 @@ class XccMainWindow(QMainWindow):
             "Persistent",
         )
 
-        persistence_layout.addWidget(
+        panel_layout.addWidget(
             self._settings_tiles_row(
                 [
                     self.settings_persistence_status,
@@ -948,13 +965,18 @@ class XccMainWindow(QMainWindow):
                 ]
             )
         )
-        layout.addWidget(defaults_card)
-        layout.addWidget(session_card)
-        layout.addWidget(persistence_card)
+
+        layout.addWidget(panel)
         layout.addStretch(1)
 
         return page
         
+    def _settings_section_title(self, text: str) -> QLabel:
+        label = QLabel(text)
+        label.setObjectName("SettingsSectionTitle")
+        label.setFixedHeight(18)
+        return label
+
     def _current_source_label(self, mode: str, project_root: Path | None) -> str:
         if mode == "files":
             count = len(self.selected_paths)
@@ -1523,6 +1545,19 @@ class XccMainWindow(QMainWindow):
             }
             #HeaderAppIcon {
                 background: transparent;
+            }
+            #SettingsPanel {
+                background: #161616;
+                border: 1px solid #6A5520;
+                border-radius: 14px;
+            }
+
+            #SettingsSectionTitle {
+                color: #F5C542;
+                font-size: 12px;
+                font-weight: 800;
+                background: transparent;
+                margin-top: 4px;
             }
             """
         )

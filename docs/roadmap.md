@@ -136,6 +136,23 @@ Status: DONE
 * [x] double click restore
 * [x] maximized startup
 
+
+## v0.8 Settings Expansion
+
+Status: PLANNED
+
+* [ ] autostart with Windows
+* [ ] start minimized to tray
+* [ ] close to tray option
+* [ ] start maximized option
+* [ ] tray behavior settings
+* [ ] settings controls UI
+* [ ] persist new settings
+* [ ] validate new settings
+* [ ] manual settings test
+* [ ] test suite pass
+
+
 ## v1.0 Windows Release
 
 Status: PLANNED
