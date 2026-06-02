@@ -22,3 +22,11 @@ class CollectionResult:
     text: str
     stats: CollectionStats
     errors: list[str]
+
+
+@dataclass(slots=True)
+class CollectionResult:
+    text: str
+    stats: CollectionStats
+    errors: list[str]
+    was_truncated: bool = False

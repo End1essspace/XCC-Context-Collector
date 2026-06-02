@@ -68,11 +68,14 @@ def format_collection(
     if compact:
         text = compact_text(text)
     
+    was_truncated = max_output_chars is not None and len(text) > max_output_chars
+
     text = apply_char_budget(text, max_output_chars)
     return CollectionResult(
         text=text,
         stats=stats,
         errors=errors,
+        was_truncated=was_truncated,
     )
 
 

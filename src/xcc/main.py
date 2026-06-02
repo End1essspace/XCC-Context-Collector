@@ -8,7 +8,6 @@ from .collector import collect_files
 from .formatter import format_collection
 from .picker import select_files, select_folder
 from .scanner import scan_project_files
-from .budget import TRUNCATION_MARKER
 
 def main() -> None:
     mode = ask_mode()
@@ -46,7 +45,7 @@ def main() -> None:
     output_chars = len(result.text)
     output_tokens = output_chars // 4
 
-    was_truncated = TRUNCATION_MARKER in result.text
+    was_truncated = result.was_truncated
         
     if not result.text.strip():
         show_error("XCC", "Nothing to copy.")
