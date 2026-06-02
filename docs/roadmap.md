@@ -19,11 +19,7 @@ Status: DONE
 
 ## v0.2 Context Optimization
 
-Status: in progress
-
-## v0.2 Context Optimization
-
-Status: in progress
+Status: DONE
 
 - [x] compact mode
 - [x] project tree in output
@@ -31,9 +27,20 @@ Status: in progress
 - [x] skip large files
 - [x] output metadata
 - [x] summarize oversized files
-- [ ] git diff mode
 
-## v0.3 Hotkey Mode
+## v0.3 Git Context Mode
+
+Status: planned
+
+- [ ] detect git repository
+- [ ] collect modified files
+- [ ] collect untracked files
+- [ ] include git diff
+- [ ] add mode metadata
+
+## v0.4 Hotkey Mode
+
+Status: planned
 
 - [ ] global hotkey
 - [ ] background process

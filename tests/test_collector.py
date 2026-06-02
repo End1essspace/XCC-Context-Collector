@@ -18,7 +18,7 @@ def test_collects_python_file(tmp_path: Path) -> None:
 
 
 def test_skips_unsupported_file(tmp_path: Path) -> None:
-    file_path = tmp_path / "notes.txt"
+    file_path = tmp_path / "notes.exe"
     file_path.write_text("hello", encoding="utf-8")
 
     files, errors = collect_files([file_path])

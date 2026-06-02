@@ -12,7 +12,7 @@ def test_scans_python_files_recursively(tmp_path: Path) -> None:
 
     main = src / "main.py"
     utils = src / "utils.py"
-    notes = src / "notes.txt"
+    notes = src / "notes.exe"
 
     main.write_text("print('main')", encoding="utf-8")
     utils.write_text("print('utils')", encoding="utf-8")
