@@ -56,6 +56,7 @@ class XccMainWindow(QMainWindow):
         self.history_entries: list[dict[str, object]] = []
         self.app_settings: AppSettings = load_settings()
         self._is_loading_settings = True
+        self._is_quitting = False
         self._has_shown_tray_hint = False
 
         self._setup_ui()

@@ -124,14 +124,17 @@ Status: DONE
 
 ## v0.7 Tray Mode
 
-Status: PLANNED
+Status: DONE
 
-* [ ] tray icon
-* [ ] show/hide GUI
-* [ ] quit from tray
-* [ ] hotkey listener integration
-* [ ] background GUI behavior
-* [ ] safe shutdown from tray
+* [x] tray icon
+* [x] show/hide GUI
+* [x] quit from tray
+* [x] background GUI behavior
+* [x] safe shutdown from tray
+* [x] tray menu polish
+* [x] first minimize notification
+* [x] double click restore
+* [x] maximized startup
 
 ## v1.0 Windows Release
 
