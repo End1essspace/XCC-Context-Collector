@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 
+TRUNCATION_MARKER = "__XCC_TRUNCATED_OUTPUT__"
+
+
 def apply_char_budget(text: str, max_chars: int | None) -> str:
     if max_chars is None:
         return text
@@ -13,6 +16,7 @@ def apply_char_budget(text: str, max_chars: int | None) -> str:
 
     marker = (
         "\n\n"
+        f"{TRUNCATION_MARKER}\n"
         "# XCC Truncated\n\n"
         f"Output was truncated to {max_chars} characters.\n"
         "Some files may be incomplete or missing from the final context.\n"
@@ -22,7 +26,8 @@ def apply_char_budget(text: str, max_chars: int | None) -> str:
 
     if available <= 0:
         return (
-            "# XCC Truncated\n"
+            f"{TRUNCATION_MARKER}\n"
+            f"# XCC Truncated\n"
             f"Limit: {max_chars}\n"
         )[:max_chars]
 
