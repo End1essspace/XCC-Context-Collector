@@ -42,7 +42,10 @@ def main() -> None:
     )
 
     estimated_tokens = sum(file.char_count for file in files) // 4
-
+    
+    output_chars = len(result.text)
+    output_tokens = output_chars // 4
+    
     if not result.text.strip():
         show_error("XCC", "Nothing to copy.")
         return
@@ -55,8 +58,10 @@ def main() -> None:
             "Copied context to clipboard.\n\n"
             f"Files: {result.stats.files}\n"
             f"Lines: {result.stats.lines}\n"
-            f"Characters: {result.stats.chars}\n"
-            f"Estimated Tokens: {estimated_tokens}\n"
+            f"Source Characters: {result.stats.chars}\n"
+            f"Output Characters: {output_chars}\n"
+            f"Source Tokens: {estimated_tokens}\n"
+            f"Output Tokens: {output_tokens}\n"
             f"Errors: {len(result.errors)}"
         ),
     )
