@@ -46,11 +46,19 @@ def main() -> None:
         return
 
     files, errors = collect_files(selected_paths)
+    
+    mode_name = {
+        "files": "Selected Files",
+        "folder": "Full Folder",
+        "git": "Git Changed Files",
+    }.get(mode, "Unknown")
+
     result = format_collection(
         files,
         errors,
         project_root=project_root,
         compact=True,
+        mode_name=mode_name,
         max_output_chars=120_000,
     )
 

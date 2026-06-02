@@ -15,6 +15,7 @@ def format_collection(
     *,
     project_root: str | Path | None = None,
     compact: bool = True,
+    mode_name: str = "Compact",
     max_output_chars: int | None = MAX_OUTPUT_CHARS,
 ) -> CollectionResult:
     errors = errors or []
@@ -29,7 +30,7 @@ def format_collection(
         "# XCC Context",
         "",
         f"XCC Version: {__version__}",
-        "Mode: Compact" if compact else "Mode: Full",
+        f"Mode: {mode_name}",
         f"Max Output Characters: {max_output_chars if max_output_chars is not None else 'Unlimited'}",
         "",
         f"Files: {stats.files}",
