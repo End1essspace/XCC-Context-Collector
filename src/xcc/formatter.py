@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from .tree import build_project_tree
 from .models import CollectionResult, CollectionStats, FileContent
 
 
@@ -27,6 +28,18 @@ def format_collection(
         f"Characters: {stats.chars}",
         "",
     ]
+
+    tree = build_project_tree([file.path for file in files], project_root)
+
+    if tree:
+        parts.extend(
+            [
+                tree,
+                "",
+                "# Files",
+                "",
+            ]
+        )
 
     for file in files:
         parts.append(format_file(file, project_root=project_root))

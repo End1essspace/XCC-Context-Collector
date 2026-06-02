@@ -2,7 +2,7 @@
 
 ## v0.1 Core MVP
 
-Status: in progress
+Status: DONE
 
 - [x] project structure
 - [x] data models
@@ -18,6 +18,8 @@ Status: in progress
 - [x] manual real-project test
 
 ## v0.2 Context Optimization
+
+Status: in progress
 
 - [ ] compact mode
 - [ ] project tree in output
