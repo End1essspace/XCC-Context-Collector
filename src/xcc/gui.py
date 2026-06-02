@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-
+from PySide6.QtGui import QIntValidator
 from . import __version__
 from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS
 
@@ -73,7 +73,7 @@ class XccMainWindow(QMainWindow):
 
         self.status_label = QLabel("Ready")
         self.status_label.setObjectName("StatusBar")
-        self.status_label.setFixedHeight(32)
+        self.status_label.setFixedHeight(38)
         root_layout.addWidget(self.status_label)
 
         self.setCentralWidget(root)
@@ -84,29 +84,24 @@ class XccMainWindow(QMainWindow):
     def _build_header(self) -> QWidget:
         header = QFrame()
         header.setObjectName("Header")
-        header.setFixedHeight(72)
+        header.setFixedHeight(56)
 
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(24, 0, 24, 0)
+        layout.setContentsMargins(18, 0, 18, 0)
+        layout.setSpacing(12)
 
-        title_box = QVBoxLayout()
-        title = QLabel("XCC Context Collector")
+        title = QLabel("XCC Context Collector — AI-ready project context collector")
         title.setObjectName("HeaderTitle")
-
-        subtitle = QLabel("AI-ready project context collector")
-        subtitle.setObjectName("HeaderSubtitle")
-
-        title_box.addWidget(title)
-        title_box.addWidget(subtitle)
 
         self.header_status = QLabel("Ready")
         self.header_status.setObjectName("StatusCapsule")
+        self.header_status.setFixedHeight(34)
 
         hotkey = QLabel(f"Hotkey: {DEFAULT_HOTKEY}")
         hotkey.setObjectName("HotkeyCapsule")
+        hotkey.setFixedHeight(34)
 
-        layout.addLayout(title_box)
-        layout.addStretch(1)
+        layout.addWidget(title, 1)
         layout.addWidget(self.header_status)
         layout.addWidget(hotkey)
 
@@ -128,16 +123,23 @@ class XccMainWindow(QMainWindow):
     def _build_collect_page(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setContentsMargins(28, 24, 28, 24)
         layout.setSpacing(18)
 
         layout.addWidget(self._section_title("Collect Context"))
 
-        mode_card = self._card()
-        mode_layout = QVBoxLayout(mode_card)
-        mode_layout.setContentsMargins(24, 18, 24, 18)
-        mode_layout.setSpacing(10)
-        mode_layout.addWidget(self._card_title("Mode"))
+        setup_card = self._card()
+        setup_card.setMinimumHeight(210)
+        setup_layout = QVBoxLayout(setup_card)
+        setup_layout.setContentsMargins(24, 18, 24, 18)
+        setup_layout.setSpacing(16)
+
+        setup_layout.addWidget(self._card_title("Setup"))
+
+        mode_row = QHBoxLayout()
+        mode_label = QLabel("Mode")
+        mode_label.setObjectName("FieldLabel")
+        mode_label.setFixedWidth(90)
 
         self.mode_group = QButtonGroup(self)
         self.mode_files = QRadioButton("Selected Files")
@@ -148,81 +150,98 @@ class XccMainWindow(QMainWindow):
 
         for index, button in enumerate([self.mode_files, self.mode_folder, self.mode_git]):
             self.mode_group.addButton(button, index)
-            mode_layout.addWidget(button)
+            mode_row.addWidget(button)
 
-        layout.addWidget(mode_card)
-
-        source_card = self._card()
-        source_layout = QVBoxLayout(source_card)
-        source_layout.setContentsMargins(24, 18, 24, 18)
-        source_layout.setSpacing(10)
-        source_layout.addWidget(self._card_title("Source"))
+        mode_row.insertWidget(0, mode_label)
+        mode_row.addStretch(1)
 
         source_row = QHBoxLayout()
+        source_label = QLabel("Source")
+        source_label.setObjectName("FieldLabel")
+        source_label.setFixedWidth(90)
+
         self.source_input = QLineEdit()
         self.source_input.setPlaceholderText("No source selected")
         self.source_input.setReadOnly(True)
-        self.source_input.setFixedHeight(38)
+        self.source_input.setFixedHeight(40)
 
         self.select_source_button = QPushButton("Select Source")
-        self.select_source_button.setMinimumWidth(150)
-        self.select_source_button.setFixedHeight(38)
+        self.select_source_button.setMinimumWidth(160)
+        self.select_source_button.setFixedHeight(40)
 
+        source_row.addWidget(source_label)
         source_row.addWidget(self.source_input, 1)
         source_row.addWidget(self.select_source_button)
 
-        source_layout.addLayout(source_row)
-        layout.addWidget(source_card)
-
-        options_card = self._card()
-        options_layout = QVBoxLayout(options_card)
-        options_layout.setContentsMargins(24, 18, 24, 18)
-        options_layout.setSpacing(10)
-        options_layout.addWidget(self._card_title("Options"))
+        options_row = QHBoxLayout()
+        options_label = QLabel("Options")
+        options_label.setObjectName("FieldLabel")
+        options_label.setFixedWidth(90)
 
         self.compact_checkbox = QCheckBox("Compact mode")
         self.compact_checkbox.setChecked(True)
 
-        max_chars_row = QHBoxLayout()
-        max_chars_label = QLabel("Max output chars")
+        max_chars_label = QLabel("Max chars")
+        max_chars_label.setObjectName("FieldLabelSmall")
+
         self.max_chars_input = QLineEdit(str(MAX_OUTPUT_CHARS))
-        self.max_chars_input.setFixedHeight(36)
-        self.max_chars_input.setMaximumWidth(180)
+        self.max_chars_input.setValidator(QIntValidator(1, 10_000_000, self))
+        self.max_chars_input.setMaximumWidth(160)
+        self.max_chars_input.setFixedHeight(38)
 
-        max_chars_row.addWidget(max_chars_label)
-        max_chars_row.addWidget(self.max_chars_input)
-        max_chars_row.addStretch(1)
+        options_row.addWidget(options_label)
+        options_row.addWidget(self.compact_checkbox)
+        options_row.addSpacing(24)
+        options_row.addWidget(max_chars_label)
+        options_row.addWidget(self.max_chars_input)
+        options_row.addStretch(1)
 
-        options_layout.addWidget(self.compact_checkbox)
-        options_layout.addLayout(max_chars_row)
+        setup_layout.addLayout(mode_row)
+        setup_layout.addLayout(source_row)
+        setup_layout.addLayout(options_row)
 
-        layout.addWidget(options_card)
+        layout.addWidget(setup_card)
 
         stats_card = self._card()
+        stats_card.setMinimumHeight(150)
         stats_layout = QVBoxLayout(stats_card)
         stats_layout.setContentsMargins(24, 18, 24, 18)
-        stats_layout.setSpacing(10)
+        stats_layout.setSpacing(14)
+
         stats_layout.addWidget(self._card_title("Last Run"))
 
-        self.stats_label = QLabel(
-            "Files: -\n"
-            "Lines: -\n"
-            "Source Characters: -\n"
-            "Output Characters: -\n"
-            "Output Tokens: -\n"
-            "Truncated: -\n"
-            "Errors: -"
-        )
-        self.stats_label.setObjectName("StatsText")
-        stats_layout.addWidget(self.stats_label)
+        self.files_metric = self._metric_capsule("Files", "-")
+        self.lines_metric = self._metric_capsule("Lines", "-")
+        self.source_chars_metric = self._metric_capsule("Source Chars", "-")
+        self.output_chars_metric = self._metric_capsule("Output Chars", "-")
+        self.tokens_metric = self._metric_capsule("Output Tokens", "-")
+        self.truncated_metric = self._metric_capsule("Truncated", "-")
+        self.errors_metric = self._metric_capsule("Errors", "-")
+
+        metrics_row_1 = QHBoxLayout()
+        metrics_row_1.setSpacing(10)
+        metrics_row_1.addWidget(self.files_metric)
+        metrics_row_1.addWidget(self.lines_metric)
+        metrics_row_1.addWidget(self.source_chars_metric)
+        metrics_row_1.addWidget(self.output_chars_metric)
+
+        metrics_row_2 = QHBoxLayout()
+        metrics_row_2.setSpacing(10)
+        metrics_row_2.addWidget(self.tokens_metric)
+        metrics_row_2.addWidget(self.truncated_metric)
+        metrics_row_2.addWidget(self.errors_metric)
+        metrics_row_2.addStretch(1)
+
+        stats_layout.addLayout(metrics_row_1)
+        stats_layout.addLayout(metrics_row_2)
 
         layout.addWidget(stats_card)
 
-        layout.addItem(QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        layout.addStretch(1)
 
         self.collect_button = QPushButton("Collect && Copy")
         self.collect_button.setObjectName("PrimaryButton")
-        self.collect_button.setFixedHeight(46)
+        self.collect_button.setFixedHeight(52)
 
         layout.addWidget(self.collect_button)
 
@@ -299,44 +318,63 @@ class XccMainWindow(QMainWindow):
     def _card(self) -> QFrame:
         card = QFrame()
         card.setObjectName("Card")
-        card.setMinimumHeight(96)
         return card
+    
+    def _metric_capsule(self, label: str, value: str) -> QFrame:
+        capsule = QFrame()
+        capsule.setObjectName("MetricCapsule")
+        capsule.setMinimumWidth(150)
+        capsule.setFixedHeight(56)
 
+        layout = QVBoxLayout(capsule)
+        layout.setContentsMargins(12, 8, 12, 8)
+        layout.setSpacing(2)
+
+        label_widget = QLabel(label)
+        label_widget.setObjectName("MetricLabel")
+
+        value_widget = QLabel(value)
+        value_widget.setObjectName("MetricValue")
+
+        capsule.value_label = value_widget
+
+        layout.addWidget(label_widget)
+        layout.addWidget(value_widget)
+
+        return capsule
+    
     def _apply_theme(self) -> None:
         self.setStyleSheet(
             """
             QMainWindow {
-                background: #0E0E0E;
+                background: #0F0F10;
             }
 
             QWidget {
-                background: #0E0E0E;
+                background: #0F0F10;
                 color: #F2F2F2;
                 font-family: Segoe UI;
                 font-size: 13px;
             }
 
             #Header {
-                background: #141414;
-                border-bottom: 1px solid #2D2D2D;
+                background: #151515;
+                border-bottom: 1px solid #2F2A1C;
             }
 
             #HeaderTitle {
-                font-size: 20px;
+                font-size: 15px;
                 font-weight: 700;
                 color: #F5C542;
-            }
-
-            #HeaderSubtitle {
-                color: #A0A0A0;
+                background: transparent;
             }
 
             #StatusCapsule,
             #HotkeyCapsule {
-                background: #202020;
-                border: 1px solid #3A3A3A;
-                border-radius: 13px;
-                padding: 5px 12px;
+                background: #1A1A1A;
+                border: 1px solid #6A5520;
+                border-radius: 10px;
+                padding: 4px 12px;
                 color: #F2F2F2;
             }
 
@@ -345,15 +383,16 @@ class XccMainWindow(QMainWindow):
             }
 
             #Sidebar {
-                background: #111111;
-                border-right: 1px solid #2D2D2D;
-                padding: 12px;
+                background: #121212;
+                border-right: 1px solid #2F2A1C;
+                padding: 10px;
             }
 
             #Sidebar::item {
                 padding: 12px 14px;
-                border-radius: 8px;
-                color: #BDBDBD;
+                border-radius: 10px;
+                color: #C9C9C9;
+                background: transparent;
             }
 
             #Sidebar::item:selected {
@@ -363,35 +402,52 @@ class XccMainWindow(QMainWindow):
             }
 
             #Sidebar::item:hover {
-                background: #202020;
-                color: #F2F2F2;
+                background: #2A2412;
+                color: #F5C542;
             }
 
             #SectionTitle {
                 font-size: 22px;
                 font-weight: 700;
                 color: #F2F2F2;
+                background: transparent;
             }
 
             #Card {
-                background: #171717;
-                border: 1px solid #2D2D2D;
-                border-radius: 12px;
-                padding: 12px;
+                background: #161616;
+                border: 1px solid #6A5520;
+                border-radius: 14px;
             }
 
             #CardTitle {
                 color: #F5C542;
                 font-weight: 700;
-                margin-bottom: 6px;
+                background: transparent;
+            }
+
+            #FieldLabel {
+                color: #D6D6D6;
+                font-weight: 700;
+                background: transparent;
+            }
+
+            #FieldLabelSmall {
+                color: #B8B8B8;
+                background: transparent;
             }
 
             QLineEdit {
-                background: #0E0E0E;
-                border: 1px solid #3A3A3A;
-                border-radius: 8px;
+                background: #101010;
+                border: 1px solid #6A5520;
+                border-radius: 10px;
                 padding: 8px 10px;
                 color: #F2F2F2;
+                selection-background-color: #F5C542;
+                selection-color: #111111;
+            }
+
+            QLineEdit:hover {
+                border: 1px solid #D2A92E;
             }
 
             QLineEdit:focus {
@@ -399,16 +455,21 @@ class XccMainWindow(QMainWindow):
             }
 
             QPushButton {
-                background: #202020;
-                border: 1px solid #3A3A3A;
-                border-radius: 9px;
+                background: #1A1A1A;
+                border: 1px solid #6A5520;
+                border-radius: 10px;
                 padding: 9px 14px;
                 color: #F2F2F2;
             }
 
             QPushButton:hover {
-                background: #2A2A2A;
+                background: #232323;
                 border: 1px solid #F5C542;
+                color: #F5C542;
+            }
+
+            QPushButton:pressed {
+                background: #2A2412;
             }
 
             #PrimaryButton {
@@ -416,46 +477,88 @@ class XccMainWindow(QMainWindow):
                 color: #111111;
                 font-size: 15px;
                 font-weight: 800;
-                border: none;
+                border: 1px solid #F5C542;
+                border-radius: 12px;
             }
 
             #PrimaryButton:hover {
                 background: #FFD95A;
+                border: 1px solid #FFD95A;
+                color: #111111;
+            }
+
+            #PrimaryButton:pressed {
+                background: #E0B83B;
+                border: 1px solid #E0B83B;
             }
 
             QRadioButton,
             QCheckBox {
                 spacing: 8px;
-                padding: 4px 0;
+                padding: 2px 0;
+                background: transparent;
             }
 
-            #StatsText {
-                color: #D8D8D8;
-                line-height: 150%;
+            QRadioButton:hover,
+            QCheckBox:hover {
+                color: #F5C542;
             }
 
-            #StatusBar {
-                background: #111111;
-                border-top: 1px solid #2D2D2D;
-                padding-left: 18px;
-                color: #A0A0A0;
-            }
             QRadioButton::indicator,
             QCheckBox::indicator {
                 width: 16px;
                 height: 16px;
+                background: #101010;
+                border: 1px solid #6A5520;
             }
 
-            QRadioButton::indicator:unchecked,
-            QCheckBox::indicator:unchecked {
-                border: 1px solid #777777;
-                background: #111111;
+            QRadioButton::indicator {
+                border-radius: 8px;
+            }
+
+            QCheckBox::indicator {
+                border-radius: 4px;
+            }
+
+            QRadioButton::indicator:hover,
+            QCheckBox::indicator:hover {
+                border: 1px solid #F5C542;
             }
 
             QRadioButton::indicator:checked,
             QCheckBox::indicator:checked {
-                border: 1px solid #F5C542;
                 background: #F5C542;
+                border: 1px solid #F5C542;
+            }
+
+            #MetricCapsule {
+                background: #1A1A1A;
+                border: 1px solid #6A5520;
+                border-radius: 10px;
+            }
+
+            #MetricCapsule:hover {
+                border: 1px solid #F5C542;
+            }
+
+            #MetricLabel {
+                color: #AFAFAF;
+                font-size: 11px;
+                background: transparent;
+            }
+
+            #MetricValue {
+                color: #F5C542;
+                font-size: 15px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #StatusBar {
+                background: #151515;
+                border-top: 1px solid #2F2A1C;
+                padding-left: 16px;
+                color: #B8B8B8;
             }
             """
         )
