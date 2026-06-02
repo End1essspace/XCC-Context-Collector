@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -377,20 +377,7 @@ class XccMainWindow(QMainWindow):
                 errors=len(result.errors),
             )
 
-            self._set_status("Copied to clipboard.")
-            QMessageBox.information(
-                self,
-                "XCC",
-                (
-                    "Copied context to clipboard.\n\n"
-                    f"Files: {result.stats.files}\n"
-                    f"Lines: {result.stats.lines}\n"
-                    f"Output Characters: {output_chars}\n"
-                    f"Output Tokens: {output_tokens}\n"
-                    f"Truncated: {'Yes' if result.was_truncated else 'No'}\n"
-                    f"Errors: {len(result.errors)}"
-                ),
-            )
+            self._show_success_feedback()
 
         except Exception as exc:
             self._set_status("Error.")
@@ -456,6 +443,17 @@ class XccMainWindow(QMainWindow):
     def _set_status(self, message: str) -> None:
         self.status_label.setText(message)
         self.header_status.setText(message if len(message) <= 18 else "Ready")
+
+    def _show_success_feedback(self) -> None:
+        self._set_status("Copied to clipboard.")
+        self.header_status.setText("Copied")
+        self.collect_button.setText("Copied!")
+
+        QTimer.singleShot(1500, self._reset_success_feedback)
+
+    def _reset_success_feedback(self) -> None:
+        self.header_status.setText("Ready")
+        self.collect_button.setText("Collect && Copy")
 
     def _build_settings_page(self) -> QWidget:
         page = QWidget()
