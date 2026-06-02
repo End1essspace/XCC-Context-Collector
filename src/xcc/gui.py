@@ -56,6 +56,7 @@ class XccMainWindow(QMainWindow):
         self.history_entries: list[dict[str, object]] = []
         self.app_settings: AppSettings = load_settings()
         self._is_loading_settings = True
+        self._has_shown_tray_hint = False
 
         self._setup_ui()
         self._apply_loaded_settings()
@@ -277,6 +278,36 @@ class XccMainWindow(QMainWindow):
         self.tray_icon.setToolTip("XCC Context Collector")
 
         tray_menu = QMenu(self)
+        tray_menu.setObjectName("TrayMenu")
+        tray_menu.setStyleSheet(
+            """
+            QMenu {
+                background: #151515;
+                border: 1px solid #6A5520;
+                padding: 6px;
+                color: #F2F2F2;
+                font-family: Segoe UI;
+                font-size: 12px;
+            }
+
+            QMenu::item {
+                background: transparent;
+                padding: 8px 28px 8px 22px;
+                border-radius: 6px;
+            }
+
+            QMenu::item:selected {
+                background: #F5C542;
+                color: #111111;
+            }
+
+            QMenu::separator {
+                height: 1px;
+                background: #2F2A1C;
+                margin: 5px 4px;
+            }
+            """
+        )
 
         show_action = QAction("Show XCC", self)
         show_action.triggered.connect(self._show_from_tray)
@@ -296,15 +327,18 @@ class XccMainWindow(QMainWindow):
         self.tray_icon.activated.connect(self._on_tray_activated)
         self.tray_icon.show()
 
+    def _set_event_status(self, message: str) -> None:
+        self.status_label.setText(message)
+
     def _show_from_tray(self) -> None:
-        self.show()
+        self.showMaximized()
         self.raise_()
         self.activateWindow()
-        self._set_status("Window restored.")
+        self._set_event_status("Window restored.")
 
     def _hide_to_tray(self) -> None:
         self.hide()
-        self._set_status("Hidden to tray.")
+        self._set_event_status("Hidden to tray.")
 
     def _quit_from_tray(self) -> None:
         self._is_quitting = True
@@ -321,13 +355,27 @@ class XccMainWindow(QMainWindow):
 
         if hasattr(self, "tray_icon") and self.tray_icon.isVisible():
             self.hide()
-            self._set_status("Hidden to tray.")
+            self._set_event_status("Hidden to tray.")
+
+            if not self._has_shown_tray_hint:
+                self.tray_icon.showMessage(
+                    "XCC is still running",
+                    "Use the tray icon to restore or quit XCC.",
+                    QSystemTrayIcon.MessageIcon.Information,
+                    2500,
+                )
+                self._has_shown_tray_hint = True
+
             event.ignore()
             return
 
         event.accept()
 
     def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.DoubleClick:
+            self._show_from_tray()
+            return
+
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
             if self.isVisible():
                 self._hide_to_tray()
@@ -1482,5 +1530,5 @@ class XccMainWindow(QMainWindow):
 def run_gui() -> None:
     app = QApplication(sys.argv)
     window = XccMainWindow()
-    window.show()
+    window.showMaximized()
     sys.exit(app.exec())
