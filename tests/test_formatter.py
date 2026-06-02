@@ -15,12 +15,13 @@ def test_formats_collection_with_stats() -> None:
     result = format_collection([file])
 
     assert "# XCC Context" in result.text
+    assert "Mode: Compact" in result.text
+    assert "Max Output Characters:" in result.text
     assert "Files: 1" in result.text
     assert "Lines: 1" in result.text
     assert "Characters: 15" in result.text
     assert "===== file: main.py =====" in result.text
     assert "print('hello')" in result.text
-
 
 def test_formats_errors() -> None:
     result = format_collection([], ["Cannot decode file: bad.py"])
