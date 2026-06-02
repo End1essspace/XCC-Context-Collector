@@ -41,14 +41,17 @@ Status: DONE
 
 ## v0.4 Hotkey Mode
 
-Status: planned
+Status: DONE
 
-- [ ] global hotkey
-- [ ] background process
-- [ ] quick collect popup
-- [ ] success notification
+- [x] global hotkey
+- [x] background process
+- [x] prevent concurrent runs
+- [x] graceful shutdown
+- [x] safe hotkey selected: Ctrl+Alt+X
 
 ## v0.5 GUI
+
+Status: planned
 
 - [ ] small main window
 - [ ] mode selector
