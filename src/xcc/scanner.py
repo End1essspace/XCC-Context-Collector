@@ -37,7 +37,7 @@ def scan_project_files(
 
         files.append(path)
 
-    return sorted(files, key=lambda item: item.as_posix().lower())
+    return sorted(files, key=_file_priority_key)
 
 
 def _is_inside_excluded_dir(
@@ -53,3 +53,24 @@ def _is_inside_excluded_dir(
     excluded = set(excluded_dirs)
 
     return any(part in excluded for part in relative_parts)
+
+
+def _file_priority_key(path: Path) -> tuple[int, str]:
+    name = path.name.lower()
+    suffix = path.suffix.lower()
+    path_text = path.as_posix().lower()
+
+    if name in {"readme.md", "pyproject.toml", "requirements.txt"}:
+        priority = 0
+    elif name in {"main.py", "run.py", "__init__.py"}:
+        priority = 1
+    elif "/src/" in path_text or "\\src\\" in path_text:
+        priority = 2
+    elif "/tests/" in path_text or "\\tests\\" in path_text:
+        priority = 4
+    elif suffix in {".md", ".txt"}:
+        priority = 5
+    else:
+        priority = 3
+
+    return priority, path_text
