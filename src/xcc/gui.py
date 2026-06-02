@@ -379,35 +379,62 @@ class XccMainWindow(QMainWindow):
             "git": "Git Changed Files",
         }.get(mode, "Unknown")
 
-    def _settings_row(self, label: str, value: str) -> QFrame:
-        row = QFrame()
-        row.setObjectName("SettingsRow")
-        row.setFixedHeight(44)
-        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+    def _settings_tile(self, label: str, value: str) -> QFrame:
+        tile = QFrame()
+        tile.setObjectName("SettingsTile")
+        tile.setFixedHeight(76)
+        tile.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
-        layout = QHBoxLayout(row)
-        layout.setContentsMargins(14, 0, 14, 0)
-        layout.setSpacing(12)
+        layout = QVBoxLayout(tile)
+        layout.setContentsMargins(14, 10, 14, 10)
+        layout.setSpacing(6)
 
         label_widget = QLabel(label)
-        label_widget.setObjectName("SettingsLabel")
+        label_widget.setObjectName("SettingsTileLabel")
 
         value_widget = QLabel(value)
-        value_widget.setObjectName("SettingsValue")
-        value_widget.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        value_widget.setObjectName("SettingsTileValue")
+        value_widget.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
-        row.value_label = value_widget
+        tile.value_label = value_widget
 
-        layout.addWidget(label_widget, 1)
-        layout.addWidget(value_widget, 1)
+        layout.addWidget(label_widget)
+        layout.addWidget(value_widget)
+
+        return tile
+
+    def _settings_tiles_row(self, tiles: list[QFrame]) -> QWidget:
+        row = QWidget()
+        row.setObjectName("TransparentWidget")
+
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(12)
+
+        for tile in tiles:
+            layout.addWidget(tile, 1)
 
         return row
 
-    def _settings_note(self, text: str) -> QLabel:
-        label = QLabel(text)
-        label.setObjectName("SettingsNote")
-        label.setWordWrap(True)
-        return label
+    def _settings_note(self, text: str) -> QFrame:
+        note = QFrame()
+        note.setObjectName("SettingsNote")
+
+        layout = QVBoxLayout(note)
+        layout.setContentsMargins(14, 10, 14, 10)
+        layout.setSpacing(4)
+
+        title = QLabel("Note")
+        title.setObjectName("SettingsNoteTitle")
+
+        body = QLabel(text)
+        body.setObjectName("SettingsNoteBody")
+        body.setWordWrap(True)
+
+        layout.addWidget(title)
+        layout.addWidget(body)
+
+        return note
 
     def _refresh_settings_page(self) -> None:
         if hasattr(self, "settings_current_mode"):
@@ -625,48 +652,68 @@ class XccMainWindow(QMainWindow):
 
         layout.addWidget(self._section_title("Settings"))
 
+        subtitle = QLabel("Runtime configuration summary for the current GUI session.")
+        subtitle.setObjectName("PageSubtitle")
+        layout.addWidget(subtitle)
+
         defaults_card = self._card()
         defaults_layout = self._card_layout(defaults_card)
+        defaults_layout.setSpacing(12)
         defaults_layout.addWidget(self._card_title("Runtime Defaults"))
 
         defaults_layout.addWidget(
-            self._settings_row("Default hotkey", DEFAULT_HOTKEY)
-        )
-        defaults_layout.addWidget(
-            self._settings_row("Default max output chars", str(MAX_OUTPUT_CHARS))
-        )
-        defaults_layout.addWidget(
-            self._settings_row("App version", __version__)
+            self._settings_tiles_row(
+                [
+                    self._settings_tile("Default hotkey", DEFAULT_HOTKEY),
+                    self._settings_tile("Default max chars", str(MAX_OUTPUT_CHARS)),
+                    self._settings_tile("App version", __version__),
+                ]
+            )
         )
 
         session_card = self._card()
         session_layout = self._card_layout(session_card)
+        session_layout.setSpacing(12)
         session_layout.addWidget(self._card_title("Current Session"))
 
-        self.settings_current_mode = self._settings_row(
+        self.settings_current_mode = self._settings_tile(
             "Current mode",
             self._current_mode_name(),
         )
-        self.settings_compact_mode = self._settings_row(
+        self.settings_compact_mode = self._settings_tile(
             "Compact mode",
             "Enabled" if self.compact_checkbox.isChecked() else "Disabled",
         )
-        self.settings_current_max_chars = self._settings_row(
+        self.settings_current_max_chars = self._settings_tile(
             "Current max chars",
             self.max_chars_input.text().strip() or "Not set",
         )
 
-        session_layout.addWidget(self.settings_current_mode)
-        session_layout.addWidget(self.settings_compact_mode)
-        session_layout.addWidget(self.settings_current_max_chars)
+        session_layout.addWidget(
+            self._settings_tiles_row(
+                [
+                    self.settings_current_mode,
+                    self.settings_compact_mode,
+                    self.settings_current_max_chars,
+                ]
+            )
+        )
 
         persistence_card = self._card()
         persistence_layout = self._card_layout(persistence_card)
+        persistence_layout.setSpacing(12)
         persistence_layout.addWidget(self._card_title("Persistence"))
 
         persistence_layout.addWidget(
-            self._settings_row("Settings persistence", "Planned in v0.6")
+            self._settings_tiles_row(
+                [
+                    self._settings_tile("Settings persistence", "Planned in v0.6"),
+                    self._settings_tile("Config file", "Not created yet"),
+                    self._settings_tile("Storage mode", "Runtime only"),
+                ]
+            )
         )
+
         persistence_layout.addWidget(
             self._settings_note(
                 "This page reflects the current runtime session only. "
@@ -680,7 +727,7 @@ class XccMainWindow(QMainWindow):
         layout.addStretch(1)
 
         return page
-    
+        
     def _current_source_label(self, mode: str, project_root: Path | None) -> str:
         if mode == "files":
             count = len(self.selected_paths)
@@ -1196,32 +1243,81 @@ class XccMainWindow(QMainWindow):
             QScrollBar::sub-page:vertical {
                 background: transparent;
             }
-            #SettingsRow {
-                background: #181818;
-                border: 1px solid #4F3F18;
-                border-radius: 10px;
+            #PageSubtitle {
+                color: #8F8F8F;
+                font-size: 12px;
+                background: transparent;
+                margin-top: -8px;
             }
 
             #SettingsRow:hover {
                 background: #1E1B12;
                 border: 1px solid #F5C542;
             }
-
-            #SettingsLabel {
-                color: #B8B8B8;
+            #PageSubtitle {
+                color: #8F8F8F;
                 font-size: 12px;
+                background: transparent;
+                margin-top: -8px;
+            }
+
+            #SettingsTile {
+                background: #181818;
+                border: 1px solid #4F3F18;
+                border-radius: 10px;
+            }
+
+            #SettingsTile:hover {
+                background: #1E1B12;
+                border: 1px solid #F5C542;
+            }
+
+            #SettingsTileLabel {
+                color: #AFAFAF;
+                font-size: 11px;
                 font-weight: 600;
                 background: transparent;
             }
 
-            #SettingsValue {
+            #SettingsTileValue {
                 color: #F5C542;
-                font-size: 12px;
+                font-size: 15px;
                 font-weight: 800;
                 background: transparent;
             }
 
             #SettingsNote {
+                background: #121212;
+                border: 1px solid #332A14;
+                border-radius: 10px;
+            }
+
+            #SettingsNoteTitle {
+                color: #F5C542;
+                font-size: 11px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #SettingsNoteBody {
+                color: #8F8F8F;
+                font-size: 12px;
+                background: transparent;
+            }
+            #SettingsNote {
+                background: #121212;
+                border: 1px solid #332A14;
+                border-radius: 10px;
+            }
+
+            #SettingsNoteTitle {
+                color: #F5C542;
+                font-size: 11px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #SettingsNoteBody {
                 color: #8F8F8F;
                 font-size: 12px;
                 background: transparent;
