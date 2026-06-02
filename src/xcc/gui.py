@@ -7,6 +7,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
     QCheckBox,
+    QFileDialog,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -14,6 +15,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
+    QMessageBox,
     QPushButton,
     QRadioButton,
     QSizePolicy,
@@ -25,6 +27,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QIntValidator
 from . import __version__
 from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS
+from pathlib import Path
+from .git_utils import is_git_repository
 
 
 class XccMainWindow(QMainWindow):
@@ -33,6 +37,9 @@ class XccMainWindow(QMainWindow):
 
         self.setWindowTitle("XCC Context Collector")
         self.setMinimumSize(920, 620)
+
+        self.selected_paths: list[Path] = []
+        self.project_root: Path | None = None
 
         self._setup_ui()
         self._apply_theme()
@@ -81,6 +88,9 @@ class XccMainWindow(QMainWindow):
         self.nav.currentRowChanged.connect(self.pages.setCurrentIndex)
         self.nav.setCurrentRow(0)
 
+        self.select_source_button.clicked.connect(self._select_source)
+        self.mode_group.buttonClicked.connect(self._clear_source)
+    
     def _build_header(self) -> QWidget:
         header = QFrame()
         header.setObjectName("Header")
@@ -246,6 +256,80 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(self.collect_button)
 
         return page
+
+    def _current_mode(self) -> str:
+        checked_id = self.mode_group.checkedId()
+
+        if checked_id == 0:
+            return "files"
+
+        if checked_id == 1:
+            return "folder"
+
+        return "git"
+
+    def _select_source(self) -> None:
+        mode = self._current_mode()
+
+        self.selected_paths = []
+        self.project_root = None
+
+        if mode == "files":
+            selected, _ = QFileDialog.getOpenFileNames(
+                self,
+                "Select context files",
+                "",
+                "Context files (*.py *.pyw *.md *.txt *.json *.yaml *.yml *.toml *.ini *.cfg);;All files (*.*)",
+            )
+
+            if not selected:
+                self._set_status("Source selection cancelled.")
+                return
+
+            self.selected_paths = [Path(path) for path in selected]
+            self.source_input.setText(f"{len(self.selected_paths)} files selected")
+            self._set_status(f"Selected {len(self.selected_paths)} files.")
+            return
+
+        selected_folder = QFileDialog.getExistingDirectory(
+            self,
+            "Select project folder",
+            "",
+        )
+
+        if not selected_folder:
+            self._set_status("Source selection cancelled.")
+            return
+
+        folder = Path(selected_folder)
+
+        if mode == "git" and not is_git_repository(folder):
+            self._set_status("Selected folder is not a Git repository.")
+            QMessageBox.warning(
+                self,
+                "XCC",
+                "Selected folder is not a Git repository.",
+            )
+            return
+
+        self.project_root = folder
+        self.source_input.setText(str(folder))
+
+        if mode == "git":
+            self._set_status("Git repository selected.")
+        else:
+            self._set_status("Project folder selected.")
+
+    def _clear_source(self) -> None:
+        self.selected_paths = []
+        self.project_root = None
+        self.source_input.clear()
+        self.source_input.setPlaceholderText("No source selected")
+        self._set_status("Source cleared.")
+
+    def _set_status(self, message: str) -> None:
+        self.status_label.setText(message)
+        self.header_status.setText(message if len(message) <= 18 else "Ready")
 
     def _build_settings_page(self) -> QWidget:
         page = QWidget()
