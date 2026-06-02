@@ -4,19 +4,15 @@ from pathlib import Path
 from typing import Iterable
 
 from .models import FileContent
-
-
-ALLOWED_EXTENSIONS = {".py"}
-DEFAULT_ENCODINGS = ("utf-8", "utf-8-sig", "cp1251")
-DEFAULT_MAX_FILE_SIZE_BYTES = 512 * 1024
+from .config import ALLOWED_EXTENSIONS, ENCODINGS, MAX_FILE_SIZE_BYTES
 
 
 def collect_files(
     paths: Iterable[str | Path],
     *,
     allowed_extensions: set[str] | None = None,
-    encodings: tuple[str, ...] = DEFAULT_ENCODINGS,
-    max_file_size_bytes: int = DEFAULT_MAX_FILE_SIZE_BYTES,
+    encodings: tuple[str, ...] = ENCODINGS,
+    max_file_size_bytes: int = MAX_FILE_SIZE_BYTES,
 ) -> tuple[list[FileContent], list[str]]:
     allowed_extensions = allowed_extensions or ALLOWED_EXTENSIONS
 
