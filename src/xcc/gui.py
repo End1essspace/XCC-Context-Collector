@@ -144,9 +144,7 @@ class XccMainWindow(QMainWindow):
 
         setup_card = self._card()
         setup_card.setMinimumHeight(225)
-        setup_layout = QVBoxLayout(setup_card)
-        setup_layout.setContentsMargins(24, 18, 24, 18)
-        setup_layout.setSpacing(16)
+        setup_layout = self._card_layout(setup_card)
 
         setup_layout.addWidget(self._card_title("Setup"))
 
@@ -217,11 +215,9 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(setup_card)
 
         stats_card = self._card()
-        stats_card.setMinimumHeight(185)
+        stats_card.setMinimumHeight(180)
 
-        stats_layout = QVBoxLayout(stats_card)
-        stats_layout.setContentsMargins(24, 18, 24, 18)
-        stats_layout.setSpacing(14)
+        stats_layout = self._card_layout(stats_card)
 
         stats_layout.addWidget(self._card_title("Last Run"))
 
@@ -236,9 +232,11 @@ class XccMainWindow(QMainWindow):
         self.errors_metric = self._metric_capsule("Errors", "-")
 
         columns_row = QHBoxLayout()
-        columns_row.setSpacing(18)
+        columns_row.setSpacing(20)
+        columns_row.setContentsMargins(0, 0, 0, 0)
 
         volume_column = QVBoxLayout()
+        volume_column.setContentsMargins(0, 0, 0, 0)
         volume_column.setSpacing(8)
         volume_title = QLabel("Volume")
         volume_title.setObjectName("MetricGroupTitle")
@@ -248,6 +246,7 @@ class XccMainWindow(QMainWindow):
         volume_column.addWidget(self.source_chars_metric)
 
         output_column = QVBoxLayout()
+        output_column.setContentsMargins(0, 0, 0, 0)
         output_column.setSpacing(8)
         output_title = QLabel("Output")
         output_title.setObjectName("MetricGroupTitle")
@@ -257,6 +256,7 @@ class XccMainWindow(QMainWindow):
         output_column.addStretch(1)
 
         health_column = QVBoxLayout()
+        health_column.setContentsMargins(0, 0, 0, 0)
         health_column.setSpacing(8)
         health_title = QLabel("Health")
         health_title.setObjectName("MetricGroupTitle")
@@ -550,6 +550,12 @@ class XccMainWindow(QMainWindow):
         card.setObjectName("Card")
         return card
     
+    def _card_layout(self, card: QFrame) -> QVBoxLayout:
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(24, 18, 24, 18)
+        layout.setSpacing(16)
+        return layout
+
     def _metric_capsule(self, label: str, value: str) -> QFrame:
         capsule = QFrame()
         capsule.setObjectName("MetricCapsule")
@@ -658,10 +664,10 @@ class XccMainWindow(QMainWindow):
 
             #CardTitle {
                 color: #F5C542;
-                font-weight: 700;
+                font-size: 13px;
+                font-weight: 800;
                 background: transparent;
             }
-
             #FieldLabel {
                 color: #D6D6D6;
                 font-weight: 700;
@@ -799,7 +805,7 @@ class XccMainWindow(QMainWindow):
                 color: #B8B8B8;
             }
             #MetricGroupTitle {
-                color: #D8D8D8;
+                color: #E0E0E0;
                 font-size: 12px;
                 font-weight: 700;
                 background: transparent;
