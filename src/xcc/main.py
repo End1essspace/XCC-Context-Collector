@@ -41,6 +41,8 @@ def main() -> None:
         max_output_chars=120_000,
     )
 
+    estimated_tokens = sum(file.char_count for file in files) // 4
+
     if not result.text.strip():
         show_error("XCC", "Nothing to copy.")
         return
@@ -54,6 +56,7 @@ def main() -> None:
             f"Files: {result.stats.files}\n"
             f"Lines: {result.stats.lines}\n"
             f"Characters: {result.stats.chars}\n"
+            f"Estimated Tokens: {estimated_tokens}\n"
             f"Errors: {len(result.errors)}"
         ),
     )
