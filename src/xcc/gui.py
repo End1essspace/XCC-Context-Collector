@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QGridLayout,
+    QScrollArea,
 )
 from PySide6.QtGui import QIntValidator
 from . import __version__
@@ -108,6 +109,13 @@ class XccMainWindow(QMainWindow):
         history_layout = self._card_layout(history_card)
         history_layout.addWidget(self._card_title("Runtime History"))
 
+        self.history_scroll_area = QScrollArea()
+        self.history_scroll_area.setObjectName("HistoryScrollArea")
+        self.history_scroll_area.setWidgetResizable(True)
+        self.history_scroll_area.setFrameShape(QFrame.Shape.NoFrame)
+        self.history_scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.history_scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
         self.history_list_container = QWidget()
         self.history_list_container.setObjectName("TransparentWidget")
 
@@ -123,11 +131,14 @@ class XccMainWindow(QMainWindow):
         self.history_empty_label.setMinimumHeight(140)
 
         self.history_list_layout.addWidget(self.history_empty_label)
+        self.history_list_layout.addStretch(1)
 
-        history_layout.addWidget(self.history_list_container)
+        self.history_scroll_area.setWidget(self.history_list_container)
 
-        layout.addWidget(history_card)
-        layout.addStretch(1)
+        history_layout.addWidget(self.history_scroll_area, 1)
+
+        layout.addWidget(history_card, 1)
+        layout.addStretch(0)
 
         return page
 
@@ -678,6 +689,7 @@ class XccMainWindow(QMainWindow):
 
         if not self.history_entries:
             self.history_list_layout.addWidget(self.history_empty_label)
+            self.history_list_layout.addStretch(1)
             return
 
         for entry in self.history_entries[:20]:
@@ -688,6 +700,8 @@ class XccMainWindow(QMainWindow):
     def _history_entry_widget(self, entry: dict[str, object]) -> QWidget:
         row = QFrame()
         row.setObjectName("HistoryEntry")
+        row.setMinimumHeight(76)
+        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         layout = QVBoxLayout(row)
         layout.setContentsMargins(14, 10, 14, 10)
@@ -1043,6 +1057,41 @@ class XccMainWindow(QMainWindow):
             #HistoryEmpty {
                 color: #8F8F8F;
                 font-size: 13px;
+                background: transparent;
+            }
+            #HistoryScrollArea {
+                background: transparent;
+                border: none;
+            }
+
+            #HistoryScrollArea QWidget {
+                background: transparent;
+            }
+
+            QScrollBar:vertical {
+                background: #101010;
+                width: 10px;
+                margin: 0px;
+                border-radius: 5px;
+            }
+
+            QScrollBar::handle:vertical {
+                background: #5E4A1A;
+                min-height: 28px;
+                border-radius: 5px;
+            }
+
+            QScrollBar::handle:vertical:hover {
+                background: #F5C542;
+            }
+
+            QScrollBar::add-line:vertical,
+            QScrollBar::sub-line:vertical {
+                height: 0px;
+            }
+
+            QScrollBar::add-page:vertical,
+            QScrollBar::sub-page:vertical {
                 background: transparent;
             }
             """
