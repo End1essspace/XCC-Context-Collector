@@ -14,8 +14,8 @@ Status: in progress
 - [x] recursive project scanner
 - [x] basic config
 - [x] root launcher
-- [ ] test suite stable
-- [ ] manual real-project test
+- [x] test suite stable
+- [x] manual real-project test
 
 ## v0.2 Context Optimization
 
