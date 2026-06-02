@@ -5,9 +5,7 @@ from tkinter import Tk, filedialog
 
 
 def select_files() -> list[Path]:
-    root = Tk()
-    root.withdraw()
-    root.attributes("-topmost", True)
+    root = _create_hidden_root()
 
     try:
         selected = filedialog.askopenfilenames(
@@ -21,3 +19,26 @@ def select_files() -> list[Path]:
         root.destroy()
 
     return [Path(path) for path in selected]
+
+
+def select_folder() -> Path | None:
+    root = _create_hidden_root()
+
+    try:
+        selected = filedialog.askdirectory(
+            title="Select project folder",
+        )
+    finally:
+        root.destroy()
+
+    if not selected:
+        return None
+
+    return Path(selected)
+
+
+def _create_hidden_root() -> Tk:
+    root = Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    return root
