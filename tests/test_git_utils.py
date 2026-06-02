@@ -44,3 +44,22 @@ def test_get_changed_files_returns_modified_file(tmp_path: Path) -> None:
     changed_files = get_changed_files(repo)
 
     assert changed_files == [file_path]
+
+def test_get_changed_files_filters_unsupported_files(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=repo, check=True)
+
+    py_file = repo / "main.py"
+    exe_file = repo / "app.exe"
+
+    py_file.write_text("print('hello')\n", encoding="utf-8")
+    exe_file.write_text("binary", encoding="utf-8")
+
+    changed_files = get_changed_files(repo)
+
+    assert py_file in changed_files
+    assert exe_file not in changed_files
