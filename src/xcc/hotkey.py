@@ -20,7 +20,10 @@ def run_hotkey_listener(hotkey: str = DEFAULT_HOTKEY) -> None:
     print(f"Hotkey: {hotkey}")
     print("Press Ctrl+C in this console to exit.")
 
-    keyboard.wait()
+    try:
+        keyboard.wait()
+    except KeyboardInterrupt:
+        print("\nXCC stopped.")
 
 
 def _run_main_safely() -> None:
