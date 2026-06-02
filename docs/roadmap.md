@@ -32,11 +32,11 @@ Status: DONE
 
 Status: in progress
 
-- [ ] detect git repository
-- [ ] collect modified files
-- [ ] collect untracked files
-- [ ] include git diff
-- [ ] add mode metadata
+- [x] detect git repository
+- [x] collect modified files
+- [x] collect untracked files
+- [x] include git diff
+- [x] add mode metadata
 
 ## v0.4 Hotkey Mode
 
