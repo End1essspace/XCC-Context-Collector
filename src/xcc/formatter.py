@@ -27,6 +27,9 @@ def format_collection(
     parts: list[str] = [
         "# XCC Context",
         "",
+        "Mode: Compact" if compact else "Mode: Full",
+        f"Max Output Characters: {max_output_chars if max_output_chars is not None else 'Unlimited'}",
+        "",
         f"Files: {stats.files}",
         f"Lines: {stats.lines}",
         f"Characters: {stats.chars}",
