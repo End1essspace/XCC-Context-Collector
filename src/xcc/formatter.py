@@ -5,6 +5,8 @@ from pathlib import Path
 from .tree import build_project_tree
 from .models import CollectionResult, CollectionStats, FileContent
 from .optimizer import compact_text
+from .budget import apply_char_budget
+from .config import MAX_OUTPUT_CHARS
 
 def format_collection(
     files: list[FileContent],
@@ -12,6 +14,7 @@ def format_collection(
     *,
     project_root: str | Path | None = None,
     compact: bool = True,
+    max_output_chars: int | None = MAX_OUTPUT_CHARS,
 ) -> CollectionResult:
     errors = errors or []
 
@@ -60,6 +63,7 @@ def format_collection(
     if compact:
         text = compact_text(text)
     
+    text = apply_char_budget(text, max_output_chars)
     return CollectionResult(
         text=text,
         stats=stats,
