@@ -30,7 +30,7 @@ Status: in progress
 - [x] token/character budget
 - [x] skip large files
 - [x] output metadata
-- [ ] summarize oversized files
+- [x] summarize oversized files
 - [ ] git diff mode
 
 ## v0.3 Hotkey Mode
