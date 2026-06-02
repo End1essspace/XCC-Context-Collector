@@ -45,6 +45,8 @@ def main() -> None:
     
     output_chars = len(result.text)
     output_tokens = output_chars // 4
+
+    was_truncated = "# XCC Truncated" in result.text
     
     if not result.text.strip():
         show_error("XCC", "Nothing to copy.")
@@ -62,6 +64,7 @@ def main() -> None:
             f"Output Characters: {output_chars}\n"
             f"Source Tokens: {estimated_tokens}\n"
             f"Output Tokens: {output_tokens}\n"
+            f"Truncated: {'Yes' if was_truncated else 'No'}\n"
             f"Errors: {len(result.errors)}"
         ),
     )
