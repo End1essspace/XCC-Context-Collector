@@ -15,6 +15,7 @@ def test_formats_collection_with_stats() -> None:
     result = format_collection([file])
 
     assert "# XCC Context" in result.text
+    assert "XCC Version:" in result.text
     assert "Mode: Compact" in result.text
     assert "Max Output Characters:" in result.text
     assert "Files: 1" in result.text
