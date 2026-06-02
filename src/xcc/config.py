@@ -6,6 +6,15 @@ APP_FULL_NAME = "XCC Context Collector"
 
 ALLOWED_EXTENSIONS = {
     ".py",
+    ".pyw",
+    ".md",
+    ".txt",
+    ".json",
+    ".yaml",
+    ".yml",
+    ".toml",
+    ".ini",
+    ".cfg",
 }
 
 EXCLUDED_DIRS = {

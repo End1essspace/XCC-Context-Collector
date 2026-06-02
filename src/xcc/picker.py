@@ -11,7 +11,8 @@ def select_files() -> list[Path]:
         selected = filedialog.askopenfilenames(
             title="Select code files",
             filetypes=[
-                ("Python files", "*.py"),
+                ("Code and config files", "*.py *.pyw *.md *.txt *.json *.yaml *.yml *.toml *.ini *.cfg"),
+                ("Python files", "*.py *.pyw"),
                 ("All files", "*.*"),
             ],
         )
