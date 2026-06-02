@@ -35,6 +35,7 @@ from .collector import collect_files
 from .formatter import format_collection
 from .git_utils import get_changed_files, get_git_diff, is_git_repository
 from .scanner import scan_project_files
+from .settings import AppSettings, load_settings, save_settings
 
 class XccMainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -46,8 +47,13 @@ class XccMainWindow(QMainWindow):
         self.selected_paths: list[Path] = []
         self.project_root: Path | None = None
         self.history_entries: list[dict[str, object]] = []
+        self.app_settings: AppSettings = load_settings()
+        self._is_loading_settings = True
 
         self._setup_ui()
+        self._apply_loaded_settings()
+        self._refresh_settings_page()
+        self._is_loading_settings = False
         self._apply_theme()
 
     def _setup_ui(self) -> None:
@@ -92,8 +98,76 @@ class XccMainWindow(QMainWindow):
         self.nav.setCurrentRow(0)
 
         self.select_source_button.clicked.connect(self._select_source)
-        self.mode_group.buttonClicked.connect(self._clear_source)
+        self.mode_group.buttonClicked.connect(self._on_mode_changed)
         self.collect_button.clicked.connect(self._collect_and_copy)
+        self.compact_checkbox.stateChanged.connect(self._on_settings_changed)
+        self.max_chars_input.editingFinished.connect(self._on_settings_changed)
+
+    def _on_settings_changed(self) -> None:
+        if self._is_loading_settings:
+            return
+
+        self._save_current_settings()
+        self._refresh_settings_page()
+
+    def _on_mode_changed(self) -> None:
+        if self._is_loading_settings:
+            return
+
+        self._clear_source()
+        self._save_current_settings()
+        self._refresh_settings_page()
+    
+    def _apply_loaded_settings(self) -> None:
+        mode_to_button = {
+            "files": self.mode_files,
+            "folder": self.mode_folder,
+            "git": self.mode_git,
+        }
+
+        mode_button = mode_to_button.get(self.app_settings.default_mode, self.mode_folder)
+        mode_button.setChecked(True)
+
+        self.compact_checkbox.setChecked(self.app_settings.compact_mode)
+        self.max_chars_input.setText(str(self.app_settings.max_chars))
+
+        last_source = self.app_settings.last_source.strip()
+        if last_source and self.app_settings.default_mode in {"folder", "git"}:
+            self.source_input.setText(last_source)
+            self.project_root = Path(last_source)
+            self._set_status("Loaded saved settings.")
+
+    def _save_current_settings(self) -> None:
+        settings = AppSettings(
+            default_mode=self._current_mode(),
+            max_chars=self._safe_current_max_chars(),
+            compact_mode=self.compact_checkbox.isChecked(),
+            last_source=self._current_persisted_source(),
+        )
+
+        save_settings(settings)
+        self.app_settings = settings
+
+    def _safe_current_max_chars(self) -> int:
+        raw_value = self.max_chars_input.text().strip()
+
+        try:
+            value = int(raw_value)
+        except ValueError:
+            return MAX_OUTPUT_CHARS
+
+        if value <= 0:
+            return MAX_OUTPUT_CHARS
+
+        return value
+
+    def _current_persisted_source(self) -> str:
+        mode = self._current_mode()
+
+        if mode in {"folder", "git"} and self.project_root is not None:
+            return str(self.project_root)
+
+        return ""
 
     def _build_history_page(self) -> QWidget:
         page = QWidget()
@@ -471,6 +545,8 @@ class XccMainWindow(QMainWindow):
             self.selected_paths = [Path(path) for path in selected]
             self.source_input.setText(f"{len(self.selected_paths)} files selected")
             self._set_status(f"Selected {len(self.selected_paths)} files.")
+            self._save_current_settings()
+            self._refresh_settings_page()
             return
 
         selected_folder = QFileDialog.getExistingDirectory(
@@ -501,6 +577,9 @@ class XccMainWindow(QMainWindow):
             self._set_status("Git repository selected.")
         else:
             self._set_status("Project folder selected.")
+
+        self._save_current_settings()
+        self._refresh_settings_page()
 
     def _collect_and_copy(self) -> None:
         try:
@@ -706,23 +785,28 @@ class XccMainWindow(QMainWindow):
         persistence_layout.setSpacing(12)
         persistence_layout.addWidget(self._card_title("Persistence"))
 
+        self.settings_persistence_status = self._settings_tile(
+            "Settings persistence",
+            "Enabled",
+        )
+        self.settings_config_file = self._settings_tile(
+            "Config file",
+            "config.json",
+        )
+        self.settings_storage_mode = self._settings_tile(
+            "Storage mode",
+            "Persistent",
+        )
+
         persistence_layout.addWidget(
             self._settings_tiles_row(
                 [
-                    self._settings_tile("Settings persistence", "Planned in v0.6"),
-                    self._settings_tile("Config file", "Not created yet"),
-                    self._settings_tile("Storage mode", "Runtime only"),
+                    self.settings_persistence_status,
+                    self.settings_config_file,
+                    self.settings_storage_mode,
                 ]
             )
         )
-
-        persistence_layout.addWidget(
-            self._settings_note(
-                "This page reflects the current runtime session only. "
-                "Saving defaults to config.json will be implemented in v0.6."
-            )
-        )
-
         layout.addWidget(defaults_card)
         layout.addWidget(session_card)
         layout.addWidget(persistence_card)
