@@ -8,7 +8,7 @@ from .collector import collect_files
 from .formatter import format_collection
 from .picker import select_files, select_folder
 from .scanner import scan_project_files
-from .git_utils import get_changed_files, is_git_repository
+from .git_utils import get_changed_files, get_git_diff, is_git_repository
 
 def main() -> None:
     mode = ask_mode()
@@ -53,6 +53,8 @@ def main() -> None:
         "git": "Git Changed Files",
     }.get(mode, "Unknown")
 
+    git_diff = get_git_diff(project_root) if mode == "git" and project_root is not None else None
+    
     result = format_collection(
         files,
         errors,
@@ -60,6 +62,7 @@ def main() -> None:
         compact=True,
         mode_name=mode_name,
         max_output_chars=120_000,
+        git_diff=git_diff,
     )
 
     estimated_tokens = sum(file.char_count for file in files) // 4

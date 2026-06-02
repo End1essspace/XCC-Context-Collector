@@ -17,6 +17,7 @@ def format_collection(
     compact: bool = True,
     mode_name: str = "Compact",
     max_output_chars: int | None = MAX_OUTPUT_CHARS,
+    git_diff: str | None = None,
 ) -> CollectionResult:
     errors = errors or []
 
@@ -40,7 +41,15 @@ def format_collection(
     ]
 
     tree = build_project_tree([file.path for file in files], project_root)
-
+    if git_diff:
+        parts.extend(
+            [
+                "# Git Diff",
+                "",
+                git_diff.strip(),
+                "",
+            ]
+        )
     if tree:
         parts.extend(
             [

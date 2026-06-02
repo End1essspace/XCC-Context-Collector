@@ -58,3 +58,19 @@ def get_changed_files(
         files.append(full_path)
 
     return files
+
+def get_git_diff(path: str | Path) -> str:
+    repo_path = Path(path)
+
+    result = subprocess.run(
+        ["git", "diff", "--", "."],
+        cwd=repo_path,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    if result.returncode != 0:
+        return ""
+
+    return result.stdout.strip()
