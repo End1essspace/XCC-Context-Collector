@@ -100,16 +100,16 @@ Status: DONE
 
 ## v0.6 Settings Persistence
 
-Status: PLANNED
+Status: in progress
 
-* [ ] config.json
+* [x] config.json
 * [ ] save default mode
 * [ ] save max chars
 * [ ] save compact mode
 * [ ] save last source
 * [ ] load settings on GUI startup
-* [ ] validate config values
-* [ ] fallback to defaults on invalid config
+* [x] validate config values
+* [x] fallback to defaults on invalid config
 
 ## v0.7 Tray Mode
 
