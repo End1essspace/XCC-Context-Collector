@@ -382,12 +382,12 @@ class XccMainWindow(QMainWindow):
     def _settings_tile(self, label: str, value: str) -> QFrame:
         tile = QFrame()
         tile.setObjectName("SettingsTile")
-        tile.setFixedHeight(76)
+        tile.setFixedHeight(72)
         tile.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         layout = QVBoxLayout(tile)
-        layout.setContentsMargins(14, 10, 14, 10)
-        layout.setSpacing(6)
+        layout.setContentsMargins(14, 9, 14, 9)
+        layout.setSpacing(5)
 
         label_widget = QLabel(label)
         label_widget.setObjectName("SettingsTileLabel")
@@ -648,13 +648,15 @@ class XccMainWindow(QMainWindow):
         page = QWidget()
         layout = QVBoxLayout(page)
         layout.setContentsMargins(28, 24, 28, 24)
-        layout.setSpacing(18)
+        layout.setSpacing(14)
 
         layout.addWidget(self._section_title("Settings"))
 
         subtitle = QLabel("Runtime configuration summary for the current GUI session.")
         subtitle.setObjectName("PageSubtitle")
         layout.addWidget(subtitle)
+
+        layout.addSpacing(6)
 
         defaults_card = self._card()
         defaults_layout = self._card_layout(defaults_card)
@@ -1247,18 +1249,8 @@ class XccMainWindow(QMainWindow):
                 color: #8F8F8F;
                 font-size: 12px;
                 background: transparent;
-                margin-top: -8px;
-            }
-
-            #SettingsRow:hover {
-                background: #1E1B12;
-                border: 1px solid #F5C542;
-            }
-            #PageSubtitle {
-                color: #8F8F8F;
-                font-size: 12px;
-                background: transparent;
-                margin-top: -8px;
+                padding: 0px;
+                margin: 0px;
             }
 
             #SettingsTile {
@@ -1287,31 +1279,13 @@ class XccMainWindow(QMainWindow):
             }
 
             #SettingsNote {
-                background: #121212;
-                border: 1px solid #332A14;
+                background: #111111;
+                border: 1px solid #2F2A1C;
                 border-radius: 10px;
             }
 
             #SettingsNoteTitle {
-                color: #F5C542;
-                font-size: 11px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #SettingsNoteBody {
-                color: #8F8F8F;
-                font-size: 12px;
-                background: transparent;
-            }
-            #SettingsNote {
-                background: #121212;
-                border: 1px solid #332A14;
-                border-radius: 10px;
-            }
-
-            #SettingsNoteTitle {
-                color: #F5C542;
+                color: #D2A92E;
                 font-size: 11px;
                 font-weight: 800;
                 background: transparent;
