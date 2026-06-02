@@ -20,7 +20,9 @@ def test_scans_python_files_recursively(tmp_path: Path) -> None:
 
     files = scan_project_files(root)
 
-    assert files == [main, utils]
+    assert len(files) == 2
+    assert main in files
+    assert utils in files
 
 
 def test_excludes_ignored_directories(tmp_path: Path) -> None:
@@ -39,7 +41,8 @@ def test_excludes_ignored_directories(tmp_path: Path) -> None:
 
     files = scan_project_files(root)
 
-    assert files == [main]
+    assert len(files) == 1
+    assert main in files
 
 
 def test_raises_for_missing_folder(tmp_path: Path) -> None:

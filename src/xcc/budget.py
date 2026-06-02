@@ -21,6 +21,9 @@ def apply_char_budget(text: str, max_chars: int | None) -> str:
     available = max_chars - len(marker)
 
     if available <= 0:
-        return marker[-max_chars:]
+        return (
+            "# XCC Truncated\n"
+            f"Limit: {max_chars}\n"
+        )[:max_chars]
 
     return text[:available].rstrip() + marker
