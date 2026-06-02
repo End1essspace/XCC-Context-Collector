@@ -8,9 +8,16 @@ from typing import Any
 from .config import MAX_OUTPUT_CHARS
 
 VALID_MODES = {"files", "folder", "git"}
+
 DEFAULT_MODE = "folder"
 DEFAULT_COMPACT_MODE = True
 DEFAULT_LAST_SOURCE = ""
+
+DEFAULT_START_WITH_WINDOWS = False
+DEFAULT_START_MINIMIZED_TO_TRAY = False
+DEFAULT_CLOSE_TO_TRAY = True
+DEFAULT_START_MAXIMIZED = True
+DEFAULT_SHOW_TRAY_NOTIFICATIONS = True
 
 
 @dataclass(slots=True)
@@ -19,6 +26,12 @@ class AppSettings:
     max_chars: int = MAX_OUTPUT_CHARS
     compact_mode: bool = DEFAULT_COMPACT_MODE
     last_source: str = DEFAULT_LAST_SOURCE
+
+    start_with_windows: bool = DEFAULT_START_WITH_WINDOWS
+    start_minimized_to_tray: bool = DEFAULT_START_MINIMIZED_TO_TRAY
+    close_to_tray: bool = DEFAULT_CLOSE_TO_TRAY
+    start_maximized: bool = DEFAULT_START_MAXIMIZED
+    show_tray_notifications: bool = DEFAULT_SHOW_TRAY_NOTIFICATIONS
 
 
 def default_settings_path() -> Path:
@@ -61,17 +74,59 @@ def validate_settings(raw_data: dict[str, Any]) -> AppSettings:
     if not isinstance(max_chars, int) or max_chars <= 0:
         max_chars = MAX_OUTPUT_CHARS
 
-    compact_mode = raw_data.get("compact_mode", DEFAULT_COMPACT_MODE)
-    if not isinstance(compact_mode, bool):
-        compact_mode = DEFAULT_COMPACT_MODE
+    compact_mode = _read_bool(
+        raw_data,
+        "compact_mode",
+        DEFAULT_COMPACT_MODE,
+    )
 
     last_source = raw_data.get("last_source", DEFAULT_LAST_SOURCE)
     if not isinstance(last_source, str):
         last_source = DEFAULT_LAST_SOURCE
+
+    start_with_windows = _read_bool(
+        raw_data,
+        "start_with_windows",
+        DEFAULT_START_WITH_WINDOWS,
+    )
+    start_minimized_to_tray = _read_bool(
+        raw_data,
+        "start_minimized_to_tray",
+        DEFAULT_START_MINIMIZED_TO_TRAY,
+    )
+    close_to_tray = _read_bool(
+        raw_data,
+        "close_to_tray",
+        DEFAULT_CLOSE_TO_TRAY,
+    )
+    start_maximized = _read_bool(
+        raw_data,
+        "start_maximized",
+        DEFAULT_START_MAXIMIZED,
+    )
+    show_tray_notifications = _read_bool(
+        raw_data,
+        "show_tray_notifications",
+        DEFAULT_SHOW_TRAY_NOTIFICATIONS,
+    )
 
     return AppSettings(
         default_mode=default_mode,
         max_chars=max_chars,
         compact_mode=compact_mode,
         last_source=last_source,
+        start_with_windows=start_with_windows,
+        start_minimized_to_tray=start_minimized_to_tray,
+        close_to_tray=close_to_tray,
+        start_maximized=start_maximized,
+        show_tray_notifications=show_tray_notifications,
     )
+
+
+def _read_bool(raw_data: dict[str, Any], key: str, default: bool) -> bool:
+    value = raw_data.get(key, default)
+
+    if not isinstance(value, bool):
+        return default
+
+    return value
