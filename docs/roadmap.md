@@ -21,11 +21,17 @@ Status: DONE
 
 Status: in progress
 
-- [ ] compact mode
-- [ ] project tree in output
-- [ ] token/character budget
-- [ ] skip binary/generated/large files
+## v0.2 Context Optimization
+
+Status: in progress
+
+- [x] compact mode
+- [x] project tree in output
+- [x] token/character budget
+- [x] skip large files
+- [x] output metadata
 - [ ] summarize oversized files
+- [ ] git diff mode
 
 ## v0.3 Hotkey Mode
 
