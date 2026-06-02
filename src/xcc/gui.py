@@ -88,7 +88,7 @@ class XccMainWindow(QMainWindow):
 
         self.setCentralWidget(root)
 
-        self.nav.currentRowChanged.connect(self.pages.setCurrentIndex)
+        self.nav.currentRowChanged.connect(self._change_page)
         self.nav.setCurrentRow(0)
 
         self.select_source_button.clicked.connect(self._select_source)
@@ -121,7 +121,7 @@ class XccMainWindow(QMainWindow):
 
         self.history_list_layout = QVBoxLayout(self.history_list_container)
         self.history_list_layout.setContentsMargins(0, 0, 0, 0)
-        self.history_list_layout.setSpacing(10)
+        self.history_list_layout.setSpacing(12)
 
         self.history_empty_label = QLabel(
             "No runs yet.\nCollect context to see runtime history here."
@@ -364,6 +364,65 @@ class XccMainWindow(QMainWindow):
 
         return "git"
 
+    def _change_page(self, index: int) -> None:
+        if index == 2:
+            self._refresh_settings_page()
+
+        self.pages.setCurrentIndex(index)
+
+    def _current_mode_name(self) -> str:
+        mode = self._current_mode()
+
+        return {
+            "files": "Selected Files",
+            "folder": "Full Folder",
+            "git": "Git Changed Files",
+        }.get(mode, "Unknown")
+
+    def _settings_row(self, label: str, value: str) -> QFrame:
+        row = QFrame()
+        row.setObjectName("SettingsRow")
+        row.setFixedHeight(44)
+        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(14, 0, 14, 0)
+        layout.setSpacing(12)
+
+        label_widget = QLabel(label)
+        label_widget.setObjectName("SettingsLabel")
+
+        value_widget = QLabel(value)
+        value_widget.setObjectName("SettingsValue")
+        value_widget.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+        row.value_label = value_widget
+
+        layout.addWidget(label_widget, 1)
+        layout.addWidget(value_widget, 1)
+
+        return row
+
+    def _settings_note(self, text: str) -> QLabel:
+        label = QLabel(text)
+        label.setObjectName("SettingsNote")
+        label.setWordWrap(True)
+        return label
+
+    def _refresh_settings_page(self) -> None:
+        if hasattr(self, "settings_current_mode"):
+            self.settings_current_mode.value_label.setText(self._current_mode_name())
+
+        if hasattr(self, "settings_compact_mode"):
+            self.settings_compact_mode.value_label.setText(
+                "Enabled" if self.compact_checkbox.isChecked() else "Disabled"
+            )
+
+        if hasattr(self, "settings_current_max_chars"):
+            self.settings_current_max_chars.value_label.setText(
+                self.max_chars_input.text().strip() or "Not set"
+            )
+
     def _select_source(self) -> None:
         mode = self._current_mode()
 
@@ -561,20 +620,63 @@ class XccMainWindow(QMainWindow):
     def _build_settings_page(self) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 28, 28, 28)
+        layout.setContentsMargins(28, 24, 28, 24)
         layout.setSpacing(18)
 
         layout.addWidget(self._section_title("Settings"))
 
-        card = self._card()
-        card_layout = QVBoxLayout(card)
+        defaults_card = self._card()
+        defaults_layout = self._card_layout(defaults_card)
+        defaults_layout.addWidget(self._card_title("Runtime Defaults"))
 
-        card_layout.addWidget(QLabel(f"Default hotkey: {DEFAULT_HOTKEY}"))
-        card_layout.addWidget(QLabel(f"Default max output chars: {MAX_OUTPUT_CHARS}"))
-        card_layout.addWidget(QLabel("Theme: Black / Yellow"))
-        card_layout.addWidget(QLabel("Settings persistence will be added later."))
+        defaults_layout.addWidget(
+            self._settings_row("Default hotkey", DEFAULT_HOTKEY)
+        )
+        defaults_layout.addWidget(
+            self._settings_row("Default max output chars", str(MAX_OUTPUT_CHARS))
+        )
+        defaults_layout.addWidget(
+            self._settings_row("App version", __version__)
+        )
 
-        layout.addWidget(card)
+        session_card = self._card()
+        session_layout = self._card_layout(session_card)
+        session_layout.addWidget(self._card_title("Current Session"))
+
+        self.settings_current_mode = self._settings_row(
+            "Current mode",
+            self._current_mode_name(),
+        )
+        self.settings_compact_mode = self._settings_row(
+            "Compact mode",
+            "Enabled" if self.compact_checkbox.isChecked() else "Disabled",
+        )
+        self.settings_current_max_chars = self._settings_row(
+            "Current max chars",
+            self.max_chars_input.text().strip() or "Not set",
+        )
+
+        session_layout.addWidget(self.settings_current_mode)
+        session_layout.addWidget(self.settings_compact_mode)
+        session_layout.addWidget(self.settings_current_max_chars)
+
+        persistence_card = self._card()
+        persistence_layout = self._card_layout(persistence_card)
+        persistence_layout.addWidget(self._card_title("Persistence"))
+
+        persistence_layout.addWidget(
+            self._settings_row("Settings persistence", "Planned in v0.6")
+        )
+        persistence_layout.addWidget(
+            self._settings_note(
+                "This page reflects the current runtime session only. "
+                "Saving defaults to config.json will be implemented in v0.6."
+            )
+        )
+
+        layout.addWidget(defaults_card)
+        layout.addWidget(session_card)
+        layout.addWidget(persistence_card)
         layout.addStretch(1)
 
         return page
@@ -700,12 +802,12 @@ class XccMainWindow(QMainWindow):
     def _history_entry_widget(self, entry: dict[str, object]) -> QWidget:
         row = QFrame()
         row.setObjectName("HistoryEntry")
-        row.setMinimumHeight(76)
+        row.setFixedHeight(96)
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         layout = QVBoxLayout(row)
-        layout.setContentsMargins(14, 10, 14, 10)
-        layout.setSpacing(6)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(7)
 
         top_row = QHBoxLayout()
         top_row.setContentsMargins(0, 0, 0, 0)
@@ -1092,6 +1194,36 @@ class XccMainWindow(QMainWindow):
 
             QScrollBar::add-page:vertical,
             QScrollBar::sub-page:vertical {
+                background: transparent;
+            }
+            #SettingsRow {
+                background: #181818;
+                border: 1px solid #4F3F18;
+                border-radius: 10px;
+            }
+
+            #SettingsRow:hover {
+                background: #1E1B12;
+                border: 1px solid #F5C542;
+            }
+
+            #SettingsLabel {
+                color: #B8B8B8;
+                font-size: 12px;
+                font-weight: 600;
+                background: transparent;
+            }
+
+            #SettingsValue {
+                color: #F5C542;
+                font-size: 12px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #SettingsNote {
+                color: #8F8F8F;
+                font-size: 12px;
                 background: transparent;
             }
             """
