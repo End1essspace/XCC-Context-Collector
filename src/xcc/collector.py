@@ -41,8 +41,21 @@ def collect_files(
             continue
 
         if file_size > max_file_size_bytes:
+            files.append(
+                FileContent(
+                    path=path,
+                    content=(
+                        "# XCC Large File Summary\n\n"
+                        f"Original file size: {file_size} bytes\n"
+                        f"Limit: {max_file_size_bytes} bytes\n"
+                        "Full content was not included to reduce AI context size.\n"
+                    ),
+                    line_count=0,
+                    char_count=0,
+                )
+            )
             errors.append(
-                f"Skipped large file: {path} "
+                f"Summarized large file: {path} "
                 f"({file_size} bytes > {max_file_size_bytes} bytes)"
             )
             continue
