@@ -30,13 +30,14 @@ Status: DONE
 
 ## v0.3 Git Context Mode
 
-Status: in progress
+Status: DONE
 
 - [x] detect git repository
 - [x] collect modified files
 - [x] collect untracked files
 - [x] include git diff
 - [x] add mode metadata
+- [x] test git diff extraction
 
 ## v0.4 Hotkey Mode
 
