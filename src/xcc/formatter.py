@@ -8,10 +8,10 @@ from .optimizer import compact_text
 
 def format_collection(
     files: list[FileContent],
-    compact: bool = True,
     errors: list[str] | None = None,
     *,
     project_root: str | Path | None = None,
+    compact: bool = True,
 ) -> CollectionResult:
     errors = errors or []
 
