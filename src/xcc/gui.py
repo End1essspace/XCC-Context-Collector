@@ -143,7 +143,7 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(self._section_title("Collect Context"))
 
         setup_card = self._card()
-        setup_card.setMinimumHeight(210)
+        setup_card.setMinimumHeight(225)
         setup_layout = QVBoxLayout(setup_card)
         setup_layout.setContentsMargins(24, 18, 24, 18)
         setup_layout.setSpacing(16)
@@ -217,22 +217,13 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(setup_card)
 
         stats_card = self._card()
-        stats_card.setMinimumHeight(210)
+        stats_card.setMinimumHeight(185)
 
         stats_layout = QVBoxLayout(stats_card)
         stats_layout.setContentsMargins(24, 18, 24, 18)
         stats_layout.setSpacing(14)
 
         stats_layout.addWidget(self._card_title("Last Run"))
-
-        volume_label = QLabel("Volume")
-        volume_label.setObjectName("MetricGroupTitle")
-
-        output_label = QLabel("Output")
-        output_label.setObjectName("MetricGroupTitle")
-
-        health_label = QLabel("Health")
-        health_label.setObjectName("MetricGroupTitle")
 
         self.files_metric = self._metric_capsule("Files", "-")
         self.lines_metric = self._metric_capsule("Lines", "-")
@@ -244,31 +235,41 @@ class XccMainWindow(QMainWindow):
         self.truncated_metric = self._metric_capsule("Truncated", "-")
         self.errors_metric = self._metric_capsule("Errors", "-")
 
-        volume_row = QHBoxLayout()
-        volume_row.setSpacing(10)
-        volume_row.addWidget(self.files_metric)
-        volume_row.addWidget(self.lines_metric)
-        volume_row.addWidget(self.source_chars_metric)
-        volume_row.addStretch(1)
+        columns_row = QHBoxLayout()
+        columns_row.setSpacing(18)
 
-        output_row = QHBoxLayout()
-        output_row.setSpacing(10)
-        output_row.addWidget(self.output_chars_metric)
-        output_row.addWidget(self.tokens_metric)
-        output_row.addStretch(1)
+        volume_column = QVBoxLayout()
+        volume_column.setSpacing(8)
+        volume_title = QLabel("Volume")
+        volume_title.setObjectName("MetricGroupTitle")
+        volume_column.addWidget(volume_title)
+        volume_column.addWidget(self.files_metric)
+        volume_column.addWidget(self.lines_metric)
+        volume_column.addWidget(self.source_chars_metric)
 
-        health_row = QHBoxLayout()
-        health_row.setSpacing(10)
-        health_row.addWidget(self.truncated_metric)
-        health_row.addWidget(self.errors_metric)
-        health_row.addStretch(1)
+        output_column = QVBoxLayout()
+        output_column.setSpacing(8)
+        output_title = QLabel("Output")
+        output_title.setObjectName("MetricGroupTitle")
+        output_column.addWidget(output_title)
+        output_column.addWidget(self.output_chars_metric)
+        output_column.addWidget(self.tokens_metric)
+        output_column.addStretch(1)
 
-        stats_layout.addWidget(volume_label)
-        stats_layout.addLayout(volume_row)
-        stats_layout.addWidget(output_label)
-        stats_layout.addLayout(output_row)
-        stats_layout.addWidget(health_label)
-        stats_layout.addLayout(health_row)
+        health_column = QVBoxLayout()
+        health_column.setSpacing(8)
+        health_title = QLabel("Health")
+        health_title.setObjectName("MetricGroupTitle")
+        health_column.addWidget(health_title)
+        health_column.addWidget(self.truncated_metric)
+        health_column.addWidget(self.errors_metric)
+        health_column.addStretch(1)
+
+        columns_row.addLayout(volume_column, 1)
+        columns_row.addLayout(output_column, 1)
+        columns_row.addLayout(health_column, 1)
+
+        stats_layout.addLayout(columns_row)
 
         layout.addWidget(stats_card)
 
@@ -552,8 +553,8 @@ class XccMainWindow(QMainWindow):
     def _metric_capsule(self, label: str, value: str) -> QFrame:
         capsule = QFrame()
         capsule.setObjectName("MetricCapsule")
-        capsule.setMinimumWidth(170)
-        capsule.setFixedHeight(50)
+        capsule.setMinimumWidth(0)
+        capsule.setFixedHeight(52)
 
         layout = QVBoxLayout(capsule)
         layout.setContentsMargins(14, 6, 14, 6)
@@ -802,7 +803,7 @@ class XccMainWindow(QMainWindow):
                 font-size: 12px;
                 font-weight: 700;
                 background: transparent;
-                margin-top: 4px;
+                margin-bottom: 2px;
             }
             """
         )
