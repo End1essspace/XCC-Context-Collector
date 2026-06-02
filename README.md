@@ -1,8 +1,8 @@
-# XCC Context Collector
+**XCC Context Collector**
 
 XCC is a small Windows utility for collecting project code context and copying it to clipboard for AI chats.
 
-## MVP
+**MVP**
 
 Current MVP supports:
 
@@ -12,7 +12,7 @@ Current MVP supports:
 - copying the result to clipboard
 - showing basic collection statistics
 
-## Output format
+**Output format**
 
 ```text
 # XCC Context
@@ -30,19 +30,19 @@ Characters: 4200
 <content>
 ```
 
-## Install
+**Install**
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## Run
+**Run**
 
 ```bash
 python -m src.xcc.main
 ```
 
-## Roadmap
+**Roadmap**
 
 * folder picker
 * recursive project scan
@@ -52,5 +52,3 @@ python -m src.xcc.main
 * global hotkey
 * Windows tray app
 * `.exe` build with PyInstaller
-
-````
