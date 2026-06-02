@@ -61,7 +61,6 @@ class XccMainWindow(QMainWindow):
 
         self._setup_ui()
         self._apply_loaded_settings()
-        self._refresh_settings_page()
         self._is_loading_settings = False
         self._apply_theme()
         self._setup_tray()
@@ -153,6 +152,11 @@ class XccMainWindow(QMainWindow):
             max_chars=self._safe_current_max_chars(),
             compact_mode=self.compact_checkbox.isChecked(),
             last_source=self._current_persisted_source(),
+            start_with_windows=self.app_settings.start_with_windows,
+            start_minimized_to_tray=self.app_settings.start_minimized_to_tray,
+            close_to_tray=self.app_settings.close_to_tray,
+            start_maximized=self.app_settings.start_maximized,
+            show_tray_notifications=self.app_settings.show_tray_notifications,
         )
 
         save_settings(settings)
@@ -1014,6 +1018,8 @@ class XccMainWindow(QMainWindow):
                 ]
             )
         )
+
+        layout.addWidget(panel, 1)
         layout.addStretch(1)
 
         return page
@@ -1556,20 +1562,6 @@ class XccMainWindow(QMainWindow):
             #SettingsTile:hover {
                 background: #1E1B12;
                 border: 1px solid #F5C542;
-            }
-
-            #SettingsTileLabel {
-                color: #AFAFAF;
-                font-size: 11px;
-                font-weight: 600;
-                background: transparent;
-            }
-
-            #SettingsTileValue {
-                color: #F5C542;
-                font-size: 14px;
-                font-weight: 800;
-                background: transparent;
             }
 
             #SettingsNote {
