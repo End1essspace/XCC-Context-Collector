@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 
 from src.xcc.git_utils import get_changed_files, is_git_repository
 
@@ -23,3 +24,23 @@ def test_get_changed_files_returns_empty_for_clean_repo(tmp_path: Path) -> None:
     repo.mkdir()
 
     assert get_changed_files(repo) == []
+
+def test_get_changed_files_returns_modified_file(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=repo, check=True)
+
+    file_path = repo / "main.py"
+    file_path.write_text("print('v1')\n", encoding="utf-8")
+
+    subprocess.run(["git", "add", "."], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "initial"], cwd=repo, check=True, capture_output=True)
+
+    file_path.write_text("print('v2')\n", encoding="utf-8")
+
+    changed_files = get_changed_files(repo)
+
+    assert changed_files == [file_path]
