@@ -26,7 +26,8 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QScrollArea,
 )
-from PySide6.QtGui import QIntValidator
+from PySide6.QtGui import QAction, QIcon, QPixmap, QIntValidator
+from PySide6.QtWidgets import QSystemTrayIcon, QMenu
 from . import __version__
 from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS
 from pathlib import Path
@@ -37,11 +38,17 @@ from .git_utils import get_changed_files, get_git_diff, is_git_repository
 from .scanner import scan_project_files
 from .settings import AppSettings, load_settings, save_settings
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+APP_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_app.ico"
+TRAY_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_tray.ico"
+
 class XccMainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
 
         self.setWindowTitle("XCC Context Collector")
+        if APP_ICON_PATH.exists():
+            self.setWindowIcon(QIcon(str(APP_ICON_PATH)))
         self.setMinimumSize(920, 620)
 
         self.selected_paths: list[Path] = []
@@ -55,6 +62,7 @@ class XccMainWindow(QMainWindow):
         self._refresh_settings_page()
         self._is_loading_settings = False
         self._apply_theme()
+        self._setup_tray()
 
     def _setup_ui(self) -> None:
         root = QWidget()
@@ -225,6 +233,21 @@ class XccMainWindow(QMainWindow):
         layout.setContentsMargins(18, 0, 18, 0)
         layout.setSpacing(12)
 
+        icon_label = QLabel()
+        icon_label.setObjectName("HeaderAppIcon")
+        icon_label.setFixedSize(28, 28)
+
+        if APP_ICON_PATH.exists():
+            pixmap = QPixmap(str(APP_ICON_PATH))
+            icon_label.setPixmap(
+                pixmap.scaled(
+                    28,
+                    28,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+
         title = QLabel("XCC Context Collector — AI-ready project context collector")
         title.setObjectName("HeaderTitle")
 
@@ -236,11 +259,80 @@ class XccMainWindow(QMainWindow):
         hotkey.setObjectName("HotkeyCapsule")
         hotkey.setFixedHeight(34)
 
+        layout.addWidget(icon_label)
         layout.addWidget(title, 1)
         layout.addWidget(self.header_status)
         layout.addWidget(hotkey)
 
         return header
+
+    def _setup_tray(self) -> None:
+        if not QSystemTrayIcon.isSystemTrayAvailable():
+            return
+
+        icon_path = TRAY_ICON_PATH if TRAY_ICON_PATH.exists() else APP_ICON_PATH
+        tray_icon = QIcon(str(icon_path)) if icon_path.exists() else self.windowIcon()
+
+        self.tray_icon = QSystemTrayIcon(tray_icon, self)
+        self.tray_icon.setToolTip("XCC Context Collector")
+
+        tray_menu = QMenu(self)
+
+        show_action = QAction("Show XCC", self)
+        show_action.triggered.connect(self._show_from_tray)
+
+        hide_action = QAction("Hide XCC", self)
+        hide_action.triggered.connect(self._hide_to_tray)
+
+        quit_action = QAction("Quit", self)
+        quit_action.triggered.connect(self._quit_from_tray)
+
+        tray_menu.addAction(show_action)
+        tray_menu.addAction(hide_action)
+        tray_menu.addSeparator()
+        tray_menu.addAction(quit_action)
+
+        self.tray_icon.setContextMenu(tray_menu)
+        self.tray_icon.activated.connect(self._on_tray_activated)
+        self.tray_icon.show()
+
+    def _show_from_tray(self) -> None:
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        self._set_status("Window restored.")
+
+    def _hide_to_tray(self) -> None:
+        self.hide()
+        self._set_status("Hidden to tray.")
+
+    def _quit_from_tray(self) -> None:
+        self._is_quitting = True
+
+        if hasattr(self, "tray_icon"):
+            self.tray_icon.hide()
+
+        QApplication.quit()
+
+    def closeEvent(self, event) -> None:
+        if self._is_quitting:
+            event.accept()
+            return
+
+        if hasattr(self, "tray_icon") and self.tray_icon.isVisible():
+            self.hide()
+            self._set_status("Hidden to tray.")
+            event.ignore()
+            return
+
+        event.accept()
+
+    def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            if self.isVisible():
+                self._hide_to_tray()
+            else:
+                self._show_from_tray()
 
     def _build_nav(self) -> QListWidget:
         nav = QListWidget()
@@ -1378,6 +1470,9 @@ class XccMainWindow(QMainWindow):
             #SettingsNoteBody {
                 color: #8F8F8F;
                 font-size: 12px;
+                background: transparent;
+            }
+            #HeaderAppIcon {
                 background: transparent;
             }
             """
