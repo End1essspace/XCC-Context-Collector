@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.xcc.git_utils import is_git_repository
+from src.xcc.git_utils import get_changed_files, is_git_repository
 
 
 def test_detects_git_repository(tmp_path: Path) -> None:
@@ -17,3 +17,9 @@ def test_detects_non_git_repository(tmp_path: Path) -> None:
     repo.mkdir()
 
     assert is_git_repository(repo) is False
+
+def test_get_changed_files_returns_empty_for_clean_repo(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    assert get_changed_files(repo) == []
