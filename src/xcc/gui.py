@@ -135,7 +135,8 @@ class XccMainWindow(QMainWindow):
 
         mode_card = self._card()
         mode_layout = QVBoxLayout(mode_card)
-
+        mode_layout.setContentsMargins(24, 18, 24, 18)
+        mode_layout.setSpacing(10)
         mode_layout.addWidget(self._card_title("Mode"))
 
         self.mode_group = QButtonGroup(self)
@@ -153,14 +154,19 @@ class XccMainWindow(QMainWindow):
 
         source_card = self._card()
         source_layout = QVBoxLayout(source_card)
+        source_layout.setContentsMargins(24, 18, 24, 18)
+        source_layout.setSpacing(10)
         source_layout.addWidget(self._card_title("Source"))
 
         source_row = QHBoxLayout()
         self.source_input = QLineEdit()
         self.source_input.setPlaceholderText("No source selected")
         self.source_input.setReadOnly(True)
+        self.source_input.setFixedHeight(38)
 
         self.select_source_button = QPushButton("Select Source")
+        self.select_source_button.setMinimumWidth(150)
+        self.select_source_button.setFixedHeight(38)
 
         source_row.addWidget(self.source_input, 1)
         source_row.addWidget(self.select_source_button)
@@ -170,6 +176,8 @@ class XccMainWindow(QMainWindow):
 
         options_card = self._card()
         options_layout = QVBoxLayout(options_card)
+        options_layout.setContentsMargins(24, 18, 24, 18)
+        options_layout.setSpacing(10)
         options_layout.addWidget(self._card_title("Options"))
 
         self.compact_checkbox = QCheckBox("Compact mode")
@@ -178,6 +186,7 @@ class XccMainWindow(QMainWindow):
         max_chars_row = QHBoxLayout()
         max_chars_label = QLabel("Max output chars")
         self.max_chars_input = QLineEdit(str(MAX_OUTPUT_CHARS))
+        self.max_chars_input.setFixedHeight(36)
         self.max_chars_input.setMaximumWidth(180)
 
         max_chars_row.addWidget(max_chars_label)
@@ -191,6 +200,8 @@ class XccMainWindow(QMainWindow):
 
         stats_card = self._card()
         stats_layout = QVBoxLayout(stats_card)
+        stats_layout.setContentsMargins(24, 18, 24, 18)
+        stats_layout.setSpacing(10)
         stats_layout.addWidget(self._card_title("Last Run"))
 
         self.stats_label = QLabel(
@@ -209,7 +220,7 @@ class XccMainWindow(QMainWindow):
 
         layout.addItem(QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
-        self.collect_button = QPushButton("Collect & Copy")
+        self.collect_button = QPushButton("Collect && Copy")
         self.collect_button.setObjectName("PrimaryButton")
         self.collect_button.setFixedHeight(46)
 
@@ -288,6 +299,7 @@ class XccMainWindow(QMainWindow):
     def _card(self) -> QFrame:
         card = QFrame()
         card.setObjectName("Card")
+        card.setMinimumHeight(96)
         return card
 
     def _apply_theme(self) -> None:
@@ -427,6 +439,23 @@ class XccMainWindow(QMainWindow):
                 border-top: 1px solid #2D2D2D;
                 padding-left: 18px;
                 color: #A0A0A0;
+            }
+            QRadioButton::indicator,
+            QCheckBox::indicator {
+                width: 16px;
+                height: 16px;
+            }
+
+            QRadioButton::indicator:unchecked,
+            QCheckBox::indicator:unchecked {
+                border: 1px solid #777777;
+                background: #111111;
+            }
+
+            QRadioButton::indicator:checked,
+            QCheckBox::indicator:checked {
+                border: 1px solid #F5C542;
+                background: #F5C542;
             }
             """
         )
