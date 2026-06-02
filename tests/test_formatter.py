@@ -24,6 +24,18 @@ def test_formats_collection_with_stats() -> None:
     assert "===== file: main.py =====" in result.text
     assert "print('hello')" in result.text
 
+def test_formats_collection_with_custom_mode_name() -> None:
+    file = FileContent(
+        path=Path("main.py"),
+        content="print('hello')\n",
+        line_count=1,
+        char_count=15,
+    )
+
+    result = format_collection([file], mode_name="Git Changed Files")
+
+    assert "Mode: Git Changed Files" in result.text
+
 def test_formats_errors() -> None:
     result = format_collection([], ["Cannot decode file: bad.py"])
 
