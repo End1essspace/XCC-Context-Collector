@@ -7,6 +7,7 @@ from .models import CollectionResult, CollectionStats, FileContent
 from .optimizer import compact_text
 from .budget import apply_char_budget
 from .config import MAX_OUTPUT_CHARS
+from . import __version__
 
 def format_collection(
     files: list[FileContent],
@@ -27,6 +28,7 @@ def format_collection(
     parts: list[str] = [
         "# XCC Context",
         "",
+        f"XCC Version: {__version__}",
         "Mode: Compact" if compact else "Mode: Full",
         f"Max Output Characters: {max_output_chars if max_output_chars is not None else 'Unlimited'}",
         "",
