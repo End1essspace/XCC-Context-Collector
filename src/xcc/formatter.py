@@ -4,10 +4,11 @@ from pathlib import Path
 
 from .tree import build_project_tree
 from .models import CollectionResult, CollectionStats, FileContent
-
+from .optimizer import compact_text
 
 def format_collection(
     files: list[FileContent],
+    compact: bool = True,
     errors: list[str] | None = None,
     *,
     project_root: str | Path | None = None,
@@ -55,7 +56,10 @@ def format_collection(
         )
 
     text = "\n".join(parts).rstrip() + "\n"
-
+    
+    if compact:
+        text = compact_text(text)
+    
     return CollectionResult(
         text=text,
         stats=stats,
