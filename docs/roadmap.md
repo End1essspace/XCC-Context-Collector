@@ -30,7 +30,7 @@ Status: DONE
 
 ## v0.3 Git Context Mode
 
-Status: planned
+Status: in progress
 
 - [ ] detect git repository
 - [ ] collect modified files
