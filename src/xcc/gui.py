@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QStackedWidget,
     QVBoxLayout,
     QWidget,
+    QGridLayout,
 )
 from PySide6.QtGui import QIntValidator
 from . import __version__
@@ -143,12 +144,16 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(self._section_title("Collect Context"))
 
         setup_card = self._card()
-        setup_card.setMinimumHeight(215)
-        setup_layout = self._card_layout(setup_card)
+        setup_card.setMinimumHeight(230)
 
+        setup_layout = self._card_layout(setup_card)
         setup_layout.addWidget(self._card_title("Setup"))
 
-        mode_row = QHBoxLayout()
+        setup_grid = QGridLayout()
+        setup_grid.setContentsMargins(0, 6, 0, 0)
+        setup_grid.setHorizontalSpacing(14)
+        setup_grid.setVerticalSpacing(14)
+
         mode_label = QLabel("Mode")
         mode_label.setObjectName("FieldLabel")
         mode_label.setFixedWidth(90)
@@ -160,14 +165,18 @@ class XccMainWindow(QMainWindow):
 
         self.mode_folder.setChecked(True)
 
+        mode_buttons = QWidget()
+        mode_buttons.setObjectName("TransparentWidget")
+        mode_buttons_layout = QHBoxLayout(mode_buttons)
+        mode_buttons_layout.setContentsMargins(0, 0, 0, 0)
+        mode_buttons_layout.setSpacing(22)
+
         for index, button in enumerate([self.mode_files, self.mode_folder, self.mode_git]):
             self.mode_group.addButton(button, index)
-            mode_row.addWidget(button)
+            mode_buttons_layout.addWidget(button)
 
-        mode_row.insertWidget(0, mode_label)
-        mode_row.addStretch(1)
+        mode_buttons_layout.addStretch(1)
 
-        source_row = QHBoxLayout()
         source_label = QLabel("Source")
         source_label.setObjectName("FieldLabel")
         source_label.setFixedWidth(90)
@@ -181,41 +190,56 @@ class XccMainWindow(QMainWindow):
         self.select_source_button.setMinimumWidth(160)
         self.select_source_button.setFixedHeight(40)
 
-        source_row.addWidget(source_label)
-        source_row.addWidget(self.source_input, 1)
-        source_row.addWidget(self.select_source_button)
-
-        options_row = QHBoxLayout()
         options_label = QLabel("Options")
         options_label.setObjectName("FieldLabel")
         options_label.setFixedWidth(90)
 
         self.compact_checkbox = QCheckBox("Compact mode")
         self.compact_checkbox.setChecked(True)
+        self.compact_checkbox.setFixedHeight(40)
 
         max_chars_label = QLabel("Max chars")
         max_chars_label.setObjectName("FieldLabelSmall")
+        max_chars_label.setFixedHeight(40)
 
         self.max_chars_input = QLineEdit(str(MAX_OUTPUT_CHARS))
         self.max_chars_input.setValidator(QIntValidator(1, 10_000_000, self))
         self.max_chars_input.setMaximumWidth(160)
-        self.max_chars_input.setFixedHeight(38)
+        self.max_chars_input.setFixedHeight(40)
 
-        options_row.addWidget(options_label)
-        options_row.addWidget(self.compact_checkbox)
-        options_row.addSpacing(24)
-        options_row.addWidget(max_chars_label)
-        options_row.addWidget(self.max_chars_input)
-        options_row.addStretch(1)
+        setup_grid.addWidget(mode_label, 0, 0)
+        setup_grid.addWidget(mode_buttons, 0, 1, 1, 2)
 
-        setup_layout.addLayout(mode_row)
-        setup_layout.addLayout(source_row)
-        setup_layout.addLayout(options_row)
+        setup_grid.addWidget(source_label, 1, 0)
+        setup_grid.addWidget(self.source_input, 1, 1)
+        setup_grid.addWidget(self.select_source_button, 1, 2)
+
+        setup_grid.addWidget(options_label, 2, 0)
+
+        options_box = QWidget()
+        options_box.setObjectName("TransparentWidget")
+        options_box_layout = QHBoxLayout(options_box)
+        options_box_layout.setContentsMargins(0, 0, 0, 0)
+        options_box_layout.setSpacing(16)
+
+        options_box_layout.addWidget(self.compact_checkbox)
+        options_box_layout.addSpacing(24)
+        options_box_layout.addWidget(max_chars_label)
+        options_box_layout.addWidget(self.max_chars_input)
+        options_box_layout.addStretch(1)
+
+        setup_grid.addWidget(options_box, 2, 1, 1, 2)
+
+        setup_grid.setColumnStretch(0, 0)
+        setup_grid.setColumnStretch(1, 1)
+        setup_grid.setColumnStretch(2, 0)
+
+        setup_layout.addLayout(setup_grid)
 
         layout.addWidget(setup_card)
 
         stats_card = self._card()
-        stats_card.setMinimumHeight(180)
+        stats_card.setMinimumHeight(210)
 
         stats_layout = self._card_layout(stats_card)
 
@@ -555,7 +579,7 @@ class XccMainWindow(QMainWindow):
     def _card_layout(self, card: QFrame) -> QVBoxLayout:
         layout = QVBoxLayout(card)
         layout.setContentsMargins(24, 18, 24, 18)
-        layout.setSpacing(14)
+        layout.setSpacing(20)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         return layout
 
@@ -815,6 +839,9 @@ class XccMainWindow(QMainWindow):
                 font-weight: 700;
                 background: transparent;
                 margin-bottom: 2px;
+            }
+            #TransparentWidget {
+                background: transparent;
             }
             """
         )
