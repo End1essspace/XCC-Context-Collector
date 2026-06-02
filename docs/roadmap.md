@@ -1,5 +1,6 @@
 # XCC Roadmap
 
+
 ## v0.1 Core MVP
 
 Status: DONE
@@ -17,6 +18,7 @@ Status: DONE
 * [x] test suite stable
 * [x] manual real-project test
 
+
 ## v0.2 Context Optimization
 
 Status: DONE
@@ -29,6 +31,7 @@ Status: DONE
 * [x] summarize oversized files
 * [x] truncation status through model result
 * [x] cache directories excluded
+
 
 ## v0.3 Git Context Mode
 
@@ -44,6 +47,7 @@ Status: DONE
 * [x] test git diff extraction
 * [x] git tests
 
+
 ## v0.4 Hotkey Mode
 
 Status: DONE
@@ -56,6 +60,7 @@ Status: DONE
 * [x] prevent concurrent runs
 * [x] graceful Ctrl+C shutdown
 * [x] hotkey launcher
+
 
 ## v0.5 PySide6 GUI
 
@@ -98,18 +103,24 @@ Status: DONE
 * [x] manual GUI test
 * [x] test suite pass
 
+
 ## v0.6 Settings Persistence
 
-Status: in progress
+Status: DONE
 
 * [x] config.json
-* [ ] save default mode
-* [ ] save max chars
-* [ ] save compact mode
-* [ ] save last source
-* [ ] load settings on GUI startup
+* [x] save default mode
+* [x] save max chars
+* [x] save compact mode
+* [x] save last source
+* [x] load settings on GUI startup
 * [x] validate config values
 * [x] fallback to defaults on invalid config
+* [x] manual persistence test
+* [x] test suite pass
+* [x] files mode restore guarded
+* [x] startup save guard
+
 
 ## v0.7 Tray Mode
 
