@@ -8,6 +8,7 @@ from .collector import collect_files
 from .formatter import format_collection
 from .picker import select_files, select_folder
 from .scanner import scan_project_files
+from .git_utils import get_changed_files, is_git_repository
 
 def main() -> None:
     mode = ask_mode()
@@ -19,13 +20,26 @@ def main() -> None:
 
     if mode == "files":
         selected_paths = select_files()
-    else:
+
+    elif mode == "folder":
         project_root = select_folder()
 
         if project_root is None:
             return
 
         selected_paths = scan_project_files(project_root)
+
+    else:
+        project_root = select_folder()
+
+        if project_root is None:
+            return
+
+        if not is_git_repository(project_root):
+            show_error("XCC", "Selected folder is not a Git repository.")
+            return
+
+        selected_paths = get_changed_files(project_root)
 
     if not selected_paths:
         show_error("XCC", "No files selected or found.")
@@ -75,20 +89,20 @@ def ask_mode() -> str | None:
     root.attributes("-topmost", True)
 
     try:
-        use_folder = messagebox.askyesnocancel(
+        use_git = messagebox.askyesnocancel(
             "XCC",
-            "Collect project folder?\n\n"
-            "Yes = select folder\n"
-            "No = select files\n"
-            "Cancel = exit",
+            "Choose collection mode:\n\n"
+            "Yes = Git changed files\n"
+            "No = Full folder\n"
+            "Cancel = Select files",
         )
     finally:
         root.destroy()
 
-    if use_folder is None:
-        return None
+    if use_git is None:
+        return "files"
 
-    return "folder" if use_folder else "files"
+    return "git" if use_git else "folder"
 
 
 def show_info(title: str, message: str) -> None:
