@@ -262,7 +262,7 @@ Any distributed modified versions must also be licensed under GPL v3 and include
 
 Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 
-
+-----------------------------
 
 [RUS]
 
