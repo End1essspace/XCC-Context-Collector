@@ -155,7 +155,7 @@ Status: DONE
 
 ## v0.9 Optimization
 
-Status: IN PROGRESS
+Status: DONE
 
 * [x] code cleanup
 * [x] remove unused imports
@@ -172,11 +172,11 @@ Status: IN PROGRESS
 * [x] improve error messages
 * [x] update README for GUI usage
 * [x] update roadmap before release
-* [ ] full manual app test
-* [ ] full pytest pass
-* [ ] measure idle CPU/RAM usage
-* [ ] verify no background scanning in tray mode
-* [ ] verify collect-only workload behavior
+* [x] full manual app test
+* [x] full pytest pass
+* [x] measure idle CPU/RAM usage
+* [x] verify no background scanning in tray mode
+* [x] verify collect-only workload behavior
 
 ## v1.0 Windows Release
 
