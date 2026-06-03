@@ -215,25 +215,49 @@ Status: DONE
 
 ## v1.0 Windows Release
 
-Status: PLANNED
+Status: IN PROGRESS
 
-* [ ] define GUI as primary release entry point
-* [ ] exclude legacy scripts from primary release flow
-* [ ] PyInstaller build
-* [ ] app icon
+* [x] define GUI as primary release entry point
+* [x] exclude legacy scripts from primary release flow
+* [x] Esc hides window to tray
+* [x] add PyInstaller dependency
+* [x] PyInstaller build
+* [x] app icon
+* [x] tray icon in packaged build
+* [x] single-instance protection
+* [x] second launch restores existing window
+* [x] verify single-instance protection in exe
+* [x] fix PyInstaller resource paths
+* [x] packaged exe autostart target
+* [x] verify autostart shortcut in exe mode
+* [x] release build script
+* [x] repeatable clean build
+* [x] clean gitignore for build artifacts
+* [x] README release update
 * [ ] release folder
-* [ ] README release update
 * [ ] basic install instructions
 * [ ] manual release test
 * [ ] release package
+
+
+## v1.1 Post-Release Polish
+
+Status: PLANNED
+
+* [ ] add hotkey controls to Settings
+* [ ] allow changing restore hotkey from GUI
+* [ ] improve About page with release links
+* [ ] optionally integrate collect action into hotkey workflow
+* [ ] installer
+* [ ] update system
 
 
 ## Future Improvements
 
 Status: BACKLOG
 
-* [ ] add hotkey controls to Settings
-* [ ] allow changing restore hotkey from GUI
-* [ ] optionally integrate collect action into hotkey workflow
-* [ ] installer
-* [ ] update system
+* [ ] signed installer
+* [ ] automatic update channel
+* [ ] portable mode toggle
+* [ ] export runtime history
+* [ ] advanced include/exclude rules
