@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,13 +17,6 @@ class CollectionStats:
     files: int
     lines: int
     chars: int
-
-
-@dataclass(slots=True)
-class CollectionResult:
-    text: str
-    stats: CollectionStats
-    errors: list[str]
 
 
 @dataclass(slots=True)

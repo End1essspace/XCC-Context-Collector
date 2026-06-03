@@ -139,19 +139,44 @@ Status: DONE
 
 ## v0.8 Settings Expansion
 
+Status: DONE
+
+* [x] autostart with Windows
+* [x] start minimized to tray
+* [x] close to tray option
+* [x] start maximized option
+* [x] tray behavior settings
+* [x] settings controls UI
+* [x] persist new settings
+* [x] validate new settings
+* [x] manual settings test
+* [x] test suite pass
+
+
+## v0.9 Optimization
+
 Status: PLANNED
 
-* [ ] autostart with Windows
-* [ ] start minimized to tray
-* [ ] close to tray option
-* [ ] start maximized option
-* [ ] tray behavior settings
-* [ ] settings controls UI
-* [ ] persist new settings
-* [ ] validate new settings
-* [ ] manual settings test
-* [ ] test suite pass
-
+* [ ] code cleanup
+* [ ] remove unused imports
+* [ ] remove duplicate model definitions
+* [ ] remove unused placeholder helpers
+* [ ] normalize GUI helper naming
+* [ ] reduce duplicated settings layout code
+* [ ] improve settings page spacing
+* [ ] optimize startup flow
+* [ ] verify tray startup edge cases
+* [ ] verify start minimized behavior
+* [ ] verify close-to-tray behavior
+* [ ] verify invalid config recovery
+* [ ] improve error messages
+* [ ] update README for GUI usage
+* [ ] update roadmap before release
+* [ ] full manual app test
+* [ ] full pytest pass
+* [ ] measure idle CPU/RAM usage
+* [ ] verify no background scanning in tray mode
+* [ ] verify collect-only workload behavior
 
 ## v1.0 Windows Release
 
