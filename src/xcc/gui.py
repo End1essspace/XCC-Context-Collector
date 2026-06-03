@@ -1026,13 +1026,6 @@ class XccMainWindow(QMainWindow):
 
         layout.addWidget(self._settings_header())
 
-        panel = self._card()
-        panel.setObjectName("SettingsPanel")
-
-        panel_layout = self._card_layout(panel)
-        panel_layout.setContentsMargins(24, 18, 24, 18)
-        panel_layout.setSpacing(16)
-
         self.start_with_windows_checkbox = self._settings_toggle(
             "",
             self.app_settings.start_with_windows,
@@ -1082,6 +1075,11 @@ class XccMainWindow(QMainWindow):
                     "Show a notification when XCC is minimized to tray.",
                     control=self.tray_notifications_checkbox,
                 ),
+                self._settings_row(
+                    "Double click restore",
+                    "Restore the main window by double-clicking the tray icon.",
+                    value="Enabled",
+                ),
             ],
         )
 
@@ -1127,19 +1125,18 @@ class XccMainWindow(QMainWindow):
 
         groups_row = QWidget()
         groups_row.setObjectName("TransparentWidget")
+
         groups_layout = QHBoxLayout(groups_row)
         groups_layout.setContentsMargins(0, 0, 0, 0)
-        groups_layout.setSpacing(16)
+        groups_layout.setSpacing(18)
         groups_layout.addWidget(behavior_group, 1)
         groups_layout.addWidget(context_group, 1)
 
-        panel_layout.addWidget(groups_row)
-
-        layout.addWidget(panel)
+        layout.addWidget(groups_row)
         layout.addStretch(1)
 
         return page
-        
+                
     def _settings_section_title(self, text: str) -> QLabel:
         label = QLabel(text)
         label.setObjectName("SettingsSectionTitle")
@@ -1665,12 +1662,6 @@ class XccMainWindow(QMainWindow):
             #HeaderAppIcon {
                 background: transparent;
             }
-            #SettingsPanel {
-                background: #161616;
-                border: 1px solid #6A5520;
-                border-radius: 14px;
-            }
-
             #SettingsSectionTitle {
                 color: #F5C542;
                 font-size: 12px;
@@ -1724,7 +1715,7 @@ class XccMainWindow(QMainWindow):
 
             #SettingsRow {
                 background: #181818;
-                border: 1px solid #3C3218;
+                border: 1px solid #2F2A1C;
                 border-radius: 10px;
             }
 
