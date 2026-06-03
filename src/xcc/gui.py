@@ -230,9 +230,7 @@ class XccMainWindow(QMainWindow):
 
     def _build_history_page(self) -> QWidget:
         page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 24, 28, 24)
-        layout.setSpacing(18)
+        layout = self._page_layout(page)
 
         layout.addWidget(self._section_title("History"))
 
@@ -461,9 +459,7 @@ class XccMainWindow(QMainWindow):
 
     def _build_collect_page(self) -> QWidget:
         page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 24, 28, 24)
-        layout.setSpacing(18)
+        layout = self._page_layout(page)
 
         layout.addWidget(self._section_title("Collect Context"))
 
@@ -1020,9 +1016,7 @@ class XccMainWindow(QMainWindow):
 
     def _build_settings_page(self) -> QWidget:
         page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 18, 28, 16)
-        layout.setSpacing(12)
+        layout = self._page_layout(page)
 
         layout.addWidget(self._settings_header())
 
@@ -1153,20 +1147,119 @@ class XccMainWindow(QMainWindow):
 
         return "Unknown source"
     
+    def _page_layout(self, page: QWidget) -> QVBoxLayout:
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(28, 24, 28, 24)
+        layout.setSpacing(18)
+        return layout
+
     def _build_about_page(self) -> QWidget:
         page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 28, 28, 28)
-        layout.setSpacing(18)
+        layout = self._page_layout(page)
 
         layout.addWidget(self._section_title("About"))
 
         card = self._card()
-        card_layout = QVBoxLayout(card)
+        card.setObjectName("AboutCard")
 
-        card_layout.addWidget(QLabel("XCC Context Collector"))
-        card_layout.addWidget(QLabel(f"Version: {__version__}"))
-        card_layout.addWidget(QLabel("Purpose: collect AI-ready project context and copy it to clipboard."))
+        card_layout = self._card_layout(card)
+        card_layout.setContentsMargins(28, 24, 28, 24)
+        card_layout.setSpacing(18)
+
+        identity_row = QWidget()
+        identity_row.setObjectName("TransparentWidget")
+
+        identity_layout = QHBoxLayout(identity_row)
+        identity_layout.setContentsMargins(0, 0, 0, 0)
+        identity_layout.setSpacing(16)
+
+        icon_label = QLabel()
+        icon_label.setObjectName("AboutAppIcon")
+        icon_label.setFixedSize(56, 56)
+
+        if APP_ICON_PATH.exists():
+            pixmap = QPixmap(str(APP_ICON_PATH))
+            icon_label.setPixmap(
+                pixmap.scaled(
+                    56,
+                    56,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+
+        title_box = QWidget()
+        title_box.setObjectName("TransparentWidget")
+
+        title_layout = QVBoxLayout(title_box)
+        title_layout.setContentsMargins(0, 0, 0, 0)
+        title_layout.setSpacing(4)
+
+        app_title = QLabel("XCC Context Collector")
+        app_title.setObjectName("AboutTitle")
+
+        app_subtitle = QLabel("AI-ready project context collector")
+        app_subtitle.setObjectName("AboutSubtitle")
+
+        app_version = QLabel(f"Version {__version__}")
+        app_version.setObjectName("AboutVersion")
+
+        title_layout.addWidget(app_title)
+        title_layout.addWidget(app_subtitle)
+        title_layout.addWidget(app_version)
+
+        identity_layout.addWidget(icon_label)
+        identity_layout.addWidget(title_box, 1)
+
+        card_layout.addWidget(identity_row)
+
+        description = QLabel(
+            "XCC helps collect clean project context for AI coding assistants "
+            "and copies it directly to the clipboard."
+        )
+        description.setObjectName("AboutDescription")
+        description.setWordWrap(True)
+        card_layout.addWidget(description)
+
+        badges_row = QWidget()
+        badges_row.setObjectName("TransparentWidget")
+
+        badges_layout = QHBoxLayout(badges_row)
+        badges_layout.setContentsMargins(0, 0, 0, 0)
+        badges_layout.setSpacing(10)
+
+        for badge_text in ["Local-first", "No cloud", "Windows utility", "Tray-ready"]:
+            badges_layout.addWidget(self._about_badge(badge_text))
+
+        badges_layout.addStretch(1)
+        card_layout.addWidget(badges_row)
+
+        paths_title = QLabel("Paths")
+        paths_title.setObjectName("AboutSectionTitle")
+        card_layout.addWidget(paths_title)
+
+        card_layout.addWidget(
+            self._about_info_row(
+                "Config file",
+                r"%USERPROFILE%\.xcc\config.json",
+            )
+        )
+        card_layout.addWidget(
+            self._about_info_row(
+                "Startup folder",
+                "shell:startup",
+            )
+        )
+        card_layout.addWidget(
+            self._about_info_row(
+                "Default hotkey",
+                DEFAULT_HOTKEY,
+            )
+        )
+
+        footer = QLabel("Built for fast AI-context workflow.")
+        footer.setObjectName("AboutFooter")
+        card_layout.addWidget(footer)
 
         layout.addWidget(card)
         layout.addStretch(1)
@@ -1294,6 +1387,34 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(health_label)
 
         return row
+    
+    def _about_info_row(self, label: str, value: str) -> QFrame:
+        row = QFrame()
+        row.setObjectName("AboutInfoRow")
+        row.setFixedHeight(42)
+
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(14, 6, 14, 6)
+        layout.setSpacing(12)
+
+        label_widget = QLabel(label)
+        label_widget.setObjectName("AboutInfoLabel")
+
+        value_widget = QLabel(value)
+        value_widget.setObjectName("AboutInfoValue")
+        value_widget.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+        layout.addWidget(label_widget)
+        layout.addWidget(value_widget, 1)
+
+        return row
+    
+    def _about_badge(self, text: str) -> QLabel:
+        badge = QLabel(text)
+        badge.setObjectName("AboutBadge")
+        badge.setFixedHeight(28)
+        badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        return badge
 
     def _metric_capsule(self, label: str, value: str) -> QFrame:
         capsule = QFrame()
@@ -1743,6 +1864,90 @@ class XccMainWindow(QMainWindow):
                 font-weight: 800;
                 background: transparent;
                 min-width: 110px;
+            }
+            #AboutCard {
+                background: #161616;
+                border: 1px solid #6A5520;
+                border-radius: 14px;
+            }
+
+            #AboutAppIcon {
+                background: transparent;
+            }
+
+            #AboutTitle {
+                color: #F2F2F2;
+                font-size: 22px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #AboutSubtitle {
+                color: #F5C542;
+                font-size: 14px;
+                font-weight: 700;
+                background: transparent;
+            }
+
+            #AboutVersion {
+                color: #8F8F8F;
+                font-size: 12px;
+                background: transparent;
+            }
+
+            #AboutDescription {
+                color: #C9C9C9;
+                font-size: 13px;
+                background: transparent;
+            }
+
+            #AboutBadge {
+                background: #181818;
+                border: 1px solid #3C3218;
+                border-radius: 10px;
+                padding: 4px 12px;
+                color: #F5C542;
+                font-size: 11px;
+                font-weight: 800;
+            }
+
+            #AboutBadge:hover {
+                background: #1E1B12;
+                border: 1px solid #6A5520;
+            }
+
+            #AboutSectionTitle {
+                color: #F5C542;
+                font-size: 13px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #AboutInfoRow {
+                background: #181818;
+                border: 1px solid #2F2A1C;
+                border-radius: 10px;
+            }
+
+            #AboutInfoLabel {
+                color: #AFAFAF;
+                font-size: 11px;
+                font-weight: 700;
+                background: transparent;
+            }
+
+            #AboutInfoValue {
+                color: #F5C542;
+                font-size: 12px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #AboutFooter {
+                color: #8F8F8F;
+                font-size: 12px;
+                background: transparent;
+                padding-top: 4px;
             }
             """
         )
