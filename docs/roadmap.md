@@ -181,17 +181,35 @@ Status: DONE
 
 ## v0.9.5 Settings/About Polish
 
+Status: DONE
+
+* [x] redesign Settings as control panel
+* [x] separate behavior settings from read-only system info
+* [x] replace checkbox cards with setting rows
+* [x] simplify Settings visual hierarchy
+* [x] redesign About page
+* [x] add app identity block to About
+* [x] add product badges to About
+* [x] add config/startup path info to About
+* [x] manual visual review
+* [x] tune yellow accent to muted amber
+* [x] reduce bright yellow usage in secondary UI
+* [x] soften checkbox and radio checked color
+* [x] soften card and row borders
+* [x] manual color review
+
+
+## v0.9.6 Integrated Restore Hotkey
+
 Status: IN PROGRESS
 
-* [ ] redesign Settings as control panel
-* [ ] separate behavior settings from read-only system info
-* [ ] replace checkbox cards with setting rows
-* [ ] simplify Settings visual hierarchy
-* [ ] redesign About page
-* [ ] add app identity block to About
-* [ ] add product badges to About
-* [ ] add config/startup path info to About
-* [ ] manual visual review
+* [ ] add GUI global hotkey listener
+* [ ] restore window with Ctrl+Alt+X
+* [ ] route hotkey callback through Qt signal
+* [ ] cleanup hotkey on app exit
+* [ ] keep legacy hotkey.py as dev-only mode
+* [ ] manual hotkey test
+* [ ] test suite pass
 
 
 ## v1.0 Windows Release

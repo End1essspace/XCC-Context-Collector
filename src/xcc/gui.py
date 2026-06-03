@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import sys
 from datetime import datetime
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
+import keyboard
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -42,6 +43,9 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 APP_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_app.ico"
 TRAY_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_tray.ico"
 
+class HotkeyBridge(QObject):
+    restore_requested = Signal()
+
 class XccMainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -60,6 +64,9 @@ class XccMainWindow(QMainWindow):
         self._is_loading_settings = True
         self._is_quitting = False
         self._has_shown_tray_hint = False
+        self._hotkey_handle = None
+        self._hotkey_bridge = HotkeyBridge()
+        self._hotkey_bridge.restore_requested.connect(self._restore_from_hotkey)
 
         self._setup_ui()
         self._apply_loaded_settings()
@@ -68,6 +75,7 @@ class XccMainWindow(QMainWindow):
         self._is_loading_settings = False
         self._apply_theme()
         self._setup_tray()
+        self._setup_global_hotkey()
 
     def _setup_ui(self) -> None:
         root = QWidget()
@@ -121,6 +129,29 @@ class XccMainWindow(QMainWindow):
         self.close_to_tray_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
 
+    def _setup_global_hotkey(self) -> None:
+        try:
+            self._hotkey_handle = keyboard.add_hotkey(
+                DEFAULT_HOTKEY,
+                self._request_restore_from_hotkey,
+            )
+            self._set_event_status("Ready")
+        except Exception as exc:
+            self._hotkey_handle = None
+            self._set_event_status("Hotkey unavailable.")
+            print(f"XCC hotkey setup failed: {exc}")
+
+
+    def _request_restore_from_hotkey(self) -> None:
+        self._hotkey_bridge.restore_requested.emit()
+
+
+    def _restore_from_hotkey(self) -> None:
+        self._show_main_window()
+        self.raise_()
+        self.activateWindow()
+        self._set_transient_event_status("Window restored by hotkey.")
+    
     def _on_autostart_changed(self) -> None:
         if self._is_loading_settings:
             return
@@ -408,7 +439,19 @@ class XccMainWindow(QMainWindow):
         if hasattr(self, "tray_icon"):
             self.tray_icon.hide()
 
+        self._cleanup_global_hotkey()
         QApplication.quit()
+
+    def _cleanup_global_hotkey(self) -> None:
+        if self._hotkey_handle is None:
+            return
+
+        try:
+            keyboard.remove_hotkey(self._hotkey_handle)
+        except Exception:
+            pass
+
+        self._hotkey_handle = None
 
     def closeEvent(self, event) -> None:
         if self._is_quitting:
@@ -435,6 +478,7 @@ class XccMainWindow(QMainWindow):
             event.ignore()
             return
 
+        self._cleanup_global_hotkey()
         event.accept()
 
     def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason) -> None:
