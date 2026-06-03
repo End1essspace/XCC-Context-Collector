@@ -111,6 +111,18 @@ class XccMainWindow(QMainWindow):
         self.collect_button.clicked.connect(self._collect_and_copy)
         self.compact_checkbox.stateChanged.connect(self._on_settings_changed)
         self.max_chars_input.editingFinished.connect(self._on_settings_changed)
+        self.start_with_windows_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+        self.start_minimized_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+        self.start_maximized_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+        self.close_to_tray_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+        self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+
+    def _on_behavior_settings_changed(self) -> None:
+        if self._is_loading_settings:
+            return
+
+        self._save_current_settings()
+        self._set_event_status("Settings saved.")
 
     def _on_settings_changed(self) -> None:
         if self._is_loading_settings:
@@ -152,11 +164,11 @@ class XccMainWindow(QMainWindow):
             max_chars=self._safe_current_max_chars(),
             compact_mode=self.compact_checkbox.isChecked(),
             last_source=self._current_persisted_source(),
-            start_with_windows=self.app_settings.start_with_windows,
-            start_minimized_to_tray=self.app_settings.start_minimized_to_tray,
-            close_to_tray=self.app_settings.close_to_tray,
-            start_maximized=self.app_settings.start_maximized,
-            show_tray_notifications=self.app_settings.show_tray_notifications,
+            start_with_windows=self.start_with_windows_checkbox.isChecked(),
+            start_minimized_to_tray=self.start_minimized_checkbox.isChecked(),
+            close_to_tray=self.close_to_tray_checkbox.isChecked(),
+            start_maximized=self.start_maximized_checkbox.isChecked(),
+            show_tray_notifications=self.tray_notifications_checkbox.isChecked(),
         )
 
         save_settings(settings)
@@ -358,11 +370,15 @@ class XccMainWindow(QMainWindow):
             event.accept()
             return
 
-        if hasattr(self, "tray_icon") and self.tray_icon.isVisible():
+        if (
+            self.app_settings.close_to_tray
+            and hasattr(self, "tray_icon")
+            and self.tray_icon.isVisible()
+        ):
             self.hide()
             self._set_event_status("Hidden to tray.")
 
-            if not self._has_shown_tray_hint:
+            if self.app_settings.show_tray_notifications and not self._has_shown_tray_hint:
                 self.tray_icon.showMessage(
                     "XCC is still running",
                     "Use the tray icon to restore or quit XCC.",
@@ -622,6 +638,13 @@ class XccMainWindow(QMainWindow):
 
         return header
 
+    def _settings_toggle(self, text: str, checked: bool) -> QCheckBox:
+        checkbox = QCheckBox(text)
+        checkbox.setObjectName("SettingsToggle")
+        checkbox.setChecked(checked)
+        checkbox.setFixedHeight(34)
+        return checkbox
+
     def _settings_tile(self, label: str, value: str) -> QFrame:
         tile = QFrame()
         tile.setObjectName("SettingsTile")
@@ -658,6 +681,22 @@ class XccMainWindow(QMainWindow):
             layout.addWidget(tile, 1)
 
         return row
+
+    def _settings_control_column(self, title: str, controls: list[QWidget]) -> QFrame:
+        column = QFrame()
+        column.setObjectName("SettingsColumn")
+        column.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+        layout = QVBoxLayout(column)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
+
+        layout.addWidget(self._settings_section_title(title))
+
+        for control in controls:
+            layout.addWidget(control)
+
+        return column
 
     def _settings_column(self, title: str, tiles: list[QFrame]) -> QFrame:
         column = QFrame()
@@ -967,20 +1006,42 @@ class XccMainWindow(QMainWindow):
             ],
         )
 
-        startup_column = self._settings_column(
+        self.start_with_windows_checkbox = self._settings_toggle(
+            "Start with Windows",
+            self.app_settings.start_with_windows,
+        )
+        self.start_minimized_checkbox = self._settings_toggle(
+            "Start minimized to tray",
+            self.app_settings.start_minimized_to_tray,
+        )
+        self.start_maximized_checkbox = self._settings_toggle(
+            "Start maximized",
+            self.app_settings.start_maximized,
+        )
+
+        startup_column = self._settings_control_column(
             "Startup Behavior",
             [
-                self._settings_tile("Start with Windows", "Planned"),
-                self._settings_tile("Start minimized", "Planned"),
-                self._settings_tile("Start maximized", "Enabled"),
+                self.start_with_windows_checkbox,
+                self.start_minimized_checkbox,
+                self.start_maximized_checkbox,
             ],
         )
 
-        tray_column = self._settings_column(
+        self.close_to_tray_checkbox = self._settings_toggle(
+            "Close to tray",
+            self.app_settings.close_to_tray,
+        )
+        self.tray_notifications_checkbox = self._settings_toggle(
+            "Tray notifications",
+            self.app_settings.show_tray_notifications,
+        )
+
+        tray_column = self._settings_control_column(
             "Tray Behavior",
             [
-                self._settings_tile("Close to tray", "Enabled"),
-                self._settings_tile("Tray notification", "Enabled"),
+                self.close_to_tray_checkbox,
+                self.tray_notifications_checkbox,
                 self._settings_tile("Double click restore", "Enabled"),
             ],
         )
@@ -1621,6 +1682,21 @@ class XccMainWindow(QMainWindow):
                 font-weight: 800;
                 background: transparent;
             }
+            #SettingsToggle {
+                background: #181818;
+                border: 1px solid #3C3218;
+                border-radius: 10px;
+                padding: 7px 10px;
+                color: #D6D6D6;
+                font-size: 11px;
+                font-weight: 700;
+            }
+
+            #SettingsToggle:hover {
+                background: #1E1B12;
+                border: 1px solid #6A5520;
+                color: #F5C542;
+            }
             """
         )
 
@@ -1628,5 +1704,10 @@ class XccMainWindow(QMainWindow):
 def run_gui() -> None:
     app = QApplication(sys.argv)
     window = XccMainWindow()
-    window.showMaximized()
+    if window.app_settings.start_minimized_to_tray:
+        window.hide()
+    elif window.app_settings.start_maximized:
+        window.showMaximized()
+    else:
+        window.show()
     sys.exit(app.exec())
