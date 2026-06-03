@@ -155,23 +155,23 @@ Status: DONE
 
 ## v0.9 Optimization
 
-Status: PLANNED
+Status: IN PROGRESS
 
-* [ ] code cleanup
-* [ ] remove unused imports
-* [ ] remove duplicate model definitions
-* [ ] remove unused placeholder helpers
-* [ ] normalize GUI helper naming
-* [ ] reduce duplicated settings layout code
-* [ ] improve settings page spacing
-* [ ] optimize startup flow
-* [ ] verify tray startup edge cases
-* [ ] verify start minimized behavior
-* [ ] verify close-to-tray behavior
-* [ ] verify invalid config recovery
-* [ ] improve error messages
-* [ ] update README for GUI usage
-* [ ] update roadmap before release
+* [x] code cleanup
+* [x] remove unused imports
+* [x] remove duplicate model definitions
+* [x] remove unused placeholder helpers
+* [x] normalize GUI helper naming
+* [x] reduce duplicated settings layout code
+* [x] improve settings page spacing
+* [x] optimize startup flow
+* [x] verify tray startup edge cases
+* [x] verify start minimized behavior
+* [x] verify close-to-tray behavior
+* [x] verify invalid config recovery
+* [x] improve error messages
+* [x] update README for GUI usage
+* [x] update roadmap before release
 * [ ] full manual app test
 * [ ] full pytest pass
 * [ ] measure idle CPU/RAM usage
