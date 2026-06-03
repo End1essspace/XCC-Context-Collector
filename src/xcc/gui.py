@@ -35,7 +35,7 @@ from .collector import collect_files
 from .formatter import format_collection
 from .git_utils import get_changed_files, get_git_diff, is_git_repository
 from .scanner import scan_project_files
-from .settings import AppSettings, load_settings, save_settings
+from .settings import AppSettings, load_settings_result, save_settings
 from .autostart import is_autostart_enabled, set_autostart_enabled
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -54,13 +54,17 @@ class XccMainWindow(QMainWindow):
         self.selected_paths: list[Path] = []
         self.project_root: Path | None = None
         self.history_entries: list[dict[str, object]] = []
-        self.app_settings: AppSettings = load_settings()
+        settings_result = load_settings_result()
+        self.app_settings: AppSettings = settings_result.settings
+        self._settings_recovery_message = settings_result.message
         self._is_loading_settings = True
         self._is_quitting = False
         self._has_shown_tray_hint = False
 
         self._setup_ui()
         self._apply_loaded_settings()
+        if settings_result.recovered_from_error:
+            self._set_event_status(self._settings_recovery_message)
         self._is_loading_settings = False
         self._apply_theme()
         self._setup_tray()

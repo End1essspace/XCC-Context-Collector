@@ -3,9 +3,29 @@ from __future__ import annotations
 from pathlib import Path
 
 from src.xcc.config import MAX_OUTPUT_CHARS
-from src.xcc.settings import AppSettings, load_settings, save_settings, validate_settings
+from src.xcc.settings import AppSettings, load_settings, save_settings, validate_settings, load_settings_result
+
+def test_load_settings_result_reports_invalid_json(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    path.write_text("{ invalid json", encoding="utf-8")
+
+    result = load_settings_result(path)
+
+    assert result.settings == AppSettings()
+    assert result.recovered_from_error is True
+    assert "invalid JSON" in result.message
 
 
+def test_load_settings_result_reports_invalid_format(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    path.write_text('["not", "a", "dict"]', encoding="utf-8")
+
+    result = load_settings_result(path)
+
+    assert result.settings == AppSettings()
+    assert result.recovered_from_error is True
+    assert "format is invalid" in result.message
+    
 def test_load_settings_returns_defaults_when_file_missing(tmp_path: Path) -> None:
     path = tmp_path / "missing.json"
 

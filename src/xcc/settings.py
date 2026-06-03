@@ -21,6 +21,12 @@ DEFAULT_SHOW_TRAY_NOTIFICATIONS = True
 
 
 @dataclass(slots=True)
+class SettingsLoadResult:
+    settings: AppSettings
+    recovered_from_error: bool = False
+    message: str = ""
+
+@dataclass(slots=True)
 class AppSettings:
     default_mode: str = DEFAULT_MODE
     max_chars: int = MAX_OUTPUT_CHARS
@@ -37,22 +43,38 @@ class AppSettings:
 def default_settings_path() -> Path:
     return Path.home() / ".xcc" / "config.json"
 
-
-def load_settings(path: str | Path | None = None) -> AppSettings:
+def load_settings_result(path: str | Path | None = None) -> SettingsLoadResult:
     settings_path = Path(path) if path is not None else default_settings_path()
 
     if not settings_path.exists():
-        return AppSettings()
+        return SettingsLoadResult(AppSettings())
 
     try:
         raw_data = json.loads(settings_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
-        return AppSettings()
+    except OSError as exc:
+        return SettingsLoadResult(
+            AppSettings(),
+            recovered_from_error=True,
+            message=f"Could not read config file: {exc}",
+        )
+    except json.JSONDecodeError:
+        return SettingsLoadResult(
+            AppSettings(),
+            recovered_from_error=True,
+            message="Config file is invalid JSON. Defaults were loaded.",
+        )
 
     if not isinstance(raw_data, dict):
-        return AppSettings()
+        return SettingsLoadResult(
+            AppSettings(),
+            recovered_from_error=True,
+            message="Config file format is invalid. Defaults were loaded.",
+        )
 
-    return validate_settings(raw_data)
+    return SettingsLoadResult(validate_settings(raw_data))
+
+def load_settings(path: str | Path | None = None) -> AppSettings:
+    return load_settings_result(path).settings
 
 
 def save_settings(settings: AppSettings, path: str | Path | None = None) -> None:
