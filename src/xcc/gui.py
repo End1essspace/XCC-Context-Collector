@@ -297,7 +297,7 @@ class XccMainWindow(QMainWindow):
                 )
             )
 
-        title = QLabel("XCC Context Collector — AI-ready project context collector")
+        title = QLabel("XCC Context Collector")
         title.setObjectName("HeaderTitle")
 
         self.header_status = QLabel("Ready")
@@ -375,6 +375,10 @@ class XccMainWindow(QMainWindow):
         self.tray_icon.activated.connect(self._on_tray_activated)
         self.tray_icon.show()
 
+    def _set_transient_event_status(self, message: str, timeout_ms: int = 1800) -> None:
+        self.status_label.setText(message)
+        QTimer.singleShot(timeout_ms, lambda: self.status_label.setText("Ready"))
+
     def _set_event_status(self, message: str) -> None:
         self.status_label.setText(message)
 
@@ -388,7 +392,7 @@ class XccMainWindow(QMainWindow):
         self._show_main_window()
         self.raise_()
         self.activateWindow()
-        self._set_event_status("Window restored.")
+        self._set_transient_event_status("Window restored.")
 
     def _hide_to_tray(self) -> None:
         if not (hasattr(self, "tray_icon") and self.tray_icon.isVisible()):
@@ -396,7 +400,7 @@ class XccMainWindow(QMainWindow):
             return
 
         self.hide()
-        self._set_event_status("Hidden to tray.")
+        self._set_transient_event_status("Hidden to tray.")
 
     def _quit_from_tray(self) -> None:
         self._is_quitting = True
@@ -417,7 +421,7 @@ class XccMainWindow(QMainWindow):
             and self.tray_icon.isVisible()
         ):
             self.hide()
-            self._set_event_status("Hidden to tray.")
+            self._set_transient_event_status("Hidden to tray.")
 
             if self.app_settings.show_tray_notifications and not self._has_shown_tray_hint:
                 self.tray_icon.showMessage(
@@ -730,30 +734,6 @@ class XccMainWindow(QMainWindow):
         checkbox.setFixedHeight(28)
         return checkbox
 
-    def _settings_tile(self, label: str, value: str) -> QFrame:
-        tile = QFrame()
-        tile.setObjectName("SettingsTile")
-        tile.setFixedHeight(58)
-        tile.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        layout = QVBoxLayout(tile)
-        layout.setContentsMargins(14, 7, 14, 7)
-        layout.setSpacing(3)
-
-        label_widget = QLabel(label)
-        label_widget.setObjectName("SettingsTileLabel")
-
-        value_widget = QLabel(value)
-        value_widget.setObjectName("SettingsTileValue")
-        value_widget.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-
-        tile.value_label = value_widget
-
-        layout.addWidget(label_widget)
-        layout.addWidget(value_widget)
-
-        return tile
-
     def _settings_group(self, title: str, rows: list[QWidget]) -> QFrame:
         group = QFrame()
         group.setObjectName("SettingsGroup")
@@ -769,37 +749,6 @@ class XccMainWindow(QMainWindow):
             layout.addWidget(row)
 
         return group
-
-    def _settings_column(self, title: str, tiles: list[QFrame]) -> QFrame:
-        column = QFrame()
-        column.setObjectName("SettingsColumn")
-        column.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        layout = QVBoxLayout(column)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
-
-        layout.addWidget(self._settings_section_title(title))
-
-        for tile in tiles:
-            layout.addWidget(tile)
-
-        return column
-
-
-    def _settings_columns_row(self, columns: list[QFrame]) -> QWidget:
-        row = QWidget()
-        row.setObjectName("TransparentWidget")
-
-        layout = QHBoxLayout(row)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
-
-        for column in columns:
-            layout.addWidget(column, 1)
-
-        return row
-
 
     def _refresh_settings_page(self) -> None:
         if hasattr(self, "settings_current_mode"):
@@ -1461,7 +1410,7 @@ class XccMainWindow(QMainWindow):
             #HeaderTitle {
                 font-size: 15px;
                 font-weight: 700;
-                color: #F5C542;
+                color: #D6A93A;
                 background: transparent;
             }
 
@@ -1499,13 +1448,13 @@ class XccMainWindow(QMainWindow):
             }
 
             #Sidebar::item:selected {
-                background: #F5C542;
+                background: #D6A93A;
                 color: #111111;
                 font-weight: 700;
             }
 
             #Sidebar::item:selected:hover {
-                background: #FFD95A;
+                background: #E8BE55;
                 color: #111111;
             }
 
@@ -1578,23 +1527,23 @@ class XccMainWindow(QMainWindow):
             }
 
             #PrimaryButton {
-                background: #F5C542;
+                background: #D6A93A;
                 color: #111111;
                 font-size: 15px;
                 font-weight: 800;
-                border: 1px solid #F5C542;
+                border: 1px solid #D6A93A;
                 border-radius: 12px;
             }
 
             #PrimaryButton:hover {
-                background: #FFD95A;
-                border: 1px solid #FFD95A;
+                background: #E8BE55;
+                border: 1px solid #E8BE55;
                 color: #111111;
             }
 
             #PrimaryButton:pressed {
-                background: #E0B83B;
-                border: 1px solid #E0B83B;
+                background: #C99831;
+                border: 1px solid #C99831;
             }
 
             QRadioButton,
@@ -1632,8 +1581,8 @@ class XccMainWindow(QMainWindow):
 
             QRadioButton::indicator:checked,
             QCheckBox::indicator:checked {
-                background: #F5C542;
-                border: 1px solid #F5C542;
+                background: #D6A93A;
+                border: 1px solid #D6A93A;
             }
 
             #MetricCapsule {
@@ -1770,16 +1719,6 @@ class XccMainWindow(QMainWindow):
                 margin: 0px;
             }
 
-            #SettingsTile {
-                background: #181818;
-                border: 1px solid #4F3F18;
-                border-radius: 10px;
-            }
-
-            #SettingsTile:hover {
-                background: #1E1B12;
-                border: 1px solid #F5C542;
-            }
             #HeaderAppIcon {
                 background: transparent;
             }
@@ -1789,29 +1728,6 @@ class XccMainWindow(QMainWindow):
                 font-weight: 800;
                 background: transparent;
                 margin-top: 0px;
-            }
-            #SettingsColumn {
-                background: #141414;
-                border: 1px solid #3C3218;
-                border-radius: 12px;
-            }
-
-            #SettingsColumn:hover {
-                border: 1px solid #6A5520;
-            }
-
-            #SettingsTileLabel {
-                color: #AFAFAF;
-                font-size: 10px;
-                font-weight: 600;
-                background: transparent;
-            }
-
-            #SettingsTileValue {
-                color: #F5C542;
-                font-size: 13px;
-                font-weight: 800;
-                background: transparent;
             }
             #SettingsToggle {
                 background: transparent;
