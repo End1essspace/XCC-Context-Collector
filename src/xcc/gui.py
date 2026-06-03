@@ -376,13 +376,23 @@ class XccMainWindow(QMainWindow):
     def _set_event_status(self, message: str) -> None:
         self.status_label.setText(message)
 
+    def _show_main_window(self) -> None:
+        if self.app_settings.start_maximized:
+            self.showMaximized()
+        else:
+            self.show()
+
     def _show_from_tray(self) -> None:
-        self.showMaximized()
+        self._show_main_window()
         self.raise_()
         self.activateWindow()
         self._set_event_status("Window restored.")
 
     def _hide_to_tray(self) -> None:
+        if not (hasattr(self, "tray_icon") and self.tray_icon.isVisible()):
+            self._set_event_status("Tray is not available.")
+            return
+
         self.hide()
         self._set_event_status("Hidden to tray.")
 
@@ -1649,10 +1659,12 @@ class XccMainWindow(QMainWindow):
 def run_gui() -> None:
     app = QApplication(sys.argv)
     window = XccMainWindow()
-    if window.app_settings.start_minimized_to_tray:
+
+    tray_ready = hasattr(window, "tray_icon") and window.tray_icon.isVisible()
+
+    if window.app_settings.start_minimized_to_tray and tray_ready:
         window.hide()
-    elif window.app_settings.start_maximized:
-        window.showMaximized()
     else:
-        window.show()
+        window._show_main_window()
+
     sys.exit(app.exec())
