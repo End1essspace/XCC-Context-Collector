@@ -461,6 +461,14 @@ class XccMainWindow(QMainWindow):
 
         self._hotkey_handle = None
 
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Escape:
+            self._hide_to_tray()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
+
     def closeEvent(self, event) -> None:
         if self._is_quitting:
             self._cleanup_global_hotkey()
