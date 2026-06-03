@@ -178,6 +178,22 @@ Status: DONE
 * [x] verify no background scanning in tray mode
 * [x] verify collect-only workload behavior
 
+
+## v0.9.5 Settings/About Polish
+
+Status: IN PROGRESS
+
+* [ ] redesign Settings as control panel
+* [ ] separate behavior settings from read-only system info
+* [ ] replace checkbox cards with setting rows
+* [ ] simplify Settings visual hierarchy
+* [ ] redesign About page
+* [ ] add app identity block to About
+* [ ] add product badges to About
+* [ ] add config/startup path info to About
+* [ ] manual visual review
+
+
 ## v1.0 Windows Release
 
 Status: PLANNED

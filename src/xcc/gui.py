@@ -681,11 +681,57 @@ class XccMainWindow(QMainWindow):
 
         return header
 
+    def _settings_row(
+        self,
+        title: str,
+        description: str,
+        control: QWidget | None = None,
+        value: str | None = None,
+    ) -> QFrame:
+        row = QFrame()
+        row.setObjectName("SettingsRow")
+        row.setFixedHeight(58)
+        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(14, 8, 14, 8)
+        layout.setSpacing(12)
+
+        text_box = QWidget()
+        text_box.setObjectName("TransparentWidget")
+        text_layout = QVBoxLayout(text_box)
+        text_layout.setContentsMargins(0, 0, 0, 0)
+        text_layout.setSpacing(3)
+
+        title_label = QLabel(title)
+        title_label.setObjectName("SettingsRowTitle")
+
+        description_label = QLabel(description)
+        description_label.setObjectName("SettingsRowDescription")
+
+        text_layout.addWidget(title_label)
+        text_layout.addWidget(description_label)
+
+        layout.addWidget(text_box, 1)
+
+        if control is not None:
+            layout.addWidget(control, 0, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+
+        if value is not None:
+            value_label = QLabel(value)
+            value_label.setObjectName("SettingsRowValue")
+            value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            layout.addWidget(value_label, 0)
+
+            row.value_label = value_label
+
+        return row
+
     def _settings_toggle(self, text: str, checked: bool) -> QCheckBox:
         checkbox = QCheckBox(text)
         checkbox.setObjectName("SettingsToggle")
         checkbox.setChecked(checked)
-        checkbox.setFixedHeight(34)
+        checkbox.setFixedHeight(28)
         return checkbox
 
     def _settings_tile(self, label: str, value: str) -> QFrame:
@@ -711,6 +757,22 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(value_widget)
 
         return tile
+
+    def _settings_group(self, title: str, rows: list[QWidget]) -> QFrame:
+        group = QFrame()
+        group.setObjectName("SettingsGroup")
+        group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+
+        layout = QVBoxLayout(group)
+        layout.setContentsMargins(16, 14, 16, 16)
+        layout.setSpacing(10)
+
+        layout.addWidget(self._settings_section_title(title))
+
+        for row in rows:
+            layout.addWidget(row)
+
+        return group
 
     def _settings_column(self, title: str, tiles: list[QFrame]) -> QFrame:
         column = QFrame()
@@ -968,114 +1030,112 @@ class XccMainWindow(QMainWindow):
         panel.setObjectName("SettingsPanel")
 
         panel_layout = self._card_layout(panel)
-        panel_layout.setContentsMargins(24, 16, 24, 14)
-        panel_layout.setSpacing(10)
-        runtime_defaults_column = self._settings_column(
-            "Runtime Defaults",
+        panel_layout.setContentsMargins(24, 18, 24, 18)
+        panel_layout.setSpacing(16)
+
+        self.start_with_windows_checkbox = self._settings_toggle(
+            "",
+            self.app_settings.start_with_windows,
+        )
+        self.start_minimized_checkbox = self._settings_toggle(
+            "",
+            self.app_settings.start_minimized_to_tray,
+        )
+        self.start_maximized_checkbox = self._settings_toggle(
+            "",
+            self.app_settings.start_maximized,
+        )
+        self.close_to_tray_checkbox = self._settings_toggle(
+            "",
+            self.app_settings.close_to_tray,
+        )
+        self.tray_notifications_checkbox = self._settings_toggle(
+            "",
+            self.app_settings.show_tray_notifications,
+        )
+
+        behavior_group = self._settings_group(
+            "Behavior",
             [
-                self._settings_tile("Default hotkey", DEFAULT_HOTKEY),
-                self._settings_tile("Default max chars", str(MAX_OUTPUT_CHARS)),
-                self._settings_tile("App version", __version__),
+                self._settings_row(
+                    "Start with Windows",
+                    "Launch XCC automatically after Windows login.",
+                    control=self.start_with_windows_checkbox,
+                ),
+                self._settings_row(
+                    "Start minimized to tray",
+                    "Keep startup silent and restore from the tray icon.",
+                    control=self.start_minimized_checkbox,
+                ),
+                self._settings_row(
+                    "Start maximized",
+                    "Open the main window in maximized mode.",
+                    control=self.start_maximized_checkbox,
+                ),
+                self._settings_row(
+                    "Close to tray",
+                    "Keep XCC running when the window is closed.",
+                    control=self.close_to_tray_checkbox,
+                ),
+                self._settings_row(
+                    "Tray notifications",
+                    "Show a notification when XCC is minimized to tray.",
+                    control=self.tray_notifications_checkbox,
+                ),
             ],
         )
 
-        self.settings_current_mode = self._settings_tile(
-            "Current mode",
-            self._current_mode_name(),
+        self.settings_current_mode = self._settings_row(
+            "Default mode",
+            "Collection mode used for the current saved session.",
+            value=self._current_mode_name(),
         )
-        self.settings_compact_mode = self._settings_tile(
+        self.settings_compact_mode = self._settings_row(
             "Compact mode",
-            "Enabled" if self.compact_checkbox.isChecked() else "Disabled",
+            "Remove repeated empty lines and reduce output noise.",
+            value="Enabled" if self.compact_checkbox.isChecked() else "Disabled",
         )
-        self.settings_current_max_chars = self._settings_tile(
-            "Current max chars",
-            self.max_chars_input.text().strip() or "Not set",
+        self.settings_current_max_chars = self._settings_row(
+            "Max output chars",
+            "Character budget applied to generated context.",
+            value=self.max_chars_input.text().strip() or "Not set",
         )
 
-        current_session_column = self._settings_column(
-            "Current Session",
+        context_group = self._settings_group(
+            "Context & System",
             [
                 self.settings_current_mode,
                 self.settings_compact_mode,
                 self.settings_current_max_chars,
+                self._settings_row(
+                    "Hotkey",
+                    "Global hotkey used by the legacy hotkey listener.",
+                    value=DEFAULT_HOTKEY,
+                ),
+                self._settings_row(
+                    "Version",
+                    "Current application version.",
+                    value=__version__,
+                ),
+                self._settings_row(
+                    "Config file",
+                    "Local settings file stored under the user profile.",
+                    value="config.json",
+                ),
             ],
         )
 
-        self.start_with_windows_checkbox = self._settings_toggle(
-            "Start with Windows",
-            self.app_settings.start_with_windows,
-        )
-        self.start_minimized_checkbox = self._settings_toggle(
-            "Start minimized to tray",
-            self.app_settings.start_minimized_to_tray,
-        )
-        self.start_maximized_checkbox = self._settings_toggle(
-            "Start maximized",
-            self.app_settings.start_maximized,
-        )
+        groups_row = QWidget()
+        groups_row.setObjectName("TransparentWidget")
+        groups_layout = QHBoxLayout(groups_row)
+        groups_layout.setContentsMargins(0, 0, 0, 0)
+        groups_layout.setSpacing(16)
+        groups_layout.addWidget(behavior_group, 1)
+        groups_layout.addWidget(context_group, 1)
 
-        startup_column = self._settings_column(
-            "Startup Behavior",
-            [
-                self.start_with_windows_checkbox,
-                self.start_minimized_checkbox,
-                self.start_maximized_checkbox,
-            ],
-        )
+        panel_layout.addWidget(groups_row)
 
-        self.close_to_tray_checkbox = self._settings_toggle(
-            "Close to tray",
-            self.app_settings.close_to_tray,
-        )
-        self.tray_notifications_checkbox = self._settings_toggle(
-            "Tray notifications",
-            self.app_settings.show_tray_notifications,
-        )
-
-        tray_column = self._settings_column(
-            "Tray Behavior",
-            [
-                self.close_to_tray_checkbox,
-                self.tray_notifications_checkbox,
-                self._settings_tile("Double click restore", "Enabled"),
-            ],
-        )
-
-        self.settings_persistence_status = self._settings_tile(
-            "Settings persistence",
-            "Enabled",
-        )
-        self.settings_config_file = self._settings_tile(
-            "Config file",
-            "config.json",
-        )
-        self.settings_storage_mode = self._settings_tile(
-            "Storage mode",
-            "Persistent",
-        )
-
-        persistence_column = self._settings_column(
-            "Persistence",
-            [
-                self.settings_persistence_status,
-                self.settings_config_file,
-                self.settings_storage_mode,
-            ],
-        )
-
-        panel_layout.addWidget(
-            self._settings_columns_row(
-                [
-                    runtime_defaults_column,
-                    current_session_column,
-                    startup_column,
-                    tray_column,
-                    persistence_column,
-                ]
-            )
-        )
-
-        layout.addWidget(panel, 1)
+        layout.addWidget(panel)
         layout.addStretch(1)
 
         return page
@@ -1642,19 +1702,56 @@ class XccMainWindow(QMainWindow):
                 background: transparent;
             }
             #SettingsToggle {
-                background: #181818;
-                border: 1px solid #3C3218;
-                border-radius: 10px;
-                padding: 7px 10px;
+                background: transparent;
+                border: none;
                 color: #D6D6D6;
                 font-size: 11px;
                 font-weight: 700;
             }
 
             #SettingsToggle:hover {
+                color: #F5C542;
+            }
+            #SettingsGroup {
+                background: #141414;
+                border: 1px solid #3C3218;
+                border-radius: 12px;
+            }
+
+            #SettingsGroup:hover {
+                border: 1px solid #6A5520;
+            }
+
+            #SettingsRow {
+                background: #181818;
+                border: 1px solid #3C3218;
+                border-radius: 10px;
+            }
+
+            #SettingsRow:hover {
                 background: #1E1B12;
                 border: 1px solid #6A5520;
+            }
+
+            #SettingsRowTitle {
+                color: #F2F2F2;
+                font-size: 12px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #SettingsRowDescription {
+                color: #8F8F8F;
+                font-size: 11px;
+                background: transparent;
+            }
+
+            #SettingsRowValue {
                 color: #F5C542;
+                font-size: 13px;
+                font-weight: 800;
+                background: transparent;
+                min-width: 110px;
             }
             """
         )
