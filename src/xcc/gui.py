@@ -37,6 +37,7 @@ from .formatter import format_collection
 from .git_utils import get_changed_files, get_git_diff, is_git_repository
 from .scanner import scan_project_files
 from .settings import AppSettings, load_settings, save_settings
+from .autostart import is_autostart_enabled, set_autostart_enabled
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 APP_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_app.ico"
@@ -111,11 +112,48 @@ class XccMainWindow(QMainWindow):
         self.collect_button.clicked.connect(self._collect_and_copy)
         self.compact_checkbox.stateChanged.connect(self._on_settings_changed)
         self.max_chars_input.editingFinished.connect(self._on_settings_changed)
-        self.start_with_windows_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+        self.start_with_windows_checkbox.stateChanged.connect(self._on_autostart_changed)
         self.start_minimized_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.start_maximized_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.close_to_tray_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+
+    def _on_behavior_settings_changed(self) -> None:
+        if self._is_loading_settings:
+            return
+
+        try:
+            set_autostart_enabled(self.start_with_windows_checkbox.isChecked())
+        except Exception as exc:
+            self.start_with_windows_checkbox.blockSignals(True)
+            self.start_with_windows_checkbox.setChecked(self.app_settings.start_with_windows)
+            self.start_with_windows_checkbox.blockSignals(False)
+
+            self._set_event_status("Autostart setup failed.")
+            QMessageBox.warning(self, "XCC", str(exc))
+            return
+
+        self._save_current_settings()
+        self._set_event_status("Settings saved.")
+
+    def _on_autostart_changed(self) -> None:
+        if self._is_loading_settings:
+            return
+
+        try:
+            set_autostart_enabled(self.start_with_windows_checkbox.isChecked())
+        except Exception as exc:
+            self.start_with_windows_checkbox.blockSignals(True)
+            self.start_with_windows_checkbox.setChecked(self.app_settings.start_with_windows)
+            self.start_with_windows_checkbox.blockSignals(False)
+
+            self._set_event_status("Autostart setup failed.")
+            QMessageBox.warning(self, "XCC", str(exc))
+            return
+
+        self._save_current_settings()
+        self._set_event_status("Settings saved.")
+
 
     def _on_behavior_settings_changed(self) -> None:
         if self._is_loading_settings:
@@ -157,6 +195,16 @@ class XccMainWindow(QMainWindow):
             self.source_input.setText(last_source)
             self.project_root = Path(last_source)
             self._set_status("Loaded saved settings.")
+
+        try:
+            real_autostart_state = is_autostart_enabled()
+        except Exception:
+            real_autostart_state = self.app_settings.start_with_windows
+
+        self.app_settings.start_with_windows = real_autostart_state
+
+        if hasattr(self, "start_with_windows_checkbox"):
+            self.start_with_windows_checkbox.setChecked(real_autostart_state)
 
     def _save_current_settings(self) -> None:
         settings = AppSettings(
