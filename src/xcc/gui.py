@@ -147,7 +147,11 @@ class XccMainWindow(QMainWindow):
 
 
     def _restore_from_hotkey(self) -> None:
-        self._show_main_window()
+        if self.app_settings.start_maximized:
+            self.showMaximized()
+        else:
+            self.showNormal()
+
         self.raise_()
         self.activateWindow()
         self._set_transient_event_status("Window restored by hotkey.")
@@ -420,7 +424,11 @@ class XccMainWindow(QMainWindow):
             self.show()
 
     def _show_from_tray(self) -> None:
-        self._show_main_window()
+        if self.app_settings.start_maximized:
+            self.showMaximized()
+        else:
+            self.showNormal()
+
         self.raise_()
         self.activateWindow()
         self._set_transient_event_status("Window restored.")
@@ -455,6 +463,7 @@ class XccMainWindow(QMainWindow):
 
     def closeEvent(self, event) -> None:
         if self._is_quitting:
+            self._cleanup_global_hotkey()
             event.accept()
             return
 
@@ -811,9 +820,6 @@ class XccMainWindow(QMainWindow):
     def _select_source(self) -> None:
         mode = self._current_mode()
 
-        self.selected_paths = []
-        self.project_root = None
-
         if mode == "files":
             selected, _ = QFileDialog.getOpenFileNames(
                 self,
@@ -827,6 +833,7 @@ class XccMainWindow(QMainWindow):
                 return
 
             self.selected_paths = [Path(path) for path in selected]
+            self.project_root = None
             self.source_input.setText(f"{len(self.selected_paths)} files selected")
             self._set_status(f"Selected {len(self.selected_paths)} files.")
             self._save_current_settings()
@@ -854,6 +861,7 @@ class XccMainWindow(QMainWindow):
             )
             return
 
+        self.selected_paths = []
         self.project_root = folder
         self.source_input.setText(str(folder))
 
@@ -951,6 +959,15 @@ class XccMainWindow(QMainWindow):
     def _resolve_selected_paths(self, mode: str) -> tuple[list[Path], Path | None]:
         if mode == "files":
             return self.selected_paths, None
+
+        if self.project_root is None:
+            source_text = self.source_input.text().strip()
+
+            if source_text:
+                restored_root = Path(source_text)
+
+                if restored_root.exists() and restored_root.is_dir():
+                    self.project_root = restored_root
 
         if self.project_root is None:
             raise ValueError("Select a source folder first.")
@@ -1094,7 +1111,7 @@ class XccMainWindow(QMainWindow):
                 self.settings_current_max_chars,
                 self._settings_row(
                     "Hotkey",
-                    "Global hotkey used by the legacy hotkey listener.",
+                    "Restore the main window while XCC is running.",
                     value=DEFAULT_HOTKEY,
                 ),
                 self._settings_row(

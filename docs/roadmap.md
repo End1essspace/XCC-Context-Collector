@@ -201,16 +201,16 @@ Status: DONE
 
 ## v0.9.6 Integrated Restore Hotkey
 
-Status: IN PROGRESS
+Status: DONE
 
-* [ ] add GUI global hotkey listener
-* [ ] restore window with Ctrl+Alt+X
-* [ ] route hotkey callback through Qt signal
-* [ ] cleanup hotkey on app exit
-* [ ] keep legacy hotkey.py as dev-only mode
-* [ ] update README for integrated restore hotkey
-* [ ] manual hotkey test
-* [ ] test suite pass
+* [x] add GUI global hotkey listener
+* [x] restore window with Ctrl+Alt+X
+* [x] route hotkey callback through Qt signal
+* [x] cleanup hotkey on app exit
+* [x] keep legacy hotkey.py as dev-only mode
+* [x] update README for integrated restore hotkey
+* [x] manual hotkey test
+* [x] test suite pass
 
 
 ## v1.0 Windows Release
