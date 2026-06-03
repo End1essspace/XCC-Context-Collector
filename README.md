@@ -8,6 +8,8 @@ and copying it directly to the clipboard for AI coding workflows.
 It is designed for developers working with **ChatGPT, Codex, Claude, and other AI assistants**,  
 where structured project context needs to be prepared quickly and consistently.
 
+AI chats often have limits on file uploads, attached files, and context size. Manually sending many project files is slow, repetitive, and often impossible in one message. XCC solves this by turning selected files, full project folders, or Git changes into one structured AI-ready context block that can be pasted directly into an AI chat.
+
 
 🚀 **Core Features**
 
@@ -224,6 +226,8 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 
 Приложение рассчитано на разработчиков, которые работают с **ChatGPT, Codex, Claude и другими AI-ассистентами**,  
 где важно быстро и стабильно подготовить структурированный контекст проекта.
+
+У AI-чатов часто есть лимиты на загрузку файлов, количество attachments и общий размер контекста. Ручная отправка множества файлов проекта занимает время, повторяется каждый раз и часто не помещается в одно сообщение. XCC решает эту проблему: превращает выбранные файлы, папку проекта или Git-изменения в один структурированный AI-ready context block для вставки в AI-чат.
 
 
 🚀 **Основные возможности**
