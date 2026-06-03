@@ -208,6 +208,7 @@ Status: IN PROGRESS
 * [ ] route hotkey callback through Qt signal
 * [ ] cleanup hotkey on app exit
 * [ ] keep legacy hotkey.py as dev-only mode
+* [ ] update README for integrated restore hotkey
 * [ ] manual hotkey test
 * [ ] test suite pass
 
@@ -216,10 +217,23 @@ Status: IN PROGRESS
 
 Status: PLANNED
 
+* [ ] define GUI as primary release entry point
+* [ ] exclude legacy scripts from primary release flow
 * [ ] PyInstaller build
 * [ ] app icon
 * [ ] release folder
-* [ ] README update
+* [ ] README release update
 * [ ] basic install instructions
 * [ ] manual release test
 * [ ] release package
+
+
+## Future Improvements
+
+Status: BACKLOG
+
+* [ ] add hotkey controls to Settings
+* [ ] allow changing restore hotkey from GUI
+* [ ] optionally integrate collect action into hotkey workflow
+* [ ] installer
+* [ ] update system

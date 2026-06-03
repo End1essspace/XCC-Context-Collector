@@ -1,10 +1,10 @@
-**XCC Context Collector**
+# XCC Context Collector
 
 XCC is a small Windows desktop utility for collecting project code context and copying it to the clipboard for AI chats.
 
 It is designed for workflows with ChatGPT, Codex, Claude, and other AI coding assistants where clean project context is needed quickly.
 
-**Features**
+## Features
 
 - PySide6 desktop GUI
 - Select individual files
@@ -23,8 +23,40 @@ It is designed for workflows with ChatGPT, Codex, Claude, and other AI coding as
 - Close to tray
 - Start maximized option
 - Optional Windows autostart
+- Integrated restore hotkey: `Ctrl+Alt+X`
 
-**Supported file types**
+## Primary app mode
+
+The primary application entry point is the GUI:
+
+```bash
+python gui.py
+```
+
+For the Windows release, the primary executable will be built from `gui.py`.
+
+The GUI includes the main collection workflow, runtime history, settings, tray behavior, autostart behavior, and the restore hotkey.
+
+## Restore hotkey
+
+Default hotkey:
+
+```text
+Ctrl+Alt+X
+```
+
+When XCC is already running, the hotkey restores the main GUI window.
+
+Expected behavior:
+
+- if the window is hidden in tray, the hotkey restores it
+- if the window is minimized or behind other windows, the hotkey brings it forward
+- if the window is already visible, the hotkey raises it
+- the hotkey does not run Collect & Copy automatically
+
+This keeps the hotkey safe: it opens the app, but does not collect or copy project context without user action.
+
+## Supported file types
 
 XCC currently supports:
 
@@ -41,7 +73,7 @@ XCC currently supports:
 .cfg
 ```
 
-**Excluded folders**
+## Excluded folders
 
 XCC skips common cache/build/dependency folders:
 
@@ -62,36 +94,12 @@ bin
 obj
 ```
 
-**Run GUI**
-
-```bash
-python gui.py
-```
-
-**Run legacy picker mode**
-
-```bash
-python -m src.xcc.main
-```
-
-**Run hotkey listener**
-
-```bash
-python hotkey.py
-```
-
-Default hotkey:
-
-```text
-Ctrl+Alt+X
-```
-
-**Output format**
+## Output format
 
 ```text
 # XCC Context
 
-XCC Version: 0.6.0
+XCC Version: 0.9.0
 Mode: Full Folder
 Max Output Characters: 120000
 
@@ -111,7 +119,7 @@ src/utils.py
 <content>
 ```
 
-**Settings**
+## Settings
 
 Settings are stored locally in:
 
@@ -121,17 +129,17 @@ Settings are stored locally in:
 
 Current persistent settings include:
 
-* default mode
-* max chars
-* compact mode
-* last source
-* start with Windows
-* start minimized to tray
-* close to tray
-* start maximized
-* tray notifications
+- default mode
+- max chars
+- compact mode
+- last source
+- start with Windows
+- start minimized to tray
+- close to tray
+- start maximized
+- tray notifications
 
-**Windows autostart**
+## Windows autostart
 
 When `Start with Windows` is enabled, XCC creates a shortcut in the Windows Startup folder:
 
@@ -141,7 +149,35 @@ shell:startup
 
 Disabling the option removes the shortcut.
 
-**Development**
+## Legacy development modes
+
+These scripts are kept for development and compatibility, but they are not the primary release flow.
+
+### Legacy picker mode
+
+```bash
+python -m src.xcc.main
+```
+
+or:
+
+```bash
+python run.py
+```
+
+This opens the older tkinter-based picker workflow.
+
+### Legacy hotkey listener
+
+```bash
+python hotkey.py
+```
+
+This starts the older standalone hotkey listener for the legacy picker workflow.
+
+For the GUI release, use the integrated restore hotkey instead.
+
+## Development
 
 Install dependencies:
 
@@ -155,23 +191,36 @@ Run tests:
 pytest -q
 ```
 
-**Roadmap**
+## Requirements
 
-Current completed milestones:
+Runtime/development dependencies are listed in `requirements.txt`:
 
-* v0.1 Core MVP
-* v0.2 Context Optimization
-* v0.3 Git Context Mode
-* v0.4 Hotkey Mode
-* v0.5 PySide6 GUI
-* v0.6 Settings Persistence
-* v0.7 Tray Mode
-* v0.8 Settings Expansion
+```text
+pyperclip
+pytest
+keyboard
+PySide6
+```
+
+## Roadmap
+
+Completed milestones:
+
+- v0.1 Core MVP
+- v0.2 Context Optimization
+- v0.3 Git Context Mode
+- v0.4 Hotkey Mode
+- v0.5 PySide6 GUI
+- v0.6 Settings Persistence
+- v0.7 Tray Mode
+- v0.8 Settings Expansion
+- v0.9 Optimization
+- v0.9.5 Settings/About Polish
 
 Current milestone:
 
-* v0.9 Optimization
+- v0.9.6 Integrated Restore Hotkey
 
 Next milestone:
 
-* v1.0 Windows Release
+- v1.0 Windows Release
