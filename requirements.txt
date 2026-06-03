@@ -2,3 +2,4 @@ pyperclip
 pytest
 keyboard
 PySide6
+pyinstaller

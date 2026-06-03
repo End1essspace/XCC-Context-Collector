@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from datetime import datetime
 from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtNetwork import QLocalServer, QLocalSocket
 import keyboard
 from PySide6.QtWidgets import (
     QApplication,
@@ -42,9 +43,49 @@ from .autostart import is_autostart_enabled, set_autostart_enabled
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 APP_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_app.ico"
 TRAY_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_tray.ico"
+INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
+
+def _notify_existing_instance() -> bool:
+    socket = QLocalSocket()
+    socket.connectToServer(INSTANCE_SERVER_NAME)
+
+    if not socket.waitForConnected(500):
+        return False
+
+    socket.write(b"restore")
+    socket.flush()
+    socket.waitForBytesWritten(500)
+    socket.disconnectFromServer()
+
+    return True
 
 class HotkeyBridge(QObject):
     restore_requested = Signal()
+
+
+class SingleInstanceServer(QObject):
+    def __init__(self, window: "XccMainWindow") -> None:
+        super().__init__(window)
+
+        self.window = window
+        self.server = QLocalServer(self)
+
+        QLocalServer.removeServer(INSTANCE_SERVER_NAME)
+
+        if not self.server.listen(INSTANCE_SERVER_NAME):
+            print(f"XCC single-instance server failed: {self.server.errorString()}")
+            return
+
+        self.server.newConnection.connect(self._handle_new_connection)
+
+    def _handle_new_connection(self) -> None:
+        while self.server.hasPendingConnections():
+            client = self.server.nextPendingConnection()
+            client.disconnectFromServer()
+            client.deleteLater()
+
+        self.window._show_from_tray()
+
 
 class XccMainWindow(QMainWindow):
     def __init__(self) -> None:
@@ -1940,7 +1981,12 @@ class XccMainWindow(QMainWindow):
 
 def run_gui() -> None:
     app = QApplication(sys.argv)
+
+    if _notify_existing_instance():
+        sys.exit(0)
+
     window = XccMainWindow()
+    window._single_instance_server = SingleInstanceServer(window)
 
     tray_ready = hasattr(window, "tray_icon") and window.tray_icon.isVisible()
 
