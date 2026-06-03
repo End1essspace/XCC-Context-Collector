@@ -331,7 +331,7 @@ class XccMainWindow(QMainWindow):
             """
             QMenu {
                 background: #151515;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
                 padding: 6px;
                 color: #F2F2F2;
                 font-family: Segoe UI;
@@ -345,7 +345,7 @@ class XccMainWindow(QMainWindow):
             }
 
             QMenu::item:selected {
-                background: #F5C542;
+                background: #D6A93A;
                 color: #111111;
             }
 
@@ -1417,14 +1417,14 @@ class XccMainWindow(QMainWindow):
             #StatusCapsule,
             #HotkeyCapsule {
                 background: #1A1A1A;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
                 border-radius: 10px;
                 padding: 4px 12px;
                 color: #F2F2F2;
             }
 
             #HotkeyCapsule {
-                color: #F5C542;
+                color: #D6A93A;
             }
 
             #Sidebar {
@@ -1444,7 +1444,7 @@ class XccMainWindow(QMainWindow):
 
             #Sidebar::item:hover {
                 background: #241F10;
-                color: #F5C542;
+                color: #D6A93A;
             }
 
             #Sidebar::item:selected {
@@ -1467,12 +1467,12 @@ class XccMainWindow(QMainWindow):
 
             #Card {
                 background: #161616;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
                 border-radius: 14px;
             }
 
             #CardTitle {
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 13px;
                 font-weight: 800;
                 background: transparent;
@@ -1492,25 +1492,25 @@ class XccMainWindow(QMainWindow):
 
             QLineEdit {
                 background: #101010;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
                 border-radius: 10px;
                 padding: 8px 10px;
                 color: #F2F2F2;
-                selection-background-color: #F5C542;
+                selection-background-color: #D6A93A;
                 selection-color: #111111;
             }
 
             QLineEdit:hover {
-                border: 1px solid #D2A92E;
+                border: 1px solid #C79A2E;
             }
 
             QLineEdit:focus {
-                border: 1px solid #F5C542;
+                border: 1px solid #D6A93A;
             }
 
             QPushButton {
                 background: #1A1A1A;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
                 border-radius: 10px;
                 padding: 9px 14px;
                 color: #F2F2F2;
@@ -1518,8 +1518,8 @@ class XccMainWindow(QMainWindow):
 
             QPushButton:hover {
                 background: #232323;
-                border: 1px solid #F5C542;
-                color: #F5C542;
+                border: 1px solid #D6A93A;
+                color: #D6A93A;
             }
 
             QPushButton:pressed {
@@ -1555,7 +1555,7 @@ class XccMainWindow(QMainWindow):
 
             QRadioButton:hover,
             QCheckBox:hover {
-                color: #F5C542;
+                color: #D6A93A;
             }
 
             QRadioButton::indicator,
@@ -1563,7 +1563,7 @@ class XccMainWindow(QMainWindow):
                 width: 16px;
                 height: 16px;
                 background: #101010;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
             }
 
             QRadioButton::indicator {
@@ -1576,7 +1576,7 @@ class XccMainWindow(QMainWindow):
 
             QRadioButton::indicator:hover,
             QCheckBox::indicator:hover {
-                border: 1px solid #F5C542;
+                border: 1px solid #D6A93A;
             }
 
             QRadioButton::indicator:checked,
@@ -1587,13 +1587,13 @@ class XccMainWindow(QMainWindow):
 
             #MetricCapsule {
                 background: #181818;
-                border: 1px solid #5E4A1A;
+                border: 1px solid #463817;
                 border-radius: 10px;
             }
 
             #MetricCapsule:hover {
                 background: #1E1B12;
-                border: 1px solid #F5C542;
+                border: 1px solid #D6A93A;
             }
 
             #MetricLabel {
@@ -1603,7 +1603,7 @@ class XccMainWindow(QMainWindow):
             }
 
             #MetricValue {
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 15px;
                 font-weight: 800;
                 background: transparent;
@@ -1627,17 +1627,17 @@ class XccMainWindow(QMainWindow):
             }
             #HistoryEntry {
                 background: #181818;
-                border: 1px solid #4F3F18;
+                border: 1px solid #3A3018;
                 border-radius: 10px;
             }
 
             #HistoryEntry:hover {
                 background: #1E1B12;
-                border: 1px solid #F5C542;
+                border: 1px solid #D6A93A;
             }
 
             #HistoryTime {
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 12px;
                 font-weight: 800;
                 background: transparent;
@@ -1645,7 +1645,7 @@ class XccMainWindow(QMainWindow):
 
             #HistoryModeCapsule {
                 background: #101010;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
                 border-radius: 8px;
                 padding: 3px 10px;
                 color: #F2F2F2;
@@ -1693,13 +1693,13 @@ class XccMainWindow(QMainWindow):
             }
 
             QScrollBar::handle:vertical {
-                background: #5E4A1A;
+                background: #463817;
                 min-height: 28px;
                 border-radius: 5px;
             }
 
             QScrollBar::handle:vertical:hover {
-                background: #F5C542;
+                background: #D6A93A;
             }
 
             QScrollBar::add-line:vertical,
@@ -1723,7 +1723,7 @@ class XccMainWindow(QMainWindow):
                 background: transparent;
             }
             #SettingsSectionTitle {
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 12px;
                 font-weight: 800;
                 background: transparent;
@@ -1738,16 +1738,16 @@ class XccMainWindow(QMainWindow):
             }
 
             #SettingsToggle:hover {
-                color: #F5C542;
+                color: #D6A93A;
             }
             #SettingsGroup {
                 background: #141414;
-                border: 1px solid #3C3218;
+                border: 1px solid #2F2A1C;
                 border-radius: 12px;
             }
 
             #SettingsGroup:hover {
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
             }
 
             #SettingsRow {
@@ -1758,7 +1758,7 @@ class XccMainWindow(QMainWindow):
 
             #SettingsRow:hover {
                 background: #1E1B12;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
             }
 
             #SettingsRowTitle {
@@ -1775,7 +1775,7 @@ class XccMainWindow(QMainWindow):
             }
 
             #SettingsRowValue {
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 13px;
                 font-weight: 800;
                 background: transparent;
@@ -1783,7 +1783,7 @@ class XccMainWindow(QMainWindow):
             }
             #AboutCard {
                 background: #161616;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
                 border-radius: 14px;
             }
 
@@ -1799,7 +1799,7 @@ class XccMainWindow(QMainWindow):
             }
 
             #AboutSubtitle {
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 14px;
                 font-weight: 700;
                 background: transparent;
@@ -1819,21 +1819,21 @@ class XccMainWindow(QMainWindow):
 
             #AboutBadge {
                 background: #181818;
-                border: 1px solid #3C3218;
+                border: 1px solid #2F2A1C;
                 border-radius: 10px;
                 padding: 4px 12px;
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 11px;
                 font-weight: 800;
             }
 
             #AboutBadge:hover {
                 background: #1E1B12;
-                border: 1px solid #6A5520;
+                border: 1px solid #5A4820;
             }
 
             #AboutSectionTitle {
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 13px;
                 font-weight: 800;
                 background: transparent;
@@ -1853,7 +1853,7 @@ class XccMainWindow(QMainWindow):
             }
 
             #AboutInfoValue {
-                color: #F5C542;
+                color: #D6A93A;
                 font-size: 12px;
                 font-weight: 800;
                 background: transparent;
