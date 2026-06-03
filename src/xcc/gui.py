@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
     QPushButton,
     QRadioButton,
     QSizePolicy,
-    QSpacerItem,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -117,24 +116,6 @@ class XccMainWindow(QMainWindow):
         self.start_maximized_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.close_to_tray_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
-
-    def _on_behavior_settings_changed(self) -> None:
-        if self._is_loading_settings:
-            return
-
-        try:
-            set_autostart_enabled(self.start_with_windows_checkbox.isChecked())
-        except Exception as exc:
-            self.start_with_windows_checkbox.blockSignals(True)
-            self.start_with_windows_checkbox.setChecked(self.app_settings.start_with_windows)
-            self.start_with_windows_checkbox.blockSignals(False)
-
-            self._set_event_status("Autostart setup failed.")
-            QMessageBox.warning(self, "XCC", str(exc))
-            return
-
-        self._save_current_settings()
-        self._set_event_status("Settings saved.")
 
     def _on_autostart_changed(self) -> None:
         if self._is_loading_settings:

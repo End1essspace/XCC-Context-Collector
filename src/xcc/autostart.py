@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from urllib.parse import quote
 
 APP_SHORTCUT_NAME = "XCC Context Collector.lnk"
 
