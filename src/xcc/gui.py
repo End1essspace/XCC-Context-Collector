@@ -698,35 +698,6 @@ class XccMainWindow(QMainWindow):
 
         return tile
 
-    def _settings_tiles_row(self, tiles: list[QFrame]) -> QWidget:
-        row = QWidget()
-        row.setObjectName("TransparentWidget")
-
-        layout = QHBoxLayout(row)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(12)
-
-        for tile in tiles:
-            layout.addWidget(tile, 1)
-
-        return row
-
-    def _settings_control_column(self, title: str, controls: list[QWidget]) -> QFrame:
-        column = QFrame()
-        column.setObjectName("SettingsColumn")
-        column.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        layout = QVBoxLayout(column)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
-
-        layout.addWidget(self._settings_section_title(title))
-
-        for control in controls:
-            layout.addWidget(control)
-
-        return column
-
     def _settings_column(self, title: str, tiles: list[QFrame]) -> QFrame:
         column = QFrame()
         column.setObjectName("SettingsColumn")
@@ -757,25 +728,6 @@ class XccMainWindow(QMainWindow):
 
         return row
 
-    def _settings_note(self, text: str) -> QFrame:
-        note = QFrame()
-        note.setObjectName("SettingsNote")
-
-        layout = QVBoxLayout(note)
-        layout.setContentsMargins(14, 10, 14, 10)
-        layout.setSpacing(4)
-
-        title = QLabel("Note")
-        title.setObjectName("SettingsNoteTitle")
-
-        body = QLabel(text)
-        body.setObjectName("SettingsNoteBody")
-        body.setWordWrap(True)
-
-        layout.addWidget(title)
-        layout.addWidget(body)
-
-        return note
 
     def _refresh_settings_page(self) -> None:
         if hasattr(self, "settings_current_mode"):
@@ -1048,7 +1000,7 @@ class XccMainWindow(QMainWindow):
             self.app_settings.start_maximized,
         )
 
-        startup_column = self._settings_control_column(
+        startup_column = self._settings_column(
             "Startup Behavior",
             [
                 self.start_with_windows_checkbox,
@@ -1066,7 +1018,7 @@ class XccMainWindow(QMainWindow):
             self.app_settings.show_tray_notifications,
         )
 
-        tray_column = self._settings_control_column(
+        tray_column = self._settings_column(
             "Tray Behavior",
             [
                 self.close_to_tray_checkbox,
@@ -1144,23 +1096,6 @@ class XccMainWindow(QMainWindow):
         card_layout.addWidget(QLabel("XCC Context Collector"))
         card_layout.addWidget(QLabel(f"Version: {__version__}"))
         card_layout.addWidget(QLabel("Purpose: collect AI-ready project context and copy it to clipboard."))
-
-        layout.addWidget(card)
-        layout.addStretch(1)
-
-        return page
-
-    def _build_placeholder_page(self, title: str, text: str) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        layout.setContentsMargins(28, 28, 28, 28)
-        layout.setSpacing(18)
-
-        layout.addWidget(self._section_title(title))
-
-        card = self._card()
-        card_layout = QVBoxLayout(card)
-        card_layout.addWidget(QLabel(text))
 
         layout.addWidget(card)
         layout.addStretch(1)
@@ -1652,25 +1587,6 @@ class XccMainWindow(QMainWindow):
             #SettingsTile:hover {
                 background: #1E1B12;
                 border: 1px solid #F5C542;
-            }
-
-            #SettingsNote {
-                background: #111111;
-                border: 1px solid #2F2A1C;
-                border-radius: 10px;
-            }
-
-            #SettingsNoteTitle {
-                color: #D2A92E;
-                font-size: 11px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #SettingsNoteBody {
-                color: #8F8F8F;
-                font-size: 12px;
-                background: transparent;
             }
             #HeaderAppIcon {
                 background: transparent;
