@@ -32,13 +32,7 @@ def set_autostart_enabled(enabled: bool) -> None:
 def create_autostart_shortcut(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    project_root = Path(__file__).resolve().parents[2]
-    gui_launcher = project_root / "gui.py"
-    python_exe = Path(sys.executable)
-
-    target = str(python_exe)
-    arguments = str(gui_launcher)
-    working_dir = str(project_root)
+    target, arguments, working_dir = current_app_target()
 
     ps_script = f"""
 $WScriptShell = New-Object -ComObject WScript.Shell
@@ -71,3 +65,14 @@ $Shortcut.Save()
 
 def _escape_powershell_string(value: str) -> str:
     return value.replace("`", "``").replace('"', '`"')
+
+def current_app_target() -> tuple[str, str, str]:
+    if getattr(sys, "frozen", False):
+        exe_path = Path(sys.executable)
+        return str(exe_path), "", str(exe_path.parent)
+
+    project_root = Path(__file__).resolve().parents[2]
+    gui_launcher = project_root / "gui.py"
+    python_exe = Path(sys.executable)
+
+    return str(python_exe), str(gui_launcher), str(project_root)
