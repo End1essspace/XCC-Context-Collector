@@ -215,29 +215,32 @@ Status: DONE
 
 ## v1.0 Windows Release
 
-Status: IN PROGRESS
+Status: DONE
 
 * [x] define GUI as primary release entry point
 * [x] exclude legacy scripts from primary release flow
 * [x] Esc hides window to tray
-* [x] add PyInstaller dependency
+* [x] PyInstaller dependency
 * [x] PyInstaller build
+* [x] release build script
+* [x] repeatable clean build
 * [x] app icon
-* [x] tray icon in packaged build
+* [x] tray icon
+* [x] PyInstaller resource paths
+* [x] packaged exe resource loading
 * [x] single-instance protection
 * [x] second launch restores existing window
 * [x] verify single-instance protection in exe
-* [x] fix PyInstaller resource paths
 * [x] packaged exe autostart target
 * [x] verify autostart shortcut in exe mode
-* [x] release build script
-* [x] repeatable clean build
 * [x] clean gitignore for build artifacts
+* [x] release folder
 * [x] README release update
-* [ ] release folder
-* [ ] basic install instructions
-* [ ] manual release test
-* [ ] release package
+* [x] basic install instructions
+* [x] manual release test
+* [x] release zip package
+* [x] verify ZIP contains exe and _internal folder
+* [x] final v1.0 package smoke test
 
 
 ## v1.1 Post-Release Polish
