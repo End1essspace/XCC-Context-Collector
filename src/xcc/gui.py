@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import sys
+import tempfile
 from datetime import datetime
-from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtCore import QObject, QLockFile, Qt, QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
-import keyboard
 from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
@@ -39,11 +39,13 @@ from .git_utils import get_changed_files, get_git_diff, is_git_repository
 from .scanner import scan_project_files
 from .settings import AppSettings, load_settings_result, save_settings
 from .autostart import is_autostart_enabled, set_autostart_enabled
+from .native_hotkey import NativeHotkeyError, NativeHotkeyManager
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 APP_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_app.ico"
 TRAY_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_tray.ico"
 INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
+INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -58,10 +60,6 @@ def _notify_existing_instance() -> bool:
     socket.disconnectFromServer()
 
     return True
-
-class HotkeyBridge(QObject):
-    restore_requested = Signal()
-
 
 class SingleInstanceServer(QObject):
     def __init__(self, window: "XccMainWindow") -> None:
@@ -105,9 +103,9 @@ class XccMainWindow(QMainWindow):
         self._is_loading_settings = True
         self._is_quitting = False
         self._has_shown_tray_hint = False
-        self._hotkey_handle = None
-        self._hotkey_bridge = HotkeyBridge()
-        self._hotkey_bridge.restore_requested.connect(self._restore_from_hotkey)
+        self._hotkey_manager: NativeHotkeyManager | None = None
+        self._hotkey_available = False
+        self._hotkey_status_message = "Not registered"
 
         self._setup_ui()
         self._apply_loaded_settings()
@@ -116,7 +114,6 @@ class XccMainWindow(QMainWindow):
         self._is_loading_settings = False
         self._apply_theme()
         self._setup_tray()
-        self._setup_global_hotkey()
 
     def _setup_ui(self) -> None:
         root = QWidget()
@@ -171,21 +168,37 @@ class XccMainWindow(QMainWindow):
         self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
 
     def _setup_global_hotkey(self) -> None:
+        self._cleanup_global_hotkey()
+
+        manager = NativeHotkeyManager(self._restore_from_hotkey)
+
         try:
-            self._hotkey_handle = keyboard.add_hotkey(
-                DEFAULT_HOTKEY,
-                self._request_restore_from_hotkey,
-            )
-            self._set_event_status("Ready")
-        except Exception as exc:
-            self._hotkey_handle = None
-            self._set_event_status("Hotkey unavailable.")
-            print(f"XCC hotkey setup failed: {exc}")
+            manager.register(DEFAULT_HOTKEY)
+        except NativeHotkeyError as exc:
+            self._hotkey_manager = None
+            self._hotkey_available = False
+            self._hotkey_status_message = f"Unavailable: {exc}"
+            self._set_event_status(f"Hotkey unavailable: {exc}")
+            self._refresh_settings_page()
 
+            if (
+                hasattr(self, "tray_icon")
+                and self.tray_icon.isVisible()
+                and self.app_settings.show_tray_notifications
+            ):
+                self.tray_icon.showMessage(
+                    "XCC hotkey unavailable",
+                    str(exc),
+                    QSystemTrayIcon.MessageIcon.Warning,
+                    3500,
+                )
+            return
 
-    def _request_restore_from_hotkey(self) -> None:
-        self._hotkey_bridge.restore_requested.emit()
-
+        self._hotkey_manager = manager
+        self._hotkey_available = True
+        self._hotkey_status_message = DEFAULT_HOTKEY
+        self._set_event_status("Ready")
+        self._refresh_settings_page()
 
     def _restore_from_hotkey(self) -> None:
         if self.app_settings.start_maximized:
@@ -492,15 +505,13 @@ class XccMainWindow(QMainWindow):
         QApplication.quit()
 
     def _cleanup_global_hotkey(self) -> None:
-        if self._hotkey_handle is None:
+        if self._hotkey_manager is None:
             return
 
-        try:
-            keyboard.remove_hotkey(self._hotkey_handle)
-        except Exception:
-            pass
-
-        self._hotkey_handle = None
+        self._hotkey_manager.unregister()
+        self._hotkey_manager = None
+        self._hotkey_available = False
+        self._hotkey_status_message = "Not registered"
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Escape:
@@ -866,6 +877,9 @@ class XccMainWindow(QMainWindow):
                 self.max_chars_input.text().strip() or "Not set"
             )
 
+        if hasattr(self, "settings_hotkey"):
+            self.settings_hotkey.value_label.setText(self._hotkey_status_message)
+
     def _select_source(self) -> None:
         mode = self._current_mode()
 
@@ -1152,17 +1166,19 @@ class XccMainWindow(QMainWindow):
             value=self.max_chars_input.text().strip() or "Not set",
         )
 
+        self.settings_hotkey = self._settings_row(
+            "Hotkey",
+            "Restore the main window while XCC is running.",
+            value=self._hotkey_status_message,
+        )
+
         context_group = self._settings_group(
             "Context & System",
             [
                 self.settings_current_mode,
                 self.settings_compact_mode,
                 self.settings_current_max_chars,
-                self._settings_row(
-                    "Hotkey",
-                    "Restore the main window while XCC is running.",
-                    value=DEFAULT_HOTKEY,
-                ),
+                self.settings_hotkey,
                 self._settings_row(
                     "Version",
                     "Current application version.",
@@ -1982,17 +1998,51 @@ class XccMainWindow(QMainWindow):
 def run_gui() -> None:
     app = QApplication(sys.argv)
 
-    if _notify_existing_instance():
-        sys.exit(0)
+    instance_lock = QLockFile(str(INSTANCE_LOCK_PATH))
+    instance_lock.setStaleLockTime(0)
 
-    window = XccMainWindow()
-    window._single_instance_server = SingleInstanceServer(window)
+    if not instance_lock.tryLock(100):
+        if _notify_existing_instance():
+            sys.exit(0)
 
-    tray_ready = hasattr(window, "tray_icon") and window.tray_icon.isVisible()
+        try:
+            instance_lock.removeStaleLockFile()
+        except Exception:
+            pass
 
-    if window.app_settings.start_minimized_to_tray and tray_ready:
-        window.hide()
-    else:
-        window._show_main_window()
+        if not instance_lock.tryLock(100):
+            QMessageBox.warning(
+                None,
+                "XCC",
+                (
+                    "XCC could not start because the single-instance lock is active, "
+                    "but no existing instance responded.\n\n"
+                    f"Lock file:\n{INSTANCE_LOCK_PATH}\n\n"
+                    "Close old XCC processes or delete the lock file manually."
+                ),
+            )
+            sys.exit(1)
 
-    sys.exit(app.exec())
+    window: XccMainWindow | None = None
+
+    try:
+        window = XccMainWindow()
+        window._single_instance_server = SingleInstanceServer(window)
+        window._setup_global_hotkey()
+
+        tray_ready = hasattr(window, "tray_icon") and window.tray_icon.isVisible()
+
+        if window.app_settings.start_minimized_to_tray and tray_ready:
+            window.hide()
+        else:
+            window._show_main_window()
+
+        exit_code = app.exec()
+
+    finally:
+        if window is not None:
+            window._cleanup_global_hotkey()
+
+        instance_lock.unlock()
+
+    sys.exit(exit_code)

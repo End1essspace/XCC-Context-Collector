@@ -39,7 +39,7 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 🖥 **Windows Desktop Integration**
 - PySide6 desktop GUI
 - System tray mode
-- `Ctrl+Alt+X` restores the app window
+- `Ctrl+Alt+X` restores the app window through a native Windows hotkey
 - `Esc` hides the window to tray
 - Close-to-tray behavior
 - Single-instance protection
@@ -192,7 +192,7 @@ dist\XCC Context Collector\XCC Context Collector.exe
 
 🔄 **Versioning**
 
-Current version: **v1.0.0**
+Current version: **v1.0.1**
 
 
 👨‍💻 **Author**
@@ -258,7 +258,7 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 🖥 **Интеграция с Windows**
 - PySide6 desktop GUI
 - System tray mode
-- `Ctrl+Alt+X` восстанавливает окно приложения
+- `Ctrl+Alt+X` восстанавливает окно приложения через нативный Windows hotkey
 - `Esc` скрывает окно в трей
 - Close-to-tray поведение
 - Защита от двойного запуска
@@ -411,7 +411,7 @@ dist\XCC Context Collector\XCC Context Collector.exe
 
 🔄 **Версионирование**
 
-Текущая версия: **v1.0.0**
+Текущая версия: **v1.0.1**
 
 
 👨‍💻 **Автор**

@@ -243,6 +243,19 @@ Status: DONE
 * [x] final v1.0 package smoke test
 
 
+## v1.0.1 Hotkey Reliability Patch
+
+Status: DONE
+
+* [x] replace GUI `keyboard` listener with native Windows `RegisterHotKey` restore hotkey
+* [x] route `WM_HOTKEY` through Qt native event filter
+* [x] keep legacy `hotkey.py` as development-only workflow
+* [x] show hotkey unavailable status in UI/tray/settings
+* [x] acquire single-instance lock before creating the main window
+* [x] register restore hotkey only after single-instance server is ready
+* [x] add native hotkey parser tests
+
+
 ## v1.1 Post-Release Polish
 
 Status: PLANNED
