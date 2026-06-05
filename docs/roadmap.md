@@ -256,7 +256,20 @@ Status: DONE
 * [x] add native hotkey parser tests
 
 
-## v1.1 Post-Release Polish
+## v1.1 Source Coverage Expansion
+
+Status: DONE
+
+* [x] expand supported source file extensions
+* [x] add filename-based allowlist
+* [x] support Dockerfile, Makefile, package/config files
+* [x] avoid sensitive defaults like .env, .pem, .key
+* [x] update scanner and collector filtering
+* [x] update tests
+* [x] update README supported file types
+
+
+## v1.2 Post-Release Polish
 
 Status: PLANNED
 

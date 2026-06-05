@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Iterable
 
-from .config import ALLOWED_EXTENSIONS, EXCLUDED_DIRS
+from .config import ALLOWED_EXTENSIONS, ALLOWED_FILENAMES, EXCLUDED_DIRS
 
 
 def scan_project_files(
@@ -32,13 +32,23 @@ def scan_project_files(
         if _is_inside_excluded_dir(path, root_path, excluded_dirs):
             continue
 
-        if path.suffix.lower() not in allowed_extensions:
+        if not _is_allowed_context_file(path, allowed_extensions):
             continue
 
         files.append(path)
 
     return sorted(files, key=_file_priority_key)
 
+
+def _is_allowed_context_file(
+    path: Path,
+    allowed_extensions: set[str],
+    allowed_filenames: set[str] = ALLOWED_FILENAMES,
+) -> bool:
+    return (
+        path.suffix.lower() in allowed_extensions
+        or path.name in allowed_filenames
+    )
 
 def _is_inside_excluded_dir(
     path: Path,
