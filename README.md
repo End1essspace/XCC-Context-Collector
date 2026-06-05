@@ -18,7 +18,7 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 - Select a full project folder
 - Collect Git changed files
 - Include Git diff in Git mode
-- Filter supported source/config file types
+- Filter supported source, documentation, configuration, script, API, and database text files
 - Skip cache, build, dependency, and IDE folders
 
 🧠 **AI-Ready Output**
@@ -71,18 +71,104 @@ The GUI is the primary release mode. Legacy scripts remain for development and c
 
 🗂 **Supported File Types**
 
+XCC supports common source, documentation, configuration, script, API, and database text files.
+
 ```text
+Python:
 .py
 .pyw
+
+JavaScript / TypeScript / frontend:
+.js
+.jsx
+.ts
+.tsx
+.mjs
+.cjs
+.html
+.css
+.scss
+.sass
+.less
+.vue
+.svelte
+
+Backend / system languages:
+.java
+.kt
+.kts
+.cs
+.go
+.rs
+.c
+.h
+.cpp
+.hpp
+.cc
+.cxx
+.php
+.rb
+.swift
+
+Data / API / database:
+.sql
+.graphql
+.gql
+
+Documentation:
 .md
+.mdx
+.rst
 .txt
+
+Configuration:
 .json
+.jsonc
 .yaml
 .yml
 .toml
 .ini
 .cfg
+.conf
+.properties
+.xml
+
+Scripts:
+.sh
+.bash
+.zsh
+.ps1
+.bat
+.cmd
 ```
+
+XCC also supports common project filenames without relying only on extensions.
+
+```text
+Dockerfile
+Containerfile
+Makefile
+CMakeLists.txt
+requirements.txt
+pyproject.toml
+setup.py
+setup.cfg
+package.json
+tsconfig.json
+vite.config.js
+vite.config.ts
+next.config.js
+next.config.ts
+.gitignore
+.dockerignore
+.gitattributes
+.editorconfig
+.env.example
+.env.template
+.env.sample
+```
+
+Sensitive files such as `.env`, private keys, certificates, databases, logs, archives, and binaries are not included by default.
 
 
 🚫 **Excluded Folders**
@@ -192,7 +278,7 @@ dist\XCC Context Collector\XCC Context Collector.exe
 
 🔄 **Versioning**
 
-Current version: **v1.0.1**
+Current version: **v1.1.0**
 
 
 👨‍💻 **Author**
@@ -237,7 +323,7 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 - Выбор полной папки проекта
 - Сбор изменённых Git-файлов
 - Добавление Git diff в Git-режиме
-- Фильтрация поддерживаемых source/config файлов
+- Фильтрация поддерживаемых файлов исходного кода, документации, конфигурации, скриптов, API и баз данных
 - Исключение cache, build, dependency и IDE-папок
 
 🧠 **AI-ready output**
@@ -290,18 +376,104 @@ GUI является основным release mode. Legacy-скрипты сох
 
 🗂 **Поддерживаемые типы файлов**
 
+XCC поддерживает распространённые текстовые файлы исходного кода, документации, конфигурации, скриптов, API и баз данных.
+
 ```text
+Python:
 .py
 .pyw
+
+JavaScript / TypeScript / frontend:
+.js
+.jsx
+.ts
+.tsx
+.mjs
+.cjs
+.html
+.css
+.scss
+.sass
+.less
+.vue
+.svelte
+
+Backend / system languages:
+.java
+.kt
+.kts
+.cs
+.go
+.rs
+.c
+.h
+.cpp
+.hpp
+.cc
+.cxx
+.php
+.rb
+.swift
+
+Data / API / database:
+.sql
+.graphql
+.gql
+
+Документация:
 .md
+.mdx
+.rst
 .txt
+
+Конфигурация:
 .json
+.jsonc
 .yaml
 .yml
 .toml
 .ini
 .cfg
+.conf
+.properties
+.xml
+
+Скрипты:
+.sh
+.bash
+.zsh
+.ps1
+.bat
+.cmd
 ```
+
+XCC также поддерживает распространённые проектные файлы по имени, а не только по расширению.
+
+```text
+Dockerfile
+Containerfile
+Makefile
+CMakeLists.txt
+requirements.txt
+pyproject.toml
+setup.py
+setup.cfg
+package.json
+tsconfig.json
+vite.config.js
+vite.config.ts
+next.config.js
+next.config.ts
+.gitignore
+.dockerignore
+.gitattributes
+.editorconfig
+.env.example
+.env.template
+.env.sample
+```
+
+Чувствительные файлы вроде `.env`, приватных ключей, сертификатов, баз данных, логов, архивов и бинарных файлов не включаются по умолчанию.
 
 
 🚫 **Исключаемые папки**
@@ -411,7 +583,7 @@ dist\XCC Context Collector\XCC Context Collector.exe
 
 🔄 **Версионирование**
 
-Текущая версия: **v1.0.1**
+Текущая версия: **v1.1.0**
 
 
 👨‍💻 **Автор**
