@@ -157,6 +157,7 @@ class XccMainWindow(QMainWindow):
         self.nav.setCurrentRow(0)
 
         self.select_source_button.clicked.connect(self._select_source)
+        self.clear_source_button.clicked.connect(self._clear_source)
         self.mode_group.buttonClicked.connect(self._on_mode_changed)
         self.collect_button.clicked.connect(self._collect_and_copy)
         self.compact_checkbox.stateChanged.connect(self._on_settings_changed)
@@ -248,8 +249,6 @@ class XccMainWindow(QMainWindow):
             return
 
         self._clear_source()
-        self._save_current_settings()
-        self._refresh_settings_page()
     
     def _apply_loaded_settings(self) -> None:
         mode_to_button = {
@@ -621,7 +620,15 @@ class XccMainWindow(QMainWindow):
         self.source_input = QLineEdit()
         self.source_input.setPlaceholderText("No source selected")
         self.source_input.setReadOnly(True)
-        self.source_input.setFixedHeight(40)
+        self.source_input.setFixedHeight(38)
+        self.source_input.setFrame(False)
+        self.source_input.setObjectName("SourceInputEmbedded")
+
+        self.clear_source_button = QPushButton("×")
+        self.clear_source_button.setObjectName("ClearSourceButton")
+        self.clear_source_button.setFixedSize(24, 24)
+        self.clear_source_button.setToolTip("Clear selected source")
+        self.clear_source_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.select_source_button = QPushButton("Select Source")
         self.select_source_button.setMinimumWidth(160)
@@ -647,8 +654,23 @@ class XccMainWindow(QMainWindow):
         setup_grid.addWidget(mode_label, 0, 0)
         setup_grid.addWidget(mode_buttons, 0, 1, 1, 2)
 
+        source_box = QFrame()
+        source_box.setObjectName("SourceInputBox")
+        source_box.setFixedHeight(40)
+
+        source_box_layout = QHBoxLayout(source_box)
+        source_box_layout.setContentsMargins(10, 0, 8, 0)
+        source_box_layout.setSpacing(6)
+
+        source_box_layout.addWidget(self.source_input, 1)
+        source_box_layout.addWidget(
+            self.clear_source_button,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+
         setup_grid.addWidget(source_label, 1, 0)
-        setup_grid.addWidget(self.source_input, 1, 1)
+        setup_grid.addWidget(source_box, 1, 1)
         setup_grid.addWidget(self.select_source_button, 1, 2)
 
         setup_grid.addWidget(options_label, 2, 0)
@@ -1099,6 +1121,8 @@ class XccMainWindow(QMainWindow):
         self.project_root = None
         self.source_input.clear()
         self.source_input.setPlaceholderText("No source selected")
+        self._save_current_settings()
+        self._refresh_settings_page()
         self._set_status("Source cleared.")
 
     def _set_status(self, message: str) -> None:
@@ -2019,6 +2043,54 @@ class XccMainWindow(QMainWindow):
                 font-size: 12px;
                 background: transparent;
                 padding-top: 4px;
+            }
+            #SourceInputBox {
+                background: #101010;
+                border: 1px solid #5A4820;
+                border-radius: 10px;
+            }
+
+            #SourceInputBox:hover {
+                border: 1px solid #C79A2E;
+            }
+
+            #SourceInputEmbedded {
+                background: transparent;
+                border: none;
+                border-radius: 0px;
+                padding: 0px;
+                color: #F2F2F2;
+                selection-background-color: #D6A93A;
+                selection-color: #111111;
+            }
+
+            #SourceInputEmbedded:hover,
+            #SourceInputEmbedded:focus {
+                border: none;
+            }
+
+            #ClearSourceButton {
+                background: transparent;
+                border: 1px solid #5A4820;
+                border-radius: 12px;
+                color: #D6A93A;
+                font-size: 14px;
+                font-weight: 800;
+                padding: 0px;
+                margin: 0px;
+                text-align: center;
+            }
+
+            #ClearSourceButton:hover {
+                background: #2A2412;
+                border: 1px solid #D6A93A;
+                color: #F2F2F2;
+            }
+
+            #ClearSourceButton:pressed {
+                background: #D6A93A;
+                border: 1px solid #D6A93A;
+                color: #111111;
             }
             """
         )
