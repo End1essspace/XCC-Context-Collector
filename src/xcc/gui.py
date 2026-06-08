@@ -895,10 +895,39 @@ class XccMainWindow(QMainWindow):
                 self._set_status("Source selection cancelled.")
                 return
 
-            self.selected_paths = [Path(path) for path in selected]
+            new_paths = [Path(path) for path in selected]
+
+            existing_paths = {
+                path.resolve()
+                for path in self.selected_paths
+                if path.exists()
+            }
+
+            added_count = 0
+
+            for path in new_paths:
+                resolved_path = path.resolve()
+
+                if resolved_path in existing_paths:
+                    continue
+
+                self.selected_paths.append(path)
+                existing_paths.add(resolved_path)
+                added_count += 1
+
             self.project_root = None
-            self.source_input.setText(f"{len(self.selected_paths)} files selected")
-            self._set_status(f"Selected {len(self.selected_paths)} files.")
+
+            total_count = len(self.selected_paths)
+            self.source_input.setText(f"{total_count} file{'s' if total_count != 1 else ''} selected")
+
+            if added_count == 0:
+                self._set_status("Selected files already added.")
+            else:
+                self._set_status(
+                    f"Added {added_count} file{'s' if added_count != 1 else ''}. "
+                    f"Total: {total_count}."
+                )
+
             self._save_current_settings()
             self._refresh_settings_page()
             return

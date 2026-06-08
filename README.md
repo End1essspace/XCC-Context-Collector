@@ -278,7 +278,7 @@ dist\XCC Context Collector\XCC Context Collector.exe
 
 🔄 **Versioning**
 
-Current version: **v1.1.0**
+Current version: **v1.1.1**
 
 
 👨‍💻 **Author**
@@ -583,7 +583,7 @@ dist\XCC Context Collector\XCC Context Collector.exe
 
 🔄 **Версионирование**
 
-Текущая версия: **v1.1.0**
+Текущая версия: **v1.1.1**
 
 
 👨‍💻 **Автор**

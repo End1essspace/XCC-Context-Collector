@@ -269,6 +269,22 @@ Status: DONE
 * [x] update README supported file types
 
 
+## v1.1.1 Context Filtering Patch
+
+Status: DONE
+
+* [x] centralize context file allowlist logic in `config.py`
+* [x] generate GUI file picker filters from supported context file definitions
+* [x] update Selected Files mode to use the expanded extension list
+* [x] update legacy picker file filters
+* [x] apply filename-based allowlist support to Git Changed Files mode
+* [x] remove duplicated file allowlist checks from scanner and collector
+* [x] add tests for allowed extensions, allowed filenames, and sensitive file exclusion
+* [x] add tests for GUI/Tk file filter generation
+* [x] add tests for Dockerfile support in scanner, collector, and Git mode
+* [x] verify expanded source coverage works consistently across files, folder, and git modes
+
+
 ## v1.2 Post-Release Polish
 
 Status: PLANNED
