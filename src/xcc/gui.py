@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QAction, QIcon, QPixmap, QIntValidator
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
 from . import __version__
-from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS
+from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS, qt_context_file_filter
 from pathlib import Path
 from .clipboard import copy_to_clipboard
 from .collector import collect_files
@@ -888,7 +888,7 @@ class XccMainWindow(QMainWindow):
                 self,
                 "Select context files",
                 "",
-                "Context files (*.py *.pyw *.md *.txt *.json *.yaml *.yml *.toml *.ini *.cfg);;All files (*.*)",
+                qt_context_file_filter(),
             )
 
             if not selected:

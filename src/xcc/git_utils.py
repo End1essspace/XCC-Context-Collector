@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import subprocess
 from pathlib import Path
-from .config import ALLOWED_EXTENSIONS, EXCLUDED_DIRS
+from .config import ALLOWED_EXTENSIONS, EXCLUDED_DIRS, is_allowed_context_file  
 from .scanner import _is_inside_excluded_dir
 
 def is_git_repository(path: str | Path) -> bool:
@@ -52,7 +52,7 @@ def get_changed_files(
         if _is_inside_excluded_dir(full_path, repo_path, excluded_dirs):
             continue
 
-        if full_path.suffix.lower() not in allowed_extensions:
+        if not is_allowed_context_file(full_path, allowed_extensions=allowed_extensions):
             continue
 
         files.append(full_path)

@@ -4,7 +4,12 @@ from pathlib import Path
 from typing import Iterable
 
 from .models import FileContent
-from .config import ALLOWED_EXTENSIONS, ALLOWED_FILENAMES, ENCODINGS, MAX_FILE_SIZE_BYTES
+from .config import (
+    ALLOWED_EXTENSIONS,
+    ENCODINGS,
+    MAX_FILE_SIZE_BYTES,
+    is_allowed_context_file,
+)
 
 
 def collect_files(
@@ -30,7 +35,7 @@ def collect_files(
             errors.append(f"Not a file: {path}")
             continue
 
-        if not _is_allowed_context_file(path, allowed_extensions):
+        if not is_allowed_context_file(path, allowed_extensions=allowed_extensions):
             errors.append(f"Skipped unsupported file type: {path}")
             continue
 
@@ -76,17 +81,6 @@ def collect_files(
         )
 
     return files, errors
-
-
-def _is_allowed_context_file(
-    path: Path,
-    allowed_extensions: set[str],
-    allowed_filenames: set[str] = ALLOWED_FILENAMES,
-) -> bool:
-    return (
-        path.suffix.lower() in allowed_extensions
-        or path.name in allowed_filenames
-    )
 
 def _read_text_with_fallback(path: Path, encodings: tuple[str, ...]) -> str | None:
     for encoding in encodings:

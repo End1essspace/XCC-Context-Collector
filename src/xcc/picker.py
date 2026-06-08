@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from tkinter import Tk, filedialog
+from .config import tkinter_context_filetypes
 
 
 def select_files() -> list[Path]:
@@ -10,11 +11,7 @@ def select_files() -> list[Path]:
     try:
         selected = filedialog.askopenfilenames(
             title="Select code files",
-            filetypes=[
-                ("Code and config files", "*.py *.pyw *.md *.txt *.json *.yaml *.yml *.toml *.ini *.cfg"),
-                ("Python files", "*.py *.pyw"),
-                ("All files", "*.*"),
-            ],
+            filetypes=tkinter_context_filetypes(),
         )
     finally:
         root.destroy()

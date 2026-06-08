@@ -86,3 +86,18 @@ def test_get_git_diff_returns_modified_content(tmp_path: Path) -> None:
     assert "diff --git" in diff
     assert "-print('v1')" in diff
     assert "+print('v2')" in diff
+
+def test_get_changed_files_includes_allowed_filename(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
+    subprocess.run(["git", "config", "user.email", "test@example.com"], cwd=repo, check=True)
+    subprocess.run(["git", "config", "user.name", "Test User"], cwd=repo, check=True)
+
+    dockerfile = repo / "Dockerfile"
+    dockerfile.write_text("FROM python:3.13\n", encoding="utf-8")
+
+    changed_files = get_changed_files(repo)
+
+    assert dockerfile in changed_files

@@ -58,3 +58,14 @@ def test_raises_for_file_instead_of_folder(tmp_path: Path) -> None:
 
     with pytest.raises(NotADirectoryError):
         scan_project_files(file_path)
+
+def test_scans_allowed_filename_without_extension(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    root.mkdir()
+
+    dockerfile = root / "Dockerfile"
+    dockerfile.write_text("FROM python:3.13\n", encoding="utf-8")
+
+    files = scan_project_files(root)
+
+    assert dockerfile in files

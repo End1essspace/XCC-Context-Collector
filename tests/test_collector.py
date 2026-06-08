@@ -51,3 +51,13 @@ def test_reads_cp1251_file(tmp_path: Path) -> None:
     assert len(files) == 1
     assert errors == []
     assert "привет" in files[0].content
+
+def test_collects_allowed_filename_without_extension(tmp_path: Path) -> None:
+    file_path = tmp_path / "Dockerfile"
+    file_path.write_text("FROM python:3.13\n", encoding="utf-8")
+
+    files, errors = collect_files([file_path])
+
+    assert len(files) == 1
+    assert errors == []
+    assert files[0].path == file_path
