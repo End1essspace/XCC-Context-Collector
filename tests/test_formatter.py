@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.xcc.formatter import format_collection, make_display_path
+from src.xcc.formatter import format_collection, format_project_tree, make_display_path
 from src.xcc.models import FileContent
 
 
@@ -74,3 +74,25 @@ def test_can_disable_project_tree_for_selected_files() -> None:
     assert "# Files" in result.text
     assert "===== file: main.py =====" in result.text
     assert "print('hello')" in result.text
+
+
+def test_formats_project_tree_without_file_contents(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    src = root / "src"
+    src.mkdir(parents=True)
+
+    file_path = src / "main.py"
+    file_path.write_text("print('secret content')\n", encoding="utf-8")
+
+    result = format_project_tree(root, compact=False)
+
+    assert "# XCC Context" in result.text
+    assert "Mode: Project Tree" in result.text
+    assert "# Project Tree" in result.text
+    assert "src/" in result.text
+    assert "src/main.py" in result.text
+    assert "# Files" not in result.text
+    assert "===== file:" not in result.text
+    assert "secret content" not in result.text
+    assert "Files: 1" in result.text
+    assert "Directories: 1" in result.text

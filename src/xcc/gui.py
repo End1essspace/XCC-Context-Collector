@@ -34,7 +34,7 @@ from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS, qt_context_file_filter
 from pathlib import Path
 from .clipboard import copy_to_clipboard
 from .collector import collect_files
-from .formatter import format_collection
+from .formatter import format_collection, format_project_tree
 from .git_utils import get_changed_files, get_git_diff, is_git_repository
 from .scanner import scan_project_files
 from .settings import AppSettings, load_settings_result, save_settings
@@ -999,14 +999,6 @@ class XccMainWindow(QMainWindow):
         try:
             max_output_chars = self._read_max_output_chars()
             mode = self._current_mode()
-            selected_paths, project_root = self._resolve_selected_paths(mode)
-
-            if not selected_paths:
-                self._set_status("No files selected or found.")
-                QMessageBox.warning(self, "XCC", "No files selected or found.")
-                return
-
-            files, errors = collect_files(selected_paths)
 
             mode_name = {
                 "files": "Selected Files",
@@ -1014,6 +1006,60 @@ class XccMainWindow(QMainWindow):
                 "git": "Git Changed Files",
                 "tree": "Project Tree",
             }.get(mode, "Unknown")
+
+            selected_paths, project_root = self._resolve_selected_paths(mode)
+
+            if mode == "tree":
+                if project_root is None:
+                    raise ValueError("Select a source folder first.")
+
+                result = format_project_tree(
+                    project_root,
+                    compact=self.compact_checkbox.isChecked(),
+                    mode_name=mode_name,
+                    max_output_chars=max_output_chars,
+                )
+
+                if not result.text.strip():
+                    self._set_status("Nothing to copy.")
+                    QMessageBox.warning(self, "XCC", "Nothing to copy.")
+                    return
+
+                copy_to_clipboard(result.text)
+
+                output_chars = len(result.text)
+                output_tokens = output_chars // 4
+
+                self._update_metrics(
+                    files=result.stats.files,
+                    lines=result.stats.lines,
+                    source_chars=result.stats.chars,
+                    output_chars=output_chars,
+                    output_tokens=output_tokens,
+                    truncated=result.was_truncated,
+                    errors=len(result.errors),
+                )
+                self._add_history_entry(
+                    mode_name=mode_name,
+                    source=self._current_source_label(mode, project_root),
+                    files=result.stats.files,
+                    lines=result.stats.lines,
+                    source_chars=result.stats.chars,
+                    output_chars=output_chars,
+                    output_tokens=output_tokens,
+                    truncated=result.was_truncated,
+                    errors=len(result.errors),
+                )
+
+                self._show_success_feedback()
+                return
+
+            if not selected_paths:
+                self._set_status("No files selected or found.")
+                QMessageBox.warning(self, "XCC", "No files selected or found.")
+                return
+
+            files, errors = collect_files(selected_paths)
 
             git_diff = None
             if mode == "git" and project_root is not None:
@@ -1095,6 +1141,9 @@ class XccMainWindow(QMainWindow):
 
         if self.project_root is None:
             raise ValueError("Select a source folder first.")
+
+        if mode == "tree":
+            return [], self.project_root
 
         if mode == "folder":
             return scan_project_files(self.project_root), self.project_root

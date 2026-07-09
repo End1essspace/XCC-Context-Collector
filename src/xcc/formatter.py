@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .tree import build_project_tree
+from .tree import build_directory_tree, build_project_tree
 from .models import CollectionResult, CollectionStats, FileContent
 from .optimizer import compact_text
 from .budget import apply_char_budget
@@ -96,6 +96,54 @@ def format_collection(
         text=text,
         stats=stats,
         errors=errors,
+        was_truncated=was_truncated,
+    )
+
+
+def format_project_tree(
+    project_root: str | Path,
+    *,
+    compact: bool = True,
+    mode_name: str = "Project Tree",
+    max_output_chars: int | None = MAX_OUTPUT_CHARS,
+) -> CollectionResult:
+    tree, file_count, directory_count = build_directory_tree(project_root)
+
+    stats = CollectionStats(
+        files=file_count,
+        lines=tree.count("\n") + 1 if tree else 0,
+        chars=len(tree),
+    )
+
+    parts: list[str] = [
+        "# XCC Context",
+        "",
+        f"XCC Version: {__version__}",
+        f"Mode: {mode_name}",
+        f"Max Output Characters: {max_output_chars if max_output_chars is not None else 'Unlimited'}",
+        "",
+        f"Files: {stats.files}",
+        f"Directories: {directory_count}",
+        f"Lines: {stats.lines}",
+        f"Characters: {stats.chars}",
+        "",
+        tree,
+        "",
+    ]
+
+    text = "\n".join(parts).rstrip() + "\n"
+
+    if compact:
+        text = compact_text(text)
+
+    was_truncated = max_output_chars is not None and len(text) > max_output_chars
+
+    text = apply_char_budget(text, max_output_chars)
+
+    return CollectionResult(
+        text=text,
+        stats=stats,
+        errors=[],
         was_truncated=was_truncated,
     )
 
