@@ -7,7 +7,7 @@ from typing import Any
 
 from .config import MAX_OUTPUT_CHARS
 
-VALID_MODES = {"files", "folder", "git"}
+VALID_MODES = {"files", "folder", "git", "tree"}
 
 DEFAULT_MODE = "folder"
 DEFAULT_COMPACT_MODE = True

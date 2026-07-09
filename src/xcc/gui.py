@@ -255,6 +255,7 @@ class XccMainWindow(QMainWindow):
             "files": self.mode_files,
             "folder": self.mode_folder,
             "git": self.mode_git,
+            "tree": self.mode_tree,
         }
 
         mode_button = mode_to_button.get(self.app_settings.default_mode, self.mode_folder)
@@ -264,7 +265,7 @@ class XccMainWindow(QMainWindow):
         self.max_chars_input.setText(str(self.app_settings.max_chars))
 
         last_source = self.app_settings.last_source.strip()
-        if last_source and self.app_settings.default_mode in {"folder", "git"}:
+        if last_source and self.app_settings.default_mode in {"folder", "git", "tree"}:
             self.source_input.setText(last_source)
             self.project_root = Path(last_source)
             self._set_status("Loaded saved settings.")
@@ -311,7 +312,7 @@ class XccMainWindow(QMainWindow):
     def _current_persisted_source(self) -> str:
         mode = self._current_mode()
 
-        if mode in {"folder", "git"} and self.project_root is not None:
+        if mode in {"folder", "git", "tree"} and self.project_root is not None:
             return str(self.project_root)
 
         return ""
@@ -598,6 +599,7 @@ class XccMainWindow(QMainWindow):
         self.mode_files = QRadioButton("Selected Files")
         self.mode_folder = QRadioButton("Full Folder")
         self.mode_git = QRadioButton("Git Changed Files")
+        self.mode_tree = QRadioButton("Project Tree")
 
         self.mode_folder.setChecked(True)
 
@@ -607,7 +609,9 @@ class XccMainWindow(QMainWindow):
         mode_buttons_layout.setContentsMargins(0, 0, 0, 0)
         mode_buttons_layout.setSpacing(22)
 
-        for index, button in enumerate([self.mode_files, self.mode_folder, self.mode_git]):
+        for index, button in enumerate(
+            [self.mode_files, self.mode_folder, self.mode_git, self.mode_tree]
+        ):
             self.mode_group.addButton(button, index)
             mode_buttons_layout.addWidget(button)
 
@@ -775,7 +779,10 @@ class XccMainWindow(QMainWindow):
         if checked_id == 1:
             return "folder"
 
-        return "git"
+        if checked_id == 2:
+            return "git"
+
+        return "tree"
 
     def _change_page(self, index: int) -> None:
         if index == 2:
@@ -790,6 +797,7 @@ class XccMainWindow(QMainWindow):
             "files": "Selected Files",
             "folder": "Full Folder",
             "git": "Git Changed Files",
+            "tree": "Project Tree",
         }.get(mode, "Unknown")
 
     def _settings_header(self) -> QWidget:
@@ -1004,6 +1012,7 @@ class XccMainWindow(QMainWindow):
                 "files": "Selected Files",
                 "folder": "Full Folder",
                 "git": "Git Changed Files",
+                "tree": "Project Tree",
             }.get(mode, "Unknown")
 
             git_diff = None
