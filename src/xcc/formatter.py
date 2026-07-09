@@ -18,6 +18,7 @@ def format_collection(
     mode_name: str = "Compact",
     max_output_chars: int | None = MAX_OUTPUT_CHARS,
     git_diff: str | None = None,
+    include_project_tree: bool = True,
 ) -> CollectionResult:
     errors = errors or []
 
@@ -40,7 +41,11 @@ def format_collection(
         "",
     ]
 
-    tree = build_project_tree([file.path for file in files], project_root)
+    tree = (
+        build_project_tree([file.path for file in files], project_root)
+        if include_project_tree
+        else ""
+    )
     if git_diff:
         parts.extend(
             [
@@ -55,6 +60,12 @@ def format_collection(
             [
                 tree,
                 "",
+            ]
+        )
+
+    if files:
+        parts.extend(
+            [
                 "# Files",
                 "",
             ]

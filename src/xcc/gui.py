@@ -1027,6 +1027,7 @@ class XccMainWindow(QMainWindow):
                 mode_name=mode_name,
                 max_output_chars=max_output_chars,
                 git_diff=git_diff,
+                include_project_tree=(mode != "files"),
             )
 
             if not result.text.strip():

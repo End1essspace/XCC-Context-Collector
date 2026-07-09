@@ -63,8 +63,9 @@ def main() -> None:
         mode_name=mode_name,
         max_output_chars=120_000,
         git_diff=git_diff,
+        include_project_tree=(mode != "files"),
     )
-
+    
     estimated_tokens = sum(file.char_count for file in files) // 4
     
     output_chars = len(result.text)

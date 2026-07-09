@@ -53,3 +53,24 @@ def test_make_display_path_relative_to_project_root(tmp_path: Path) -> None:
     display_path = make_display_path(file_path, root)
 
     assert display_path == "src/main.py"
+
+
+def test_can_disable_project_tree_for_selected_files() -> None:
+    file = FileContent(
+        path=Path("src/main.py"),
+        content="print('hello')\n",
+        line_count=1,
+        char_count=15,
+    )
+
+    result = format_collection(
+        [file],
+        mode_name="Selected Files",
+        include_project_tree=False,
+    )
+
+    assert "Mode: Selected Files" in result.text
+    assert "# Project Tree" not in result.text
+    assert "# Files" in result.text
+    assert "===== file: main.py =====" in result.text
+    assert "print('hello')" in result.text
