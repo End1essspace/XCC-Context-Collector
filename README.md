@@ -8,7 +8,7 @@ and copying it directly to the clipboard for AI coding workflows.
 It is designed for developers working with **ChatGPT, Codex, Claude, and other AI assistants**,  
 where structured project context needs to be prepared quickly and consistently.
 
-AI chats often have limits on file uploads, attached files, and context size. Manually sending many project files is slow, repetitive, and often impossible in one message. XCC solves this by turning selected files, full project folders, or Git changes into one structured AI-ready context block that can be pasted directly into an AI chat.
+AI chats often have limits on file uploads, attached files, and context size. Manually sending many project files is slow, repetitive, and often impossible in one message. XCC solves this by turning selected files, full project folders, Git changes, or a project tree into one structured AI-ready context block that can be pasted directly into an AI chat.
 
 
 🚀 **Core Features**
@@ -17,13 +17,15 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 - Select individual files
 - Select a full project folder
 - Collect Git changed files
+- Copy project tree only, without file contents
 - Include Git diff in Git mode
 - Filter supported source, documentation, configuration, script, API, and database text files
 - Skip cache, build, dependency, and IDE folders
 
 🧠 **AI-Ready Output**
 - Structured output header
-- Project tree included in context
+- Project tree included for folder/Git modes
+- Standalone Project Tree mode for structure-only context
 - Per-file content sections
 - Source/output statistics
 - Compact mode for cleaner prompts
@@ -278,7 +280,7 @@ dist\XCC Context Collector\XCC Context Collector.exe
 
 🔄 **Versioning**
 
-Current version: **v1.1.1**
+Current version: **v1.1.2**
 
 
 👨‍💻 **Author**
@@ -313,7 +315,7 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 Приложение рассчитано на разработчиков, которые работают с **ChatGPT, Codex, Claude и другими AI-ассистентами**,  
 где важно быстро и стабильно подготовить структурированный контекст проекта.
 
-У AI-чатов часто есть лимиты на загрузку файлов, количество attachments и общий размер контекста. Ручная отправка множества файлов проекта занимает время, повторяется каждый раз и часто не помещается в одно сообщение. XCC решает эту проблему: превращает выбранные файлы, папку проекта или Git-изменения в один структурированный AI-ready context block для вставки в AI-чат.
+У AI-чатов часто есть лимиты на загрузку файлов, количество attachments и общий размер контекста. Ручная отправка множества файлов проекта занимает время, повторяется каждый раз и часто не помещается в одно сообщение. XCC решает эту проблему: превращает выбранные файлы, папку проекта, Git-изменения или дерево проекта в один структурированный AI-ready context block для вставки в AI-чат.
 
 
 🚀 **Основные возможности**
@@ -322,13 +324,15 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 - Выбор отдельных файлов
 - Выбор полной папки проекта
 - Сбор изменённых Git-файлов
+- Копирование только дерева проекта без содержимого файлов
 - Добавление Git diff в Git-режиме
 - Фильтрация поддерживаемых файлов исходного кода, документации, конфигурации, скриптов, API и баз данных
 - Исключение cache, build, dependency и IDE-папок
 
 🧠 **AI-ready output**
 - Структурированный заголовок
-- Project tree внутри output
+- Project tree для folder/Git режимов
+- Отдельный Project Tree mode для context только по структуре проекта
 - Отдельные секции по каждому файлу
 - Статистика source/output
 - Compact mode для более чистого prompt
@@ -583,7 +587,7 @@ dist\XCC Context Collector\XCC Context Collector.exe
 
 🔄 **Версионирование**
 
-Текущая версия: **v1.1.1**
+Текущая версия: **v1.1.2**
 
 
 👨‍💻 **Автор**

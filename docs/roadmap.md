@@ -285,6 +285,24 @@ Status: DONE
 * [x] verify expanded source coverage works consistently across files, folder, and git modes
 
 
+## v1.1.2 Project Tree Mode Patch
+
+Status: DONE
+
+* [x] add Project Tree collection mode to GUI
+* [x] persist Project Tree as a valid settings mode
+* [x] add tree-only formatter output
+* [x] build full project directory tree without reading file contents
+* [x] include both files and directories in Project Tree mode
+* [x] exclude cache, build, dependency, IDE, and VCS folders from Project Tree mode
+* [x] remove Project Tree from Selected Files output
+* [x] keep Project Tree in Full Folder and Git Changed Files modes
+* [x] add tests for directory tree builder
+* [x] add tests for tree-only formatter output
+* [x] add settings validation test for Project Tree mode
+* [x] verify Project Tree output does not include file content sections
+
+
 ## v1.2 Post-Release Polish
 
 Status: PLANNED
