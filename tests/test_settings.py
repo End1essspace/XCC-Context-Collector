@@ -80,6 +80,12 @@ def test_validate_settings_accepts_valid_values() -> None:
     assert settings.last_source == "D:/tmp"
 
 
+def test_validate_settings_accepts_project_tree_mode() -> None:
+    settings = validate_settings({"default_mode": "tree"})
+
+    assert settings.default_mode == "tree"
+
+
 def test_validate_settings_falls_back_on_invalid_mode() -> None:
     settings = validate_settings({"default_mode": "bad"})
 
