@@ -110,6 +110,7 @@ ALLOWED_FILENAMES = {
     "next.config.ts",
 
     ".gitignore",
+    ".xccignore",
     ".dockerignore",
     ".gitattributes",
     ".editorconfig",

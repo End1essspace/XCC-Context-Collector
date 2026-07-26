@@ -5,10 +5,22 @@ from tkinter import Tk, messagebox
 
 from .clipboard import copy_to_clipboard
 from .collector import collect_files
-from .formatter import format_collection
+from .formatter import format_collection, make_display_paths
+from .git_utils import (
+    get_collectable_changed_files,
+    get_git_context,
+    is_git_repository,
+)
+from .models import GitContext
 from .picker import select_files, select_folder
 from .scanner import scan_project_files
-from .git_utils import get_changed_files, get_git_diff, is_git_repository
+from .safety import (
+    build_warning_confirmation_text,
+    merge_warnings,
+    scan_files_for_warnings,
+    scan_git_context_for_warnings,
+)
+
 
 def main() -> None:
     mode = ask_mode()
@@ -17,6 +29,7 @@ def main() -> None:
         return
 
     project_root: Path | None = None
+    git_context: GitContext | None = None
 
     if mode == "files":
         selected_paths = select_files()
@@ -39,22 +52,53 @@ def main() -> None:
             show_error("XCC", "Selected folder is not a Git repository.")
             return
 
-        selected_paths = get_changed_files(project_root)
+        try:
+            git_context = get_git_context(project_root)
+        except Exception as exc:
+            show_error("XCC", str(exc))
+            return
+
+        selected_paths = get_collectable_changed_files(
+            project_root,
+            git_context.changes,
+        )
 
     if not selected_paths:
-        show_error("XCC", "No files selected or found.")
-        return
+        if mode == "git" and git_context is not None:
+            if not git_context.has_changes:
+                show_error("XCC", "No supported Git changes found.")
+                return
+            # Deleted-only Git context remains valid without file payloads.
+        else:
+            show_error("XCC", "No files selected or found.")
+            return
 
     files, errors = collect_files(selected_paths)
-    
+    display_paths = make_display_paths(
+        [file.path for file in files],
+        project_root=project_root,
+    )
+    warnings = merge_warnings(
+        scan_files_for_warnings(
+            files,
+            display_paths=display_paths,
+        ),
+        (
+            scan_git_context_for_warnings(git_context)
+            if git_context is not None
+            else []
+        ),
+    )
+
+    if warnings and not confirm_safety_warnings(warnings):
+        return
+
     mode_name = {
         "files": "Selected Files",
         "folder": "Full Folder",
         "git": "Git Changed Files",
     }.get(mode, "Unknown")
 
-    git_diff = get_git_diff(project_root) if mode == "git" and project_root is not None else None
-    
     result = format_collection(
         files,
         errors,
@@ -62,17 +106,16 @@ def main() -> None:
         compact=True,
         mode_name=mode_name,
         max_output_chars=120_000,
-        git_diff=git_diff,
+        git_context=git_context,
+        warnings=warnings,
         include_project_tree=(mode != "files"),
     )
-    
+
     estimated_tokens = sum(file.char_count for file in files) // 4
-    
+
     output_chars = len(result.text)
     output_tokens = output_chars // 4
 
-    was_truncated = result.was_truncated
-        
     if not result.text.strip():
         show_error("XCC", "Nothing to copy.")
         return
@@ -89,7 +132,8 @@ def main() -> None:
             f"Output Characters: {output_chars}\n"
             f"Source Tokens: {estimated_tokens}\n"
             f"Output Tokens: {output_tokens}\n"
-            f"Truncated: {'Yes' if was_truncated else 'No'}\n"
+            f"Truncated: {'Yes' if result.was_truncated else 'No'}\n"
+            f"Warnings: {result.stats.warning_count}\n"
             f"Errors: {len(result.errors)}"
         ),
     )
@@ -135,6 +179,21 @@ def show_error(title: str, message: str) -> None:
 
     try:
         messagebox.showerror(title, message)
+    finally:
+        root.destroy()
+
+
+def confirm_safety_warnings(warnings) -> bool:
+    root = Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+
+    try:
+        return messagebox.askyesno(
+            "XCC Safety Warning",
+            build_warning_confirmation_text(warnings),
+            default=messagebox.NO,
+        )
     finally:
         root.destroy()
 

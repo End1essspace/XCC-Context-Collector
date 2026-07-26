@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import tempfile
 from datetime import datetime
-from PySide6.QtCore import QObject, QLockFile, Qt, QTimer
+from PySide6.QtCore import QObject, QLockFile, QThread, Qt, QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QApplication,
@@ -33,13 +33,14 @@ from . import __version__
 from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS, qt_context_file_filter
 from pathlib import Path
 from .clipboard import copy_to_clipboard
-from .collector import collect_files
-from .formatter import format_collection, format_project_tree
-from .git_utils import get_changed_files, get_git_diff, is_git_repository
-from .scanner import scan_project_files
+from .git_utils import is_git_repository
 from .settings import AppSettings, load_settings_result, save_settings
 from .autostart import is_autostart_enabled, set_autostart_enabled
 from .native_hotkey import NativeHotkeyError, NativeHotkeyManager
+from .models import SafetyWarning
+from .pipeline import CollectionJobResult, CollectionRequest
+from .qt_worker import CollectionWorker
+from .safety import build_warning_confirmation_text
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 APP_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_app.ico"
@@ -106,6 +107,11 @@ class XccMainWindow(QMainWindow):
         self._hotkey_manager: NativeHotkeyManager | None = None
         self._hotkey_available = False
         self._hotkey_status_message = "Not registered"
+        self._collection_thread: QThread | None = None
+        self._collection_worker: CollectionWorker | None = None
+        self._collection_active = False
+        self._close_after_collection = False
+        self._quit_after_collection = False
 
         self._setup_ui()
         self._apply_loaded_settings()
@@ -159,7 +165,7 @@ class XccMainWindow(QMainWindow):
         self.select_source_button.clicked.connect(self._select_source)
         self.clear_source_button.clicked.connect(self._clear_source)
         self.mode_group.buttonClicked.connect(self._on_mode_changed)
-        self.collect_button.clicked.connect(self._collect_and_copy)
+        self.collect_button.clicked.connect(self._on_collect_button_clicked)
         self.compact_checkbox.stateChanged.connect(self._on_settings_changed)
         self.max_chars_input.editingFinished.connect(self._on_settings_changed)
         self.start_with_windows_checkbox.stateChanged.connect(self._on_autostart_changed)
@@ -496,6 +502,14 @@ class XccMainWindow(QMainWindow):
         self._set_transient_event_status("Hidden to tray.")
 
     def _quit_from_tray(self) -> None:
+        if self._collection_active:
+            self._quit_after_collection = True
+            self._cancel_collection()
+            return
+
+        self._complete_quit_from_tray()
+
+    def _complete_quit_from_tray(self) -> None:
         self._is_quitting = True
 
         if hasattr(self, "tray_icon"):
@@ -503,6 +517,20 @@ class XccMainWindow(QMainWindow):
 
         self._cleanup_global_hotkey()
         QApplication.quit()
+
+    def _shutdown_collection_worker(self) -> None:
+        worker = self._collection_worker
+        thread = self._collection_thread
+
+        if worker is not None:
+            try:
+                worker.request_cancel()
+            except RuntimeError:
+                pass
+
+        if thread is not None and thread.isRunning():
+            thread.quit()
+            thread.wait()
 
     def _cleanup_global_hotkey(self) -> None:
         if self._hotkey_manager is None:
@@ -544,6 +572,12 @@ class XccMainWindow(QMainWindow):
                 )
                 self._has_shown_tray_hint = True
 
+            event.ignore()
+            return
+
+        if self._collection_active:
+            self._close_after_collection = True
+            self._cancel_collection()
             event.ignore()
             return
 
@@ -716,6 +750,7 @@ class XccMainWindow(QMainWindow):
         self.tokens_metric = self._metric_capsule("Output Tokens", "-")
 
         self.truncated_metric = self._metric_capsule("Truncated", "-")
+        self.warnings_metric = self._metric_capsule("Warnings", "-")
         self.errors_metric = self._metric_capsule("Errors", "-")
 
         columns_row = QHBoxLayout()
@@ -749,6 +784,7 @@ class XccMainWindow(QMainWindow):
         health_title.setObjectName("MetricGroupTitle")
         health_column.addWidget(health_title)
         health_column.addWidget(self.truncated_metric)
+        health_column.addWidget(self.warnings_metric)
         health_column.addWidget(self.errors_metric)
         health_column.addStretch(1)
 
@@ -995,92 +1031,130 @@ class XccMainWindow(QMainWindow):
         self._save_current_settings()
         self._refresh_settings_page()
 
-    def _collect_and_copy(self) -> None:
+    def _on_collect_button_clicked(self) -> None:
+        if self._collection_active:
+            self._cancel_collection()
+            return
+
+        self._start_collection()
+
+    def _start_collection(self) -> None:
+        if self._collection_active or self._collection_thread is not None:
+            return
+
         try:
-            max_output_chars = self._read_max_output_chars()
-            mode = self._current_mode()
+            request = self._build_collection_request()
+        except Exception as exc:
+            self._set_status("Error.")
+            QMessageBox.critical(self, "XCC", str(exc))
+            return
 
-            mode_name = {
-                "files": "Selected Files",
-                "folder": "Full Folder",
-                "git": "Git Changed Files",
-                "tree": "Project Tree",
-            }.get(mode, "Unknown")
+        thread = QThread(self)
+        worker = CollectionWorker(request)
+        worker.moveToThread(thread)
 
-            selected_paths, project_root = self._resolve_selected_paths(mode)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._on_collection_progress)
+        worker.completed.connect(self._on_collection_completed)
+        worker.failed.connect(self._on_collection_failed)
+        worker.cancelled.connect(self._on_collection_cancelled)
 
-            if mode == "tree":
-                if project_root is None:
-                    raise ValueError("Select a source folder first.")
+        worker.completed.connect(thread.quit)
+        worker.failed.connect(thread.quit)
+        worker.cancelled.connect(thread.quit)
+        worker.completed.connect(worker.deleteLater)
+        worker.failed.connect(worker.deleteLater)
+        worker.cancelled.connect(worker.deleteLater)
+        thread.finished.connect(self._on_collection_thread_finished)
+        thread.finished.connect(thread.deleteLater)
 
-                result = format_project_tree(
-                    project_root,
-                    compact=self.compact_checkbox.isChecked(),
-                    mode_name=mode_name,
-                    max_output_chars=max_output_chars,
-                )
+        self._collection_thread = thread
+        self._collection_worker = worker
+        self._set_collection_active(True)
+        self._on_collection_progress("Preparing", 0, 0)
+        thread.start()
 
-                if not result.text.strip():
-                    self._set_status("Nothing to copy.")
-                    QMessageBox.warning(self, "XCC", "Nothing to copy.")
+    def _build_collection_request(self) -> CollectionRequest:
+        mode = self._current_mode()
+        max_output_chars = self._read_max_output_chars()
+        project_root = self.project_root
+
+        if mode == "files":
+            selected_paths = tuple(self.selected_paths)
+            if not selected_paths:
+                raise ValueError("No files selected or found.")
+        else:
+            if project_root is None:
+                source_text = self.source_input.text().strip()
+                if source_text:
+                    restored_root = Path(source_text)
+                    if restored_root.exists() and restored_root.is_dir():
+                        project_root = restored_root
+                        self.project_root = restored_root
+
+            if project_root is None:
+                raise ValueError("Select a source folder first.")
+
+            if mode == "git" and not is_git_repository(project_root):
+                raise ValueError("Selected folder is not a Git repository.")
+
+            selected_paths = ()
+
+        return CollectionRequest(
+            mode=mode,
+            mode_name=self._current_mode_name(),
+            selected_paths=selected_paths,
+            project_root=project_root,
+            compact=self.compact_checkbox.isChecked(),
+            max_output_chars=max_output_chars,
+        )
+
+    def _cancel_collection(self) -> None:
+        worker = self._collection_worker
+        if not self._collection_active or worker is None:
+            return
+
+        worker.request_cancel()
+        self.collect_button.setEnabled(False)
+        self.collect_button.setText("Cancelling…")
+        self._set_status("Cancelling collection…")
+        self.header_status.setText("Cancelling")
+
+    def _on_collection_progress(
+        self,
+        phase: str,
+        current: int,
+        total: int,
+    ) -> None:
+        if not self._collection_active:
+            return
+
+        if total > 0:
+            message = f"{phase}: {current}/{total}"
+        elif current > 0:
+            message = f"{phase}: {current}"
+        else:
+            message = phase
+
+        self.status_label.setText(message)
+        self.header_status.setText(phase if len(phase) <= 18 else "Working")
+
+    def _on_collection_completed(self, job: CollectionJobResult) -> None:
+        copied = False
+
+        try:
+            result = job.result
+            if not result.text.strip():
+                raise ValueError("Nothing to copy.")
+
+            if result.warnings:
+                self._on_collection_progress("Reviewing warnings", 0, 0)
+                if not self._confirm_safety_warnings(result.warnings):
+                    self._set_status("Copy cancelled after safety warning.")
+                    self.header_status.setText("Cancelled")
                     return
 
-                copy_to_clipboard(result.text)
-
-                output_chars = len(result.text)
-                output_tokens = output_chars // 4
-
-                self._update_metrics(
-                    files=result.stats.files,
-                    lines=result.stats.lines,
-                    source_chars=result.stats.chars,
-                    output_chars=output_chars,
-                    output_tokens=output_tokens,
-                    truncated=result.was_truncated,
-                    errors=len(result.errors),
-                )
-                self._add_history_entry(
-                    mode_name=mode_name,
-                    source=self._current_source_label(mode, project_root),
-                    files=result.stats.files,
-                    lines=result.stats.lines,
-                    source_chars=result.stats.chars,
-                    output_chars=output_chars,
-                    output_tokens=output_tokens,
-                    truncated=result.was_truncated,
-                    errors=len(result.errors),
-                )
-
-                self._show_success_feedback()
-                return
-
-            if not selected_paths:
-                self._set_status("No files selected or found.")
-                QMessageBox.warning(self, "XCC", "No files selected or found.")
-                return
-
-            files, errors = collect_files(selected_paths)
-
-            git_diff = None
-            if mode == "git" and project_root is not None:
-                git_diff = get_git_diff(project_root)
-
-            result = format_collection(
-                files,
-                errors,
-                project_root=project_root,
-                compact=self.compact_checkbox.isChecked(),
-                mode_name=mode_name,
-                max_output_chars=max_output_chars,
-                git_diff=git_diff,
-                include_project_tree=(mode != "files"),
-            )
-
-            if not result.text.strip():
-                self._set_status("Nothing to copy.")
-                QMessageBox.warning(self, "XCC", "Nothing to copy.")
-                return
-
+            self._on_collection_progress("Copying", 0, 0)
             copy_to_clipboard(result.text)
 
             output_chars = len(result.text)
@@ -1093,25 +1167,116 @@ class XccMainWindow(QMainWindow):
                 output_chars=output_chars,
                 output_tokens=output_tokens,
                 truncated=result.was_truncated,
+                warnings=result.stats.warning_count,
                 errors=len(result.errors),
             )
             self._add_history_entry(
-                mode_name=mode_name,
-                source=self._current_source_label(mode, project_root),
+                mode_name=job.mode_name,
+                source=job.source,
                 files=result.stats.files,
                 lines=result.stats.lines,
                 source_chars=result.stats.chars,
                 output_chars=output_chars,
                 output_tokens=output_tokens,
                 truncated=result.was_truncated,
+                warnings=result.stats.warning_count,
                 errors=len(result.errors),
             )
 
-            self._show_success_feedback()
+            self._on_collection_progress("Completed", 0, 0)
+            copied = True
 
         except Exception as exc:
             self._set_status("Error.")
+            self.header_status.setText("Error")
             QMessageBox.critical(self, "XCC", str(exc))
+        finally:
+            self._set_collection_active(False)
+
+        if copied:
+            self._show_success_feedback()
+
+    def _on_collection_failed(self, message: str) -> None:
+        self._set_collection_active(False)
+
+        if message == "No supported Git changes found.":
+            self._set_status(message)
+            self.header_status.setText("No changes")
+            QMessageBox.information(self, "XCC", message)
+            return
+
+        if message == "No files selected or found.":
+            self._set_status(message)
+            self.header_status.setText("No files")
+            QMessageBox.warning(self, "XCC", message)
+            return
+
+        self._set_status("Error.")
+        self.header_status.setText("Error")
+        QMessageBox.critical(self, "XCC", message)
+
+    def _on_collection_cancelled(self) -> None:
+        self._set_collection_active(False)
+        self._set_status("Collection cancelled.")
+        self.header_status.setText("Cancelled")
+
+    def _on_collection_thread_finished(self) -> None:
+        self._collection_worker = None
+        self._collection_thread = None
+        self._run_deferred_close_or_quit()
+
+    def _set_collection_active(self, active: bool) -> None:
+        self._collection_active = active
+
+        for control in (
+            self.select_source_button,
+            self.clear_source_button,
+            self.compact_checkbox,
+            self.max_chars_input,
+        ):
+            control.setEnabled(not active)
+
+        for button in (
+            self.mode_files,
+            self.mode_folder,
+            self.mode_git,
+            self.mode_tree,
+        ):
+            button.setEnabled(not active)
+
+        self.collect_button.setEnabled(True)
+        self.collect_button.setText("Cancel" if active else "Collect && Copy")
+
+    def _run_deferred_close_or_quit(self) -> None:
+        if self._quit_after_collection:
+            self._quit_after_collection = False
+            QTimer.singleShot(0, self._complete_quit_from_tray)
+            return
+
+        if self._close_after_collection:
+            self._close_after_collection = False
+            QTimer.singleShot(0, self.close)
+
+    def _confirm_safety_warnings(
+        self,
+        warnings: list[SafetyWarning],
+    ) -> bool:
+        response = QMessageBox.question(
+            self,
+            "XCC Safety Warning",
+            build_warning_confirmation_text(warnings),
+            (
+                QMessageBox.StandardButton.Yes
+                | QMessageBox.StandardButton.Cancel
+            ),
+            QMessageBox.StandardButton.Cancel,
+        )
+
+        if response == QMessageBox.StandardButton.Yes:
+            return True
+
+        self._set_status("Copy cancelled after safety warning.")
+        return False
 
     def _read_max_output_chars(self) -> int:
         raw_value = self.max_chars_input.text().strip()
@@ -1126,33 +1291,6 @@ class XccMainWindow(QMainWindow):
 
         return value
 
-    def _resolve_selected_paths(self, mode: str) -> tuple[list[Path], Path | None]:
-        if mode == "files":
-            return self.selected_paths, None
-
-        if self.project_root is None:
-            source_text = self.source_input.text().strip()
-
-            if source_text:
-                restored_root = Path(source_text)
-
-                if restored_root.exists() and restored_root.is_dir():
-                    self.project_root = restored_root
-
-        if self.project_root is None:
-            raise ValueError("Select a source folder first.")
-
-        if mode == "tree":
-            return [], self.project_root
-
-        if mode == "folder":
-            return scan_project_files(self.project_root), self.project_root
-
-        if not is_git_repository(self.project_root):
-            raise ValueError("Selected folder is not a Git repository.")
-
-        return get_changed_files(self.project_root), self.project_root
-
     def _update_metrics(
         self,
         *,
@@ -1162,6 +1300,7 @@ class XccMainWindow(QMainWindow):
         output_chars: int,
         output_tokens: int,
         truncated: bool,
+        warnings: int,
         errors: int,
     ) -> None:
         self._set_metric_value(self.files_metric, str(files))
@@ -1170,6 +1309,7 @@ class XccMainWindow(QMainWindow):
         self._set_metric_value(self.output_chars_metric, str(output_chars))
         self._set_metric_value(self.tokens_metric, str(output_tokens))
         self._set_metric_value(self.truncated_metric, "Yes" if truncated else "No")
+        self._set_metric_value(self.warnings_metric, str(warnings))
         self._set_metric_value(self.errors_metric, str(errors))
 
     def _set_metric_value(self, metric: QFrame, value: str) -> None:
@@ -1488,6 +1628,7 @@ class XccMainWindow(QMainWindow):
         output_chars: int,
         output_tokens: int,
         truncated: bool,
+        warnings: int,
         errors: int,
     ) -> None:
         entry = {
@@ -1500,6 +1641,7 @@ class XccMainWindow(QMainWindow):
             "output_chars": output_chars,
             "output_tokens": output_tokens,
             "truncated": truncated,
+            "warnings": warnings,
             "errors": errors,
         }
 
@@ -1564,6 +1706,7 @@ class XccMainWindow(QMainWindow):
         health_label = QLabel(
             f"Tokens {entry['output_tokens']} · "
             f"Truncated {'Yes' if entry['truncated'] else 'No'} · "
+            f"Warnings {entry['warnings']} · "
             f"Errors {entry['errors']}"
         )
         health_label.setObjectName("HistoryHealth")
@@ -2201,6 +2344,7 @@ def run_gui() -> None:
 
     finally:
         if window is not None:
+            window._shutdown_collection_worker()
             window._cleanup_global_hotkey()
 
         instance_lock.unlock()

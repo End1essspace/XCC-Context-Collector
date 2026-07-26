@@ -17,6 +17,7 @@ def test_allows_file_by_extension() -> None:
 def test_allows_file_by_name() -> None:
     assert is_allowed_context_file(Path("Dockerfile")) is True
     assert is_allowed_context_file(Path(".env.example")) is True
+    assert is_allowed_context_file(Path(".xccignore")) is True
 
 
 def test_rejects_sensitive_env_file() -> None:
@@ -30,6 +31,7 @@ def test_qt_filter_contains_new_extensions() -> None:
     assert "*.rs" in file_filter
     assert "Dockerfile" in file_filter
     assert ".env.example" in file_filter
+    assert ".xccignore" in file_filter
 
 
 def test_tkinter_filter_contains_new_extensions() -> None:
@@ -40,3 +42,4 @@ def test_tkinter_filter_contains_new_extensions() -> None:
     assert "*.rs" in patterns
     assert "Dockerfile" in patterns
     assert ".env.example" in patterns
+    assert ".xccignore" in patterns

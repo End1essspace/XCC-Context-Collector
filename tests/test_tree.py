@@ -77,3 +77,37 @@ def test_build_directory_tree_excludes_ignored_directories(tmp_path: Path) -> No
     assert "venv" not in tree
     assert file_count == 1
     assert directory_count == 1
+
+
+def test_directory_tree_respects_xccignore_and_gitignore(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    root.mkdir()
+    visible = root / "visible.py"
+    git_ignored = root / "generated.py"
+    xcc_ignored = root / "private.py"
+
+    visible.write_text("VISIBLE = True\n", encoding="utf-8")
+    git_ignored.write_text("GENERATED = True\n", encoding="utf-8")
+    xcc_ignored.write_text("PRIVATE = True\n", encoding="utf-8")
+    (root / ".gitignore").write_text("generated.py\n", encoding="utf-8")
+    (root / ".xccignore").write_text("private.py\n", encoding="utf-8")
+
+    tree, _, _ = build_directory_tree(root)
+
+    assert "visible.py" in tree
+    assert "generated.py" not in tree
+    assert "private.py" not in tree
+
+def test_directory_tree_reports_processed_entries(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    src = root / "src"
+    src.mkdir(parents=True)
+    (src / "main.py").write_text("VALUE = 1\n", encoding="utf-8")
+    progress: list[tuple[int, int]] = []
+
+    build_directory_tree(
+        root,
+        progress_callback=lambda current, total: progress.append((current, total)),
+    )
+
+    assert progress[-1] == (2, 0)

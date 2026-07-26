@@ -40,6 +40,7 @@ def test_summarizes_large_file(tmp_path: Path) -> None:
     assert files[0].path == file_path
     assert "# XCC Large File Summary" in files[0].content
     assert "Full content was not included" in files[0].content
+    assert files[0].is_summary is True
 
 
 def test_reads_cp1251_file(tmp_path: Path) -> None:
@@ -61,3 +62,17 @@ def test_collects_allowed_filename_without_extension(tmp_path: Path) -> None:
     assert len(files) == 1
     assert errors == []
     assert files[0].path == file_path
+
+def test_collection_reports_progress_for_each_input_path(tmp_path: Path) -> None:
+    first = tmp_path / "first.py"
+    second = tmp_path / "second.py"
+    first.write_text("FIRST = True\n", encoding="utf-8")
+    second.write_text("SECOND = True\n", encoding="utf-8")
+    progress: list[tuple[int, int]] = []
+
+    collect_files(
+        [first, second],
+        progress_callback=lambda current, total: progress.append((current, total)),
+    )
+
+    assert progress == [(1, 2), (2, 2)]

@@ -31,11 +31,16 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 - Compact mode for cleaner prompts
 - Character budget with truncation status
 - Oversized file summarization
+- `.xccignore` support and root `.gitignore` filtering in folder/tree modes
+- Pre-copy warnings for likely secrets, credentials, and sensitive filenames
 
 📋 **Fast Clipboard Workflow**
 - One-click **Collect & Copy**
 - Output copied directly to clipboard
 - Runtime history for recent collection runs
+- Background collection worker keeps the GUI responsive on large projects
+- Live collection phases and processed-file counts
+- Cooperative Cancel action with no partial clipboard copy
 - Last selected source and settings are restored between launches
 
 🖥 **Windows Desktop Integration**
@@ -56,10 +61,14 @@ Layered Python design:
 config      → constants and supported extensions
 models      → typed collection result models
 scanner     → project folder scanning
-collector   → file reading and large-file handling
+collector   → file reading, progress reporting, and cancellation checks
+pipeline    → background-safe collection orchestration
+qt_worker   → QThread worker and Qt progress/result signals
 formatter   → AI-ready output formatting
 optimizer   → compact output processing
 budget      → character budget and truncation logic
+ignore      → .xccignore and project ignore rule matching
+safety      → sensitive-context warning detection
 git_utils   → Git repository detection, changed files, diff extraction
 settings    → persistent config loading, validation, recovery
 autostart   → Windows Startup shortcut integration
@@ -191,6 +200,44 @@ build
 bin
 obj
 ```
+
+
+🛡 **Context Safety and Ignore Rules**
+
+Create a `.xccignore` file in the project root to exclude additional paths from XCC context.
+
+Supported rule semantics:
+
+```text
+# comments and empty lines are ignored
+*.generated.py       # match a file or directory name at any depth
+private/**           # recursive path pattern
+/cache/              # root-anchored directory
+!private/example.py  # re-include a matching path
+```
+
+Rules use forward-slash paths and support `*`, `?`, `**`, trailing `/`, root-leading `/`, and `!` negation. The last matching project rule wins. Built-in excluded directories such as `.git`, `node_modules`, `dist`, and `build` remain excluded and cannot be re-enabled.
+
+Full Folder and Project Tree modes also respect the project-root `.gitignore` by default. Git Changed Files mode uses Git status for normal Git ignore behavior and applies `.xccignore` as an additional XCC-only exclusion layer. Selected Files mode treats explicit selection as intentional and does not apply project ignore rules.
+
+Before copying file content or Git diffs, XCC performs a lightweight heuristic scan for:
+
+- sensitive filenames;
+- private-key headers;
+- likely API tokens and access keys;
+- likely password assignments;
+- connection strings containing credentials.
+
+When findings exist, XCC shows a confirmation dialog and allows the operation to be cancelled. Warning summaries contain only the relative filename, line number, and warning category. Detected values are not displayed in the warning dialog or stored in runtime history.
+
+Detection is heuristic. It can produce false positives and is not a security guarantee. XCC warns but does not silently redact or modify collected source code.
+
+
+⚙️ **Responsive Collection Pipeline**
+
+Folder scanning, Git inspection, file reading, safety analysis, formatting, and budget processing run outside the Qt main thread. The window remains interactive while a collection is running, including moving, minimizing, restoring from tray, and navigating to non-conflicting pages.
+
+The status bar reports the active phase and available progress counts. Source, mode, and context-option controls are locked for the duration of the job, while the primary action becomes **Cancel**. Cancellation is cooperative between files and never copies a partial result. Clipboard access and safety confirmation dialogs remain on the GUI thread.
 
 
 🗃 **Data Storage**
@@ -338,11 +385,16 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 - Compact mode для более чистого prompt
 - Лимит символов с truncation status
 - Summarize для слишком больших файлов
+- Поддержка `.xccignore` и фильтрация по корневому `.gitignore` в folder/tree modes
+- Предупреждения перед копированием для вероятных секретов, credentials и чувствительных имён файлов
 
 📋 **Быстрый clipboard workflow**
 - One-click **Collect & Copy**
 - Готовый output сразу копируется в буфер обмена
 - Runtime history последних сборов
+- Background worker сохраняет отзывчивость GUI на больших проектах
+- Текущая фаза и количество обработанных файлов отображаются во время сборки
+- Cooperative Cancel не копирует частичный результат в clipboard
 - Last selected source и настройки восстанавливаются между запусками
 
 🖥 **Интеграция с Windows**
@@ -363,10 +415,14 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 config      → константы и поддерживаемые расширения
 models      → typed модели результата
 scanner     → сканирование папки проекта
-collector   → чтение файлов и обработка больших файлов
+collector   → чтение файлов, progress reporting и cancellation checks
+pipeline    → background-safe orchestration процесса сборки
+qt_worker   → QThread worker и Qt progress/result signals
 formatter   → AI-ready форматирование
 optimizer   → compact output
 budget      → лимит символов и truncation
+ignore      → обработка .xccignore и project ignore rules
+safety      → предупреждения о потенциально чувствительном context
 git_utils   → Git repository detection, changed files, diff extraction
 settings    → загрузка, валидация и recovery настроек
 autostart   → Windows Startup shortcut integration
@@ -498,6 +554,44 @@ build
 bin
 obj
 ```
+
+
+🛡 **Безопасность контекста и ignore rules**
+
+Создай файл `.xccignore` в корне проекта, чтобы исключить дополнительные пути из XCC context.
+
+Поддерживаемая семантика правил:
+
+```text
+# комментарии и пустые строки игнорируются
+*.generated.py       # имя файла или папки на любой глубине
+private/**           # рекурсивный path pattern
+/cache/              # директория относительно корня проекта
+!private/example.py  # повторное включение совпавшего пути
+```
+
+Правила используют пути с `/` и поддерживают `*`, `?`, `**`, завершающий `/`, начальный `/` для привязки к корню и `!` для negation. Побеждает последнее совпавшее project rule. Встроенные исключения вроде `.git`, `node_modules`, `dist` и `build` всегда остаются исключёнными и не могут быть включены обратно.
+
+Full Folder и Project Tree modes по умолчанию также учитывают корневой `.gitignore`. Git Changed Files mode использует Git status для обычного Git ignore behavior и применяет `.xccignore` как дополнительный XCC-only exclusion layer. В Selected Files mode явный выбор пользователя считается намеренным, поэтому project ignore rules не применяются.
+
+Перед копированием содержимого файлов или Git diff XCC выполняет лёгкую эвристическую проверку на:
+
+- чувствительные имена файлов;
+- заголовки приватных ключей;
+- вероятные API tokens и access keys;
+- вероятные password assignments;
+- connection strings с credentials.
+
+При наличии findings XCC показывает confirmation dialog и позволяет отменить операцию. Warning summary содержит только относительный путь, номер строки и категорию предупреждения. Найденные значения не показываются в warning dialog и не сохраняются в runtime history.
+
+Проверка является эвристической, может давать false positives и не является гарантией безопасности. XCC предупреждает пользователя, но не выполняет скрытую redaction и не изменяет исходный код.
+
+
+⚙️ **Responsive collection pipeline**
+
+Сканирование папки, Git inspection, чтение файлов, safety analysis, форматирование и budget processing выполняются вне Qt main thread. Во время сборки окно остаётся отзывчивым: его можно перемещать, сворачивать, восстанавливать из tray и открывать страницы, не конфликтующие с активной операцией.
+
+Status bar показывает текущую фазу и доступные progress counts. Source, mode и context-option controls блокируются до завершения job, а основная кнопка превращается в **Cancel**. Отмена выполняется между файлами и никогда не копирует частичный результат. Clipboard access и safety confirmation dialogs остаются в GUI thread.
 
 
 🗃 **Хранение данных**

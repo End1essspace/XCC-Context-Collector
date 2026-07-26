@@ -302,25 +302,613 @@ Status: DONE
 * [x] add settings validation test for Project Tree mode
 * [x] verify Project Tree output does not include file content sections
 
+## v1.2.0 Context Integrity & Reliability
 
-## v1.2 Post-Release Polish
+**Status: PLANNED**
 
-Status: PLANNED
+### Release Goal
 
-* [ ] add hotkey controls to Settings
-* [ ] allow changing restore hotkey from GUI
-* [ ] improve About page with release links
-* [ ] optionally integrate collect action into hotkey workflow
-* [ ] installer
-* [ ] update system
+Make XCC safe and reliable for everyday use across real-world repositories.
+
+The release must guarantee that:
+
+- source content is not modified during formatting;
+- Git mode correctly represents staged and unstaged changes;
+- selected files retain distinguishable project paths;
+- character limits do not silently cut arbitrary source code;
+- large collections do not freeze the main window;
+- potentially sensitive context is surfaced before copying;
+- public builds are validated through repeatable CI and release checks.
+
+---
+
+### M1 — Source Content Fidelity
+
+**Status: DONE**
+
+**Priority: CRITICAL**
+
+- [x] stop applying global compact processing to source file contents
+- [x] preserve repeated empty lines inside collected files
+- [x] preserve trailing spaces inside collected files
+- [x] preserve final blank lines where they are part of file content
+- [x] remove destructive `rstrip()` processing from file content formatting
+- [x] apply compact mode only to XCC-generated metadata and separators
+- [x] separate structural output formatting from source content rendering
+- [x] guarantee that compact and non-compact modes contain identical source content
+- [x] add regression tests for multiline strings
+- [x] add regression tests for Markdown whitespace
+- [x] add regression tests for YAML block content
+- [x] add regression tests for trailing spaces
+- [x] add regression tests for repeated blank lines
+- [x] add source-content fidelity test using exact string comparison
+
+#### Acceptance Criteria
+
+```text
+input FileContent.content == content extracted from final XCC file section
+```
+
+The only permitted differences are XCC section delimiters surrounding the file.
+
+Compact mode must never rewrite collected file content.
+
+Completed in the first v1.2.0 implementation batch.
+
+---
+
+### M2 — Git Context Correctness
+
+**Status: DONE**
+
+**Priority: CRITICAL**
+
+- [x] replace line-based `git status --porcelain` parsing with null-delimited parsing
+- [x] use `git status --porcelain=v1 -z`
+- [x] introduce a typed Git change model
+- [x] represent working-tree and index status separately
+- [x] support unstaged modified files
+- [x] support staged modified files
+- [x] support staged added files
+- [x] support untracked files
+- [x] support renamed files
+- [x] support copied files
+- [x] support deleted files
+- [x] handle paths containing spaces
+- [x] handle quoted paths
+- [x] handle non-ASCII paths
+- [x] remove duplicate paths from combined Git results
+- [x] collect unstaged diff
+- [x] collect staged diff with `git diff --cached`
+- [x] combine staged and unstaged diff into clearly labelled sections
+- [x] represent untracked files through full file content
+- [x] represent deleted files through status and diff without attempting file reads
+- [x] include old and new paths for renamed files
+- [x] expose Git command failures instead of silently returning an empty result
+- [x] distinguish a clean repository from a failed Git command
+- [x] add tests for all supported Git statuses
+- [x] add tests for staged-only changes
+- [x] add tests for mixed staged and unstaged changes
+- [x] add tests for rename and delete scenarios
+- [x] add tests for paths containing spaces and Unicode
+
+#### Proposed Output Structure
+
+```text
+# Git Changes
+
+- [ M] src/main.py
+- [A ] tests/test_new_feature.py
+- [R ] src/old_name.py -> src/new_name.py
+- [D ] docs/obsolete.md
+- [??] notes.md
+
+# Git Diff — Staged
+
+...
+
+## Git Diff — Unstaged
+
+...
+```
+
+#### Acceptance Criteria
+
+A repository containing modified, staged, renamed, deleted, and untracked files must produce complete and deterministic context without silently losing any supported change.
+
+Completed in the fourth v1.2.0 implementation batch.
+
+---
+
+### M3 — Stable File Identity and Relative Paths
+
+**Status: DONE**
+
+**Priority: HIGH**
+
+- [x] calculate a common source root for Selected Files mode
+- [x] preserve relative directory paths where possible
+- [x] prevent different files from receiving the same display path
+- [x] support selected files from different directories
+- [x] support selected files from different drives
+- [x] add a safe fallback when no common project root exists
+- [x] avoid exposing unnecessary absolute user-profile paths
+- [x] add stable path normalization for Windows
+- [x] use forward slashes in generated AI context
+- [x] add tests for duplicate filenames
+- [x] add tests for nested selected files
+- [x] add tests for cross-root selections
+- [x] add tests for non-ASCII directory names
+
+#### Example
+
+Instead of:
+
+```text
+===== file: config.py =====
+===== file: config.py =====
+```
+
+XCC must produce distinguishable paths:
+
+```text
+===== file: backend/config.py =====
+===== file: frontend/config.py =====
+```
+
+Completed in the second v1.2.0 implementation batch.
+
+---
+
+### M4 — Structure-Aware Character Budget
+
+**Status: DONE**
+
+**Priority: CRITICAL**
+
+- [x] replace arbitrary whole-text slicing with section-aware budgeting
+- [x] calculate budget before adding each output section
+- [x] reserve space for truncation metadata
+- [x] keep XCC header complete whenever the configured budget can hold mandatory metadata
+- [x] emit a bounded budget-too-small notice for extremely small limits
+- [x] keep file section headers complete
+- [x] avoid cutting source files in the middle by default
+- [x] avoid cutting Git diff lines in the middle
+- [x] add complete files until the remaining budget is insufficient
+- [x] keep partial-file inclusion disabled by default and report `Partial files: 0`
+- [x] list files omitted because of the output budget
+- [x] distinguish oversized-file summaries from budget omissions
+- [x] track included file count
+- [x] track omitted file count
+- [x] track partially included file count
+- [x] track summarized file count
+- [x] expose budget usage in result statistics
+- [x] preserve deterministic file ordering
+- [x] add tests for very small budgets
+- [x] add tests for exact-boundary budgets
+- [x] add tests for file omission order
+- [x] add tests proving that output never exceeds the configured limit
+
+#### Proposed Budget Summary
+
+```text
+## XCC Budget Summary
+
+Limit: 120000
+Used: 118742
+Included files: 14
+Omitted files: 6
+Partial files: 0
+
+Omitted:
+- tests/large_fixture.py
+- docs/reference.md
+- src/generated/schema.py
+```
+
+#### Acceptance Criteria
+
+The final output must never exceed the configured limit and must never silently end in the middle of an unmarked source file.
+
+---
+
+Completed in the third v1.2.0 implementation batch.
+
+---
+
+### M5 — Context Safety Guardrails
+
+**Status: DONE**
+
+**Priority: HIGH**
+
+- [x] add `.xccignore` support
+- [x] define documented `.xccignore` pattern semantics
+- [x] optionally respect `.gitignore` in Full Folder mode
+- [x] allow built-in exclusions and project exclusions to work together
+- [x] add suspicious filename detection
+- [x] warn about credential and secret configuration files
+- [x] add lightweight secret-pattern warnings
+- [x] detect common private key headers
+- [x] detect likely API tokens and access keys
+- [x] detect likely password and connection-string assignments
+- [x] never write detected secret values to logs or history
+- [x] report only filename, line number, and warning category
+- [x] show a warning summary before clipboard copy when findings exist
+- [x] allow the user to cancel collection after a warning
+- [x] clearly state that detection is heuristic and not a security guarantee
+- [x] add tests for obvious secret patterns
+- [x] add false-positive regression tests
+- [x] update README security wording
+
+#### Scope Boundary
+
+v1.2.0 should provide **warnings**, not automatic redaction.
+
+Silent redaction could corrupt code and produce misleading context. Automatic redaction may be considered later as an explicit opt-in mode.
+
+Completed in the fifth v1.2.0 implementation batch. Safety scanning covers current file payloads, staged and unstaged Git diffs, and sensitive filenames in Project Tree mode. Warning output never includes detected secret values.
+
+---
+
+### M6 — Responsive Collection Pipeline
+
+**Status: IMPLEMENTED — WINDOWS MANUAL VALIDATION PENDING**
+
+**Priority: HIGH**
+
+- [x] move scanning and collection out of the Qt main thread
+- [x] introduce a dedicated collection worker
+- [x] keep clipboard interaction on the GUI thread
+- [x] expose worker progress through Qt signals
+- [x] show current collection phase
+- [x] show scanned and processed file counts
+- [x] disable conflicting controls while collection is running
+- [x] prevent multiple simultaneous collection jobs
+- [x] add a Cancel action
+- [x] implement cooperative cancellation between files
+- [x] restore UI state after success
+- [x] restore UI state after failure
+- [x] restore UI state after cancellation
+- [x] prevent closing or mode switching from leaving an orphan worker
+- [x] preserve single-instance and tray behavior during collection
+- [x] add worker and pipeline unit tests
+- [x] add automated cancellation and progress regression tests
+- [ ] complete final Windows manual large-project responsiveness validation
+
+#### Collection Phases
+
+```text
+Preparing
+Scanning
+Reading files
+Inspecting Git changes
+Inspecting context
+Formatting
+Applying budget
+Copying
+Completed
+```
+
+#### Acceptance Criteria
+
+During collection of a large repository:
+
+- the window remains responsive;
+- the user can move or minimize it;
+- the operation can be cancelled;
+- no second collection can start concurrently;
+- partial results are not copied after cancellation.
+
+Implementation completed in the sixth v1.2.0 batch. The milestone remains open only for the final packaged Windows manual responsiveness check.
+
+---
 
 
-## Future Improvements
+### M7 — Result Model and Runtime History Upgrade
 
-Status: BACKLOG
+**Priority: MEDIUM**
 
-* [ ] signed installer
-* [ ] automatic update channel
-* [ ] portable mode toggle
-* [ ] export runtime history
-* [ ] advanced include/exclude rules
+- [ ] expand `CollectionStats`
+- [ ] add included file count
+- [ ] add omitted file count
+- [ ] add summarized file count
+- [ ] add partial file count
+- [x] add warning count
+- [ ] add collection duration
+- [ ] add collection outcome enum
+- [ ] distinguish errors from warnings
+- [ ] distinguish cancellation from failure
+- [ ] update Last Run metrics
+- [ ] update runtime history entries
+- [ ] add clear health status for completed-with-warnings
+- [ ] keep history free of file contents and detected secret values
+- [ ] add tests for result statistics
+
+#### Suggested Outcomes
+
+```text
+SUCCESS
+SUCCESS_WITH_WARNINGS
+CANCELLED
+FAILED
+```
+
+---
+
+### M8 — Dependency and Project Structure Cleanup
+
+**Priority: MEDIUM**
+
+- [ ] add `pyproject.toml`
+- [ ] define project metadata in one canonical location
+- [ ] define supported Python version
+- [ ] separate runtime dependencies from development dependencies
+- [ ] separate build dependencies from runtime dependencies
+- [ ] make legacy `keyboard` dependency optional
+- [ ] pin compatible dependency ranges
+- [ ] document reproducible source setup
+- [ ] remove version duplication where possible
+- [ ] ensure packaged build reads the canonical version
+- [ ] evaluate removal of legacy Tkinter entry points
+- [ ] clearly mark retained legacy modules as unsupported development tools
+- [ ] update architecture documentation
+- [ ] verify clean installation in a new virtual environment
+
+#### Suggested Dependency Groups
+
+```text
+runtime:
+- PySide6
+- pyperclip
+
+dev:
+- pytest
+- pytest-cov
+
+build:
+- pyinstaller
+
+legacy:
+- keyboard
+```
+
+---
+
+### M9 — GitHub Repository Maturity
+
+**Priority: HIGH**
+
+- [ ] add Windows GitHub Actions test workflow
+- [ ] run tests on supported Python versions
+- [ ] add source compilation check
+- [ ] add packaged build smoke check
+- [ ] cache Python dependencies safely
+- [ ] add `CHANGELOG.md`
+- [ ] add `CONTRIBUTING.md`
+- [ ] add `SECURITY.md`
+- [ ] verify repository contains a root `LICENSE`
+- [ ] add issue templates
+- [ ] add pull request template
+- [ ] document bug-report diagnostics
+- [ ] add CI status badge to README
+- [ ] add release link to README
+- [ ] add screenshots to README
+- [ ] document portable ZIP usage
+- [ ] generate SHA-256 checksum for release archives
+- [ ] verify release archive contents automatically
+- [ ] add release checklist
+- [ ] ensure version consistency across code, README, and release notes
+
+#### CI Minimum Gate
+
+```text
+pytest
+compileall
+clean PyInstaller build
+packaged executable startup smoke test
+release archive structure validation
+```
+
+---
+
+### M10 — v1.2.0 Validation and Release Gate
+
+**Priority: RELEASE BLOCKER**
+
+- [ ] all automated tests pass
+- [ ] no regression in existing four collection modes
+- [ ] source fidelity regression suite passes
+- [ ] staged Git changes test passes
+- [ ] rename and delete Git tests pass
+- [ ] duplicate filename test passes
+- [ ] budget boundary test suite passes
+- [ ] `.xccignore` validation passes
+- [ ] secret-warning validation passes
+- [ ] cancellation validation passes
+- [ ] large-project GUI responsiveness test passes
+- [ ] clean Windows 10 packaged-app smoke test
+- [ ] clean Windows 11 packaged-app smoke test
+- [ ] tray restore test passes
+- [ ] hotkey conflict remains non-fatal
+- [ ] autostart shortcut test passes
+- [ ] invalid-config recovery test passes
+- [ ] release ZIP contents verified
+- [ ] SHA-256 checksum generated
+- [ ] README updated to v1.2.0
+- [ ] roadmap updated
+- [ ] changelog updated
+- [ ] release notes created
+- [ ] final release tag created
+
+---
+
+## Excluded from v1.2.0
+
+The following features should not block the reliability release:
+
+- installer;
+- automatic updater;
+- signed binaries;
+- editable hotkey;
+- Collect & Copy hotkey;
+- persistent history export;
+- portable mode toggle;
+- full preview editor;
+- complex include/exclude profiles.
+
+These features are useful, but combining them with formatter, Git, budget, and worker-pipeline changes would expand the release scope too far.
+
+---
+
+## v1.3.0 Windows Workflow & Distribution
+
+**Status: PLANNED**
+
+- [ ] add editable restore hotkey
+- [ ] validate hotkey conflicts before saving
+- [ ] add reset-to-default hotkey action
+- [ ] optionally add Collect & Copy hotkey
+- [ ] improve About page with repository and release links
+- [ ] add installer
+- [ ] support clean uninstall
+- [ ] preserve or remove user settings explicitly during uninstall
+- [ ] add portable mode
+- [ ] add update availability check
+- [ ] open the release page from the application
+- [ ] add persistent runtime history
+- [ ] export runtime history
+- [ ] add installer and portable build validation
+
+An update-availability check is preferable to full automatic self-updating at this stage.
+
+The application may detect a newer version and open its GitHub Release page. A full updater has additional security, rollback, and atomic-replacement requirements.
+
+---
+
+## v1.4.0 Advanced Context Rules
+
+**Status: BACKLOG**
+
+- [ ] advanced include/exclude rule editor
+- [ ] reusable collection profiles
+- [ ] per-project settings
+- [ ] file size rules by extension
+- [ ] context priority rules
+- [ ] include only selected directories
+- [ ] exclude generated code patterns
+- [ ] configurable project tree depth
+- [ ] optional file preview
+- [ ] opt-in secret redaction
+- [ ] custom output templates
+- [ ] token estimation profiles for different AI providers
+
+---
+
+## Recommended Implementation Order
+
+### Stage 1 — Stabilize Output Integrity
+
+Implement:
+
+1. M1 — Source Content Fidelity
+2. M3 — Stable File Identity
+3. M4 — Structure-Aware Character Budget
+
+These components form one formatter/output pipeline.
+
+The budget system should not be redesigned until source rendering is guaranteed to preserve exact file content.
+
+### Stage 2 — Rebuild Git Mode
+
+Implement:
+
+1. typed Git change model;
+2. porcelain `-z` parsing;
+3. staged and unstaged diff support;
+4. rename, delete, and untracked semantics;
+5. complete Git regression suite.
+
+Git mode should pass normalized structured data into the formatter instead of raw command-line strings.
+
+### Stage 3 — Add Safety Layer
+
+Implement:
+
+1. `.xccignore`;
+2. optional `.gitignore` integration;
+3. sensitive filename warnings;
+4. secret-pattern warnings;
+5. pre-copy warning state.
+
+Safety checks depend on reliable scanner and Git file-selection behavior.
+
+### Stage 4 — Move Collection into Worker Pipeline
+
+Add background execution only after the collection APIs and result models are stable.
+
+This avoids debugging core logic and multithreading at the same time.
+
+### Stage 5 — GitHub and Release Gate
+
+Complete:
+
+1. dependency cleanup;
+2. CI;
+3. documentation;
+4. Windows validation;
+5. release artifacts;
+6. final `v1.2.0` tag.
+
+---
+
+## v1.2.0 Release Guarantees
+
+The release is complete only when all five guarantees are satisfied.
+
+### 1. Fidelity
+
+XCC does not modify collected file contents.
+
+### 2. Git Completeness
+
+Staged, unstaged, untracked, renamed, copied, and deleted changes are represented without silent loss.
+
+### 3. Budget Transparency
+
+The user can see which files were included, omitted, summarized, or partially included.
+
+### 4. Safety Visibility
+
+XCC warns about likely sensitive context before copying.
+
+### 5. UI Responsiveness
+
+Large projects do not block the interface, and collection can be cancelled safely.
+
+---
+
+## Next Development Stage
+
+Proceed with:
+
+> **M6 — Responsive Collection Pipeline**
+
+Required files for the next stage:
+
+```text
+src/xcc/gui.py
+src/xcc/collector.py
+src/xcc/scanner.py
+src/xcc/git_utils.py
+src/xcc/formatter.py
+src/xcc/models.py
+src/xcc/tree.py
+
+tests/test_collector.py
+tests/test_scanner.py
+tests/test_git_utils.py
+tests/test_formatter.py
+```
+
+The full project is not required for the initial worker-pipeline implementation.
