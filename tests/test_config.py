@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.xcc.config import (
+from xcc.config import (
     is_allowed_context_file,
     qt_context_file_filter,
     tkinter_context_filetypes,

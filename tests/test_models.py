@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from src.xcc.models import (
+from xcc.models import (
     CollectionOutcome,
     CollectionResult,
     CollectionRunRecord,

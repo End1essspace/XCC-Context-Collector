@@ -2,14 +2,14 @@ from pathlib import Path
 
 import pytest
 
-from src.xcc.formatter import (
+from xcc.formatter import (
     format_collection,
     format_file,
     format_project_tree,
     make_display_path,
     make_display_paths,
 )
-from src.xcc.models import (
+from xcc.models import (
     CollectionOutcome,
     FileContent,
     GitChange,

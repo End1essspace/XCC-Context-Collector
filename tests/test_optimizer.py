@@ -1,4 +1,4 @@
-from src.xcc.optimizer import compact_generated_text, compact_text
+from xcc.optimizer import compact_generated_text, compact_text
 
 
 def test_compact_generated_text_removes_repeated_empty_lines() -> None:

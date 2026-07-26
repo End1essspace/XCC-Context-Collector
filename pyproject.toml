@@ -1,0 +1,74 @@
+[build-system]
+requires = ["setuptools>=77,<83"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xcc-context-collector"
+dynamic = ["version"]
+description = "Windows desktop utility for collecting AI-ready project context."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+license = "GPL-3.0-only"
+license-files = ["LICENSE"]
+authors = [
+    { name = "Rafael Xudoynazarov" },
+]
+keywords = [
+    "ai",
+    "context",
+    "developer-tools",
+    "git",
+    "windows",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Win32 (MS Windows)",
+    "Intended Audience :: Developers",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Build Tools",
+]
+dependencies = [
+    "PySide6>=6.8,<6.12",
+    "pyperclip>=1.9,<2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<10",
+    "pytest-cov>=6,<8",
+]
+build = [
+    "pyinstaller>=6.11,<7",
+]
+legacy = [
+    "keyboard==0.13.5",
+]
+
+[project.gui-scripts]
+xcc-context-collector = "xcc.gui:run_gui"
+
+[project.urls]
+Repository = "https://github.com/End1essspace/xcc-context-collector"
+Releases = "https://github.com/End1essspace/xcc-context-collector/releases"
+
+[tool.setuptools.dynamic]
+version = { attr = "xcc.__version__" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["xcc*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+branch = true
+source = ["xcc"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true

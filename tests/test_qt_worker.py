@@ -4,8 +4,8 @@ from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication
 
-from src.xcc.pipeline import CollectionRequest
-from src.xcc.qt_worker import CollectionWorker
+from xcc.pipeline import CollectionRequest
+from xcc.qt_worker import CollectionWorker
 
 
 def _request(tmp_path: Path) -> CollectionRequest:

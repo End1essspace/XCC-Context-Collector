@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from src.xcc.models import FileContent, GitContext
-from src.xcc.safety import (
+from xcc.models import FileContent, GitContext
+from xcc.safety import (
     WARNING_API_TOKEN,
     WARNING_CONNECTION_STRING,
     WARNING_CREDENTIAL,

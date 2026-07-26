@@ -80,7 +80,9 @@ main        → legacy tkinter picker workflow
 hotkey      → legacy standalone hotkey workflow
 ```
 
-The GUI is the primary release mode. Legacy scripts remain for development and compatibility.
+The installable package uses the standard `src` layout and the import name `xcc`. Project metadata and dependency groups are defined in `pyproject.toml`; `src/xcc/__init__.py` is the single source of the application version. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the supported runtime boundary.
+
+The PySide6 GUI is the only supported release mode. Tkinter picker and `keyboard`-based listener modules are retained only as unsupported development compatibility tools.
 
 
 🗂 **Supported File Types**
@@ -289,44 +291,43 @@ gui.py
 
 🧩 **Legacy Development Modes**
 
-Legacy picker mode:
+These entry points are retained only for unsupported development compatibility. They are not part of the supported release workflow.
 
-```bash
-python -m src.xcc.main
-```
-
-or:
+Legacy Tkinter picker:
 
 ```bash
 python run.py
 ```
 
-Legacy standalone hotkey listener:
+Legacy standalone `keyboard` listener requires the optional dependency group:
 
 ```bash
+python -m pip install -e ".[legacy]"
 python hotkey.py
 ```
 
-The release version uses the integrated GUI restore hotkey instead.
+The supported release uses the PySide6 GUI and native Windows restore hotkey.
 
 
-📦 **Build from Source**
+📦 **Reproducible Source Setup**
 
-Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-Run tests:
-
-```bash
-pytest -q
-```
-
-Build Windows app:
+XCC v1.2.0 targets **CPython 3.13.x** for source development and release builds. Create an isolated environment and install the required dependency group:
 
 ```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+python -m compileall -q src tests
+python -m pytest -q
+```
+
+Runtime, development, build, and legacy dependencies are separated in `pyproject.toml`. `requirements.txt` remains only as a compatibility wrapper for `pip install -r requirements.txt`.
+
+Install build tooling and create the Windows package:
+
+```powershell
+python -m pip install -e ".[dev,build]"
 powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
 ```
 
@@ -334,13 +335,20 @@ Build output:
 
 ```text
 dist\XCC Context Collector\XCC Context Collector.exe
+dist\XCC Context Collector\VERSION.txt
+```
+
+Run the isolated M8 installation gate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\validate_clean_install.ps1
 ```
 
 
 🖥 **System Requirements**
 
 * Windows 10 / 11 (64-bit)
-* Python 3.13+ for source/development mode
+* CPython 3.13.x for supported source/development mode
 * No Python installation required for packaged PyInstaller release
 
 
@@ -453,7 +461,9 @@ main        → legacy tkinter picker workflow
 hotkey      → legacy standalone hotkey workflow
 ```
 
-GUI является основным release mode. Legacy-скрипты сохранены для разработки и совместимости.
+Устанавливаемый package использует стандартный `src` layout и import name `xcc`. Метаданные проекта и группы зависимостей определены в `pyproject.toml`, а `src/xcc/__init__.py` является единственным источником версии приложения. Подробная архитектурная граница описана в [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+PySide6 GUI — единственный поддерживаемый release mode. Tkinter picker и listener на базе `keyboard` сохранены только как неподдерживаемые development compatibility tools.
 
 
 🗂 **Поддерживаемые типы файлов**
@@ -662,44 +672,43 @@ gui.py
 
 🧩 **Legacy development modes**
 
-Legacy picker mode:
+Эти entry points сохранены только для неподдерживаемой development-совместимости и не относятся к основному release workflow.
 
-```bash
-python -m src.xcc.main
-```
-
-или:
+Legacy Tkinter picker:
 
 ```bash
 python run.py
 ```
 
-Legacy standalone hotkey listener:
+Legacy listener на базе `keyboard` требует optional dependency group:
 
 ```bash
+python -m pip install -e ".[legacy]"
 python hotkey.py
 ```
 
-Релизная версия использует встроенный GUI restore hotkey.
+Поддерживаемый релиз использует PySide6 GUI и нативный Windows restore hotkey.
 
 
-📦 **Сборка из исходников**
+📦 **Воспроизводимая установка из исходников**
 
-Установка зависимостей:
-
-```bash
-pip install -r requirements.txt
-```
-
-Запуск тестов:
-
-```bash
-pytest -q
-```
-
-Сборка Windows-приложения:
+Для разработки и release build XCC v1.2.0 поддерживает **CPython 3.13.x**. Создай изолированное окружение и установи нужную группу зависимостей:
 
 ```powershell
+py -3.13 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -e ".[dev]"
+python -m compileall -q src tests
+python -m pytest -q
+```
+
+Runtime, development, build и legacy dependencies разделены в `pyproject.toml`. `requirements.txt` оставлен только как compatibility wrapper для `pip install -r requirements.txt`.
+
+Установка build tools и сборка Windows package:
+
+```powershell
+python -m pip install -e ".[dev,build]"
 powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
 ```
 
@@ -707,13 +716,20 @@ powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
 
 ```text
 dist\XCC Context Collector\XCC Context Collector.exe
+dist\XCC Context Collector\VERSION.txt
+```
+
+Изолированный M8 installation gate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\validate_clean_install.ps1
 ```
 
 
 🖥 **Системные требования**
 
 * Windows 10 / 11 (64-bit)
-* Python 3.13+ для запуска из исходников
+* CPython 3.13.x для поддерживаемого запуска из исходников
 * Для packaged PyInstaller release установка Python не требуется
 
 

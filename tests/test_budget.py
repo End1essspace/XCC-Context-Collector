@@ -1,6 +1,6 @@
 import pytest
 
-from src.xcc.budget import (
+from xcc.budget import (
     TRUNCATION_MARKER,
     apply_char_budget,
     minimal_budget_notice,

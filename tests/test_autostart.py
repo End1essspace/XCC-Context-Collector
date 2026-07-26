@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.xcc.autostart import APP_SHORTCUT_NAME, shortcut_path, startup_folder
+from xcc.autostart import APP_SHORTCUT_NAME, shortcut_path, startup_folder
 
 
 def test_startup_folder_points_to_windows_startup() -> None:

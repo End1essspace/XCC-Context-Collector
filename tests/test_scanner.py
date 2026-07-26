@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from src.xcc.scanner import scan_project_files
+from xcc.scanner import scan_project_files
 
 
 def test_scans_python_files_recursively(tmp_path: Path) -> None:

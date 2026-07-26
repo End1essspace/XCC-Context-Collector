@@ -1,5 +1,3 @@
-pyperclip
-pytest
-keyboard
-PySide6
-pyinstaller
+# Compatibility installer for the supported GUI runtime.
+# Canonical metadata and dependency ranges live in pyproject.toml.
+-e .

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.xcc.config import MAX_OUTPUT_CHARS
-from src.xcc.settings import AppSettings, load_settings, save_settings, validate_settings, load_settings_result
+from xcc.config import MAX_OUTPUT_CHARS
+from xcc.settings import AppSettings, load_settings, save_settings, validate_settings, load_settings_result
 
 def test_load_settings_result_reports_invalid_json(tmp_path: Path) -> None:
     path = tmp_path / "config.json"

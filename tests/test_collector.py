@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.xcc.collector import collect_files
+from xcc.collector import collect_files
 
 
 def test_collects_python_file(tmp_path: Path) -> None:

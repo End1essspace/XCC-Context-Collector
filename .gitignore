@@ -27,3 +27,10 @@ Desktop.ini
 *.log
 
 release/
+
+# Python packaging / coverage
+*.egg-info/
+.eggs/
+.coverage
+.coverage.*
+htmlcov/

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.xcc.ignore import ProjectIgnoreMatcher, load_ignore_rules, parse_ignore_rule
+from xcc.ignore import ProjectIgnoreMatcher, load_ignore_rules, parse_ignore_rule
 
 
 def test_parses_comments_negation_and_root_anchoring() -> None:

@@ -643,40 +643,44 @@ Completed in the seventh v1.2.0 implementation batch. `CollectionOutcome` now di
 
 ### M8 — Dependency and Project Structure Cleanup
 
+**Status: DONE**
+
 **Priority: MEDIUM**
 
-- [ ] add `pyproject.toml`
-- [ ] define project metadata in one canonical location
-- [ ] define supported Python version
-- [ ] separate runtime dependencies from development dependencies
-- [ ] separate build dependencies from runtime dependencies
-- [ ] make legacy `keyboard` dependency optional
-- [ ] pin compatible dependency ranges
-- [ ] document reproducible source setup
-- [ ] remove version duplication where possible
-- [ ] ensure packaged build reads the canonical version
-- [ ] evaluate removal of legacy Tkinter entry points
-- [ ] clearly mark retained legacy modules as unsupported development tools
-- [ ] update architecture documentation
-- [ ] verify clean installation in a new virtual environment
+- [x] add `pyproject.toml`
+- [x] define project metadata in one canonical location
+- [x] define supported Python version
+- [x] separate runtime dependencies from development dependencies
+- [x] separate build dependencies from runtime dependencies
+- [x] make legacy `keyboard` dependency optional
+- [x] pin compatible dependency ranges
+- [x] document reproducible source setup
+- [x] remove version duplication where possible
+- [x] ensure packaged build reads the canonical version
+- [x] evaluate removal of legacy Tkinter entry points
+- [x] clearly mark retained legacy modules as unsupported development tools
+- [x] update architecture documentation
+- [x] verify clean installation in a new virtual environment
 
-#### Suggested Dependency Groups
+#### Dependency Groups
 
 ```text
 runtime:
-- PySide6
-- pyperclip
+- PySide6 >=6.8,<6.12
+- pyperclip >=1.9,<2
 
 dev:
-- pytest
-- pytest-cov
+- pytest >=8.3,<10
+- pytest-cov >=6,<8
 
 build:
-- pyinstaller
+- pyinstaller >=6.11,<7
 
 legacy:
-- keyboard
+- keyboard ==0.13.5
 ```
+
+Implementation completed in the eighth v1.2.0 batch. The repository now uses a standard installable `src` layout with import package `xcc`, canonical PEP 621 metadata in `pyproject.toml`, dynamic version metadata sourced from `xcc.__version__`, separated optional dependency groups, and version-aware PyInstaller resources. Legacy Tkinter and `keyboard` workflows are retained only as unsupported development compatibility tools. Clean-install validation passed in new Windows CPython 3.13 virtual environments with the complete 152-test suite, editable package installation, canonical version verification, GUI import checks, and confirmation that the optional legacy `keyboard` dependency is absent from the normal runtime install.
 
 ---
 

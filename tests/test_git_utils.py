@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from src.xcc.git_utils import (
+from xcc.git_utils import (
     GitCommandError,
     get_changed_files,
     get_collectable_changed_files,

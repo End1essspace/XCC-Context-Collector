@@ -1,3 +1,5 @@
+"""Tkinter source pickers used only by the unsupported legacy workflow."""
+
 from __future__ import annotations
 
 from pathlib import Path

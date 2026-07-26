@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.xcc.native_hotkey import (
+from xcc.native_hotkey import (
     MOD_ALT,
     MOD_CONTROL,
     MOD_NOREPEAT,

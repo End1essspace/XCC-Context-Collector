@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from src.xcc.tree import build_directory_tree, build_project_tree
+from xcc.tree import build_directory_tree, build_project_tree
 
 
 def test_builds_project_tree_with_relative_paths(tmp_path: Path) -> None:

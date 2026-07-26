@@ -1,3 +1,9 @@
+"""Unsupported legacy Tkinter picker workflow.
+
+Retained for development compatibility. The supported application entry point
+is the PySide6 GUI exposed by ``xcc.gui``.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path

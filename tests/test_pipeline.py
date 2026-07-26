@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from src.xcc.cancellation import CollectionCancelled
-from src.xcc.models import CollectionOutcome
-from src.xcc.pipeline import CollectionRequest, execute_collection
+from xcc.cancellation import CollectionCancelled
+from xcc.models import CollectionOutcome
+from xcc.pipeline import CollectionRequest, execute_collection
 
 
 def _request(
