@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/End1essspace/xcc-context-collector/security/advisories/new
+    about: Report vulnerabilities privately. Do not publish credentials or exploit details.
+  - name: Release downloads
+    url: https://github.com/End1essspace/xcc-context-collector/releases
+    about: Download the latest verified portable ZIP.

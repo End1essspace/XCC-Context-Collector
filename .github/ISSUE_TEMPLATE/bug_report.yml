@@ -1,0 +1,96 @@
+name: Bug report
+description: Report a reproducible XCC defect or regression.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Remove secrets and private source code before submitting. See `docs/BUG_REPORTING.md`.
+
+  - type: input
+    id: version
+    attributes:
+      label: XCC version
+      description: Copy the version from About or VERSION.txt.
+      placeholder: "1.1.2"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: distribution
+    attributes:
+      label: Distribution
+      options:
+        - Packaged portable ZIP
+        - Source checkout / editable install
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Collection mode
+      options:
+        - Selected Files
+        - Full Folder
+        - Git Changed Files
+        - Project Tree
+        - Startup / tray / settings
+        - Build or packaging
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: windows
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 24H2, x64"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Provide the smallest deterministic sequence.
+      placeholder: |
+        1. Start XCC
+        2. Select Full Folder
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Include outcome, mode, counts, error category, and relevant CI/build output. Never paste collected context or credentials.
+      render: text
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Submission checks
+      options:
+        - label: I removed secrets, tokens, private paths, and proprietary source content.
+          required: true
+        - label: I checked existing issues for duplicates.
+          required: true

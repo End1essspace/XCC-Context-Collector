@@ -27,6 +27,7 @@ Desktop.ini
 *.log
 
 release/
+artifacts/
 
 # Python packaging / coverage
 *.egg-info/

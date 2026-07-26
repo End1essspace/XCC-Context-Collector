@@ -98,7 +98,7 @@ Removal can be reconsidered in a later breaking cleanup after repository users h
 
 ## Validation Gates
 
-M8 provides two distinct validation paths:
+M8 and M9 provide layered validation paths:
 
 ```text
 scripts/validate_clean_install.ps1
@@ -110,11 +110,37 @@ scripts/validate_clean_install.ps1
     -> GUI module import
     -> confirms keyboard was not installed
 
+scripts/check_version_consistency.py
+    -> canonical source version
+    -> pyproject dynamic metadata
+    -> bilingual README version markers
+    -> current changelog section
+    -> current release-notes version
+    -> root LICENSE presence
+
 scripts/build_release.ps1
     -> canonical version read
     -> Windows version resource generation
     -> clean PyInstaller build
     -> VERSION.txt emission
+
+scripts/smoke_packaged_app.ps1
+    -> offscreen packaged process startup
+    -> verifies the executable remains alive
+    -> deterministic process cleanup
+
+scripts/package_release.ps1
+    -> versioned portable ZIP
+    -> SHA-256 checksum file
+    -> automatic archive contract validation
+
+scripts/validate_release_archive.py
+    -> safe ZIP paths
+    -> one application root directory
+    -> required executable and VERSION.txt
+    -> no Python source/cache/build files
+    -> canonical packaged version
+    -> companion checksum verification
 ```
 
-Packaged executable startup and release archive validation remain part of M9 and M10.
+`.github/workflows/ci.yml` executes the supported Python 3.13 test gate and the complete Windows package gate on GitHub-hosted `windows-latest`. M10 adds final manual Windows 10/11 release validation and publication evidence.

@@ -1,0 +1,106 @@
+name: Windows CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: xcc-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test · Python ${{ matrix.python-version }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version:
+          - "3.13"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install test dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,build]"
+
+      - name: Compile source
+        shell: pwsh
+        run: python -m compileall -q src tests scripts gui.py run.py hotkey.py
+
+      - name: Check repository version consistency
+        shell: pwsh
+        run: python scripts/check_version_consistency.py
+
+      - name: Run tests
+        shell: pwsh
+        run: python -m pytest -q
+
+  package:
+    name: Package · Windows x64
+    needs: test
+    runs-on: windows-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install build dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev,build]"
+
+      - name: Build packaged application
+        shell: pwsh
+        run: ./scripts/build_release.ps1
+
+      - name: Smoke-test packaged executable
+        shell: pwsh
+        run: ./scripts/smoke_packaged_app.ps1
+
+      - name: Create and validate portable release archive
+        shell: pwsh
+        run: ./scripts/package_release.ps1 -OutputDirectory artifacts
+
+      - name: Upload validated release artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcc-windows-portable
+          path: |
+            artifacts/*.zip
+            artifacts/*.sha256
+          if-no-files-found: error
+          retention-days: 14

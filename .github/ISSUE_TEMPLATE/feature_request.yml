@@ -1,0 +1,50 @@
+name: Feature request
+description: Propose a focused improvement to XCC.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: Describe the workflow limitation, not only the proposed UI.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Explain the expected user-visible behavior and scope boundary.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Collection and scanning
+        - Git context
+        - Output formatting and budget
+        - Safety warnings
+        - GUI and tray workflow
+        - Packaging and releases
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: Scope checks
+      options:
+        - label: This request does not require sending private project content.
+          required: true

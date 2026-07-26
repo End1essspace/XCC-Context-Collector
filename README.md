@@ -1,3 +1,7 @@
+[![Windows CI](https://github.com/End1essspace/xcc-context-collector/actions/workflows/ci.yml/badge.svg)](https://github.com/End1essspace/xcc-context-collector/actions/workflows/ci.yml)
+[![Latest Release](https://img.shields.io/github/v/release/End1essspace/xcc-context-collector?display_name=tag)](https://github.com/End1essspace/xcc-context-collector/releases)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
+
 [ENG]
 
 📋 **XCC Context Collector**
@@ -9,6 +13,16 @@ It is designed for developers working with **ChatGPT, Codex, Claude, and other A
 where structured project context needs to be prepared quickly and consistently.
 
 AI chats often have limits on file uploads, attached files, and context size. Manually sending many project files is slow, repetitive, and often impossible in one message. XCC solves this by turning selected files, full project folders, Git changes, or a project tree into one structured AI-ready context block that can be pasted directly into an AI chat.
+
+⬇️ **Download:** [GitHub Releases](https://github.com/End1essspace/xcc-context-collector/releases)
+
+🖼 **Interface**
+
+| Collect and result health | Metadata-only runtime history |
+|---|---|
+| ![XCC Collect page](docs/screenshots/xcc-collect.svg) | ![XCC History page](docs/screenshots/xcc-history.svg) |
+
+These repository previews follow the current v1.2 development layout. Native packaged-build captures are refreshed during the final release gate.
 
 
 🚀 **Core Features**
@@ -338,6 +352,15 @@ dist\XCC Context Collector\XCC Context Collector.exe
 dist\XCC Context Collector\VERSION.txt
 ```
 
+Create a validated portable ZIP and SHA-256 checksum:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\smoke_packaged_app.ps1
+powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
+```
+
+Portable usage and checksum verification are documented in [`docs/PORTABLE_ZIP.md`](docs/PORTABLE_ZIP.md). Release engineering uses [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
+
 Run the isolated M8 installation gate:
 
 ```powershell
@@ -390,6 +413,16 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 где важно быстро и стабильно подготовить структурированный контекст проекта.
 
 У AI-чатов часто есть лимиты на загрузку файлов, количество attachments и общий размер контекста. Ручная отправка множества файлов проекта занимает время, повторяется каждый раз и часто не помещается в одно сообщение. XCC решает эту проблему: превращает выбранные файлы, папку проекта, Git-изменения или дерево проекта в один структурированный AI-ready context block для вставки в AI-чат.
+
+⬇️ **Скачать:** [GitHub Releases](https://github.com/End1essspace/xcc-context-collector/releases)
+
+🖼 **Интерфейс**
+
+| Сбор и состояние результата | Metadata-only runtime history |
+|---|---|
+| ![Страница Collect](docs/screenshots/xcc-collect.svg) | ![Страница History](docs/screenshots/xcc-history.svg) |
+
+Эти repository previews соответствуют текущему layout разработки v1.2. Нативные снимки packaged build обновляются во время финального release gate.
 
 
 🚀 **Основные возможности**
@@ -718,6 +751,15 @@ powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
 dist\XCC Context Collector\XCC Context Collector.exe
 dist\XCC Context Collector\VERSION.txt
 ```
+
+Создание проверенного portable ZIP и SHA-256 checksum:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\smoke_packaged_app.ps1
+powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
+```
+
+Portable usage и проверка checksum описаны в [`docs/PORTABLE_ZIP.md`](docs/PORTABLE_ZIP.md). Release engineering выполняется по [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
 
 Изолированный M8 installation gate:
 

@@ -686,28 +686,30 @@ Implementation completed in the eighth v1.2.0 batch. The repository now uses a s
 
 ### M9 — GitHub Repository Maturity
 
+**Status: IMPLEMENTED — GITHUB-HOSTED CI VALIDATION PENDING**
+
 **Priority: HIGH**
 
-- [ ] add Windows GitHub Actions test workflow
-- [ ] run tests on supported Python versions
-- [ ] add source compilation check
-- [ ] add packaged build smoke check
-- [ ] cache Python dependencies safely
-- [ ] add `CHANGELOG.md`
-- [ ] add `CONTRIBUTING.md`
-- [ ] add `SECURITY.md`
-- [ ] verify repository contains a root `LICENSE`
-- [ ] add issue templates
-- [ ] add pull request template
-- [ ] document bug-report diagnostics
-- [ ] add CI status badge to README
-- [ ] add release link to README
-- [ ] add screenshots to README
-- [ ] document portable ZIP usage
-- [ ] generate SHA-256 checksum for release archives
-- [ ] verify release archive contents automatically
-- [ ] add release checklist
-- [ ] ensure version consistency across code, README, and release notes
+- [x] add Windows GitHub Actions test workflow
+- [x] run tests on supported Python versions
+- [x] add source compilation check
+- [x] add packaged build smoke check
+- [x] cache Python dependencies safely
+- [x] add `CHANGELOG.md`
+- [x] add `CONTRIBUTING.md`
+- [x] add `SECURITY.md`
+- [x] verify repository contains a root `LICENSE`
+- [x] add issue templates
+- [x] add pull request template
+- [x] document bug-report diagnostics
+- [x] add CI status badge to README
+- [x] add release link to README
+- [x] add screenshots to README
+- [x] document portable ZIP usage
+- [x] generate SHA-256 checksum for release archives
+- [x] verify release archive contents automatically
+- [x] add release checklist
+- [x] ensure version consistency across code, README, and release notes
 
 #### CI Minimum Gate
 
@@ -718,6 +720,10 @@ clean PyInstaller build
 packaged executable startup smoke test
 release archive structure validation
 ```
+
+Implementation completed in the ninth v1.2.0 batch. The repository now has a Windows-only Python 3.13 CI gate, safe pip caching through `setup-python`, deterministic source compilation and tests, canonical version checks, clean PyInstaller packaging, offscreen packaged startup smoke validation, portable ZIP generation, SHA-256 checksums, and archive-structure validation. Governance and support documentation now includes changelog, contribution, security, diagnostics, issue/PR templates, portable usage, release checklist, release links, CI badge, and current UI previews.
+
+The milestone remains open only until the new workflow completes successfully on the GitHub-hosted `windows-latest` runner after push to `main`.
 
 ---
 

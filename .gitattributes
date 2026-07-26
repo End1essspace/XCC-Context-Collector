@@ -1,0 +1,16 @@
+# Keep repository text deterministic across Windows and GitHub Actions.
+* text=auto
+
+*.py text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.ps1 text eol=crlf
+*.txt text eol=lf
+*.svg text eol=lf
+
+*.png binary
+*.ico binary
+*.zip binary
+*.exe binary

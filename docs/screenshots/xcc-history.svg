@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860">
+  <rect width="1400" height="860" rx="18" fill="#0f0f10"/>
+  <rect width="1400" height="58" rx="18" fill="#151515"/>
+  <rect y="40" width="1400" height="18" fill="#151515"/>
+  <circle cx="30" cy="29" r="14" fill="#d6a93a"/>
+  <text x="55" y="36" fill="#d6a93a" font-family="Segoe UI,Arial" font-size="18" font-weight="700">XCC Context Collector</text>
+  <rect x="1050" y="13" width="105" height="32" rx="10" fill="#1a1a1a" stroke="#5a4820"/>
+  <text x="1102" y="34" fill="#f2f2f2" text-anchor="middle" font-family="Segoe UI,Arial" font-size="13">Ready</text>
+  <rect x="1170" y="13" width="205" height="32" rx="10" fill="#1a1a1a" stroke="#5a4820"/>
+  <text x="1272" y="34" fill="#d6a93a" text-anchor="middle" font-family="Segoe UI,Arial" font-size="13">Hotkey: ctrl+alt+x</text>
+
+  <rect y="58" width="205" height="764" fill="#121212"/>
+  <line x1="205" y1="58" x2="205" y2="822" stroke="#2f2a1c"/>
+  <g font-family="Segoe UI,Arial" font-size="15">
+    <text x="34" y="108" fill="#c9c9c9">Collect</text>
+    <rect x="14" y="136" width="177" height="48" rx="10" fill="#d6a93a"/>
+    <text x="34" y="166" fill="#111" font-weight="700">History</text>
+    <text x="34" y="222" fill="#c9c9c9">Settings</text>
+    <text x="34" y="278" fill="#c9c9c9">About</text>
+  </g>
+
+  <text x="245" y="105" fill="#f2f2f2" font-family="Segoe UI,Arial" font-size="28" font-weight="700">History</text>
+  <rect x="245" y="132" width="1115" height="630" rx="14" fill="#161616" stroke="#5a4820"/>
+  <text x="270" y="165" fill="#d6a93a" font-family="Segoe UI,Arial" font-size="15" font-weight="800">Runtime History</text>
+
+  <g font-family="Segoe UI,Arial">
+    <g transform="translate(270 190)">
+      <rect width="1065" height="145" rx="10" fill="#181818" stroke="#3a3018"/>
+      <text x="16" y="29" fill="#d6a93a" font-size="13" font-weight="800">23:41:08</text>
+      <rect x="90" y="10" width="170" height="27" rx="8" fill="#101010" stroke="#5a4820"/>
+      <text x="175" y="29" text-anchor="middle" fill="#d6a93a" font-size="12" font-weight="700">Completed</text>
+      <rect x="870" y="10" width="175" height="27" rx="8" fill="#101010" stroke="#5a4820"/>
+      <text x="957" y="29" text-anchor="middle" fill="#f2f2f2" font-size="12" font-weight="700">Full Folder</text>
+      <text x="16" y="58" fill="#d6d6d6" font-size="13">D:\projects\GitHub\xcc-context-collector</text>
+      <text x="16" y="84" fill="#afafaf" font-size="12">Files 74 · Included 74 · Omitted 0 · Summarized 0 · Partial 0</text>
+      <text x="16" y="108" fill="#afafaf" font-size="12">Source 320965 chars · Output 318402 chars · Tokens 79600 · Truncated No</text>
+      <text x="16" y="132" fill="#8f8f8f" font-size="12">Duration 1.34 s · Warnings 0 · Errors 0</text>
+    </g>
+    <g transform="translate(270 355)">
+      <rect width="1065" height="145" rx="10" fill="#181818" stroke="#3a3018"/>
+      <text x="16" y="29" fill="#d6a93a" font-size="13" font-weight="800">23:39:22</text>
+      <rect x="90" y="10" width="220" height="27" rx="8" fill="#101010" stroke="#5a4820"/>
+      <text x="200" y="29" text-anchor="middle" fill="#d6a93a" font-size="12" font-weight="700">Completed with warnings</text>
+      <rect x="850" y="10" width="195" height="27" rx="8" fill="#101010" stroke="#5a4820"/>
+      <text x="947" y="29" text-anchor="middle" fill="#f2f2f2" font-size="12" font-weight="700">Git Changed Files</text>
+      <text x="16" y="58" fill="#d6d6d6" font-size="13">D:\projects\sample-repository</text>
+      <text x="16" y="84" fill="#afafaf" font-size="12">Files 12 · Included 10 · Omitted 2 · Summarized 0 · Partial 0</text>
+      <text x="16" y="108" fill="#afafaf" font-size="12">Source 48420 chars · Output 119842 chars · Tokens 29960 · Truncated Yes</text>
+      <text x="16" y="132" fill="#8f8f8f" font-size="12">Duration 0.86 s · Warnings 2 · Errors 0</text>
+    </g>
+    <g transform="translate(270 520)">
+      <rect width="1065" height="145" rx="10" fill="#181818" stroke="#3a3018"/>
+      <text x="16" y="29" fill="#d6a93a" font-size="13" font-weight="800">23:35:04</text>
+      <rect x="90" y="10" width="120" height="27" rx="8" fill="#101010" stroke="#5a4820"/>
+      <text x="150" y="29" text-anchor="middle" fill="#d6a93a" font-size="12" font-weight="700">Cancelled</text>
+      <rect x="875" y="10" width="170" height="27" rx="8" fill="#101010" stroke="#5a4820"/>
+      <text x="960" y="29" text-anchor="middle" fill="#f2f2f2" font-size="12" font-weight="700">Project Tree</text>
+      <text x="16" y="58" fill="#d6d6d6" font-size="13">D:\projects\large-monorepo</text>
+      <text x="16" y="84" fill="#afafaf" font-size="12">Files 0 · Included 0 · Omitted 0 · Summarized 0 · Partial 0</text>
+      <text x="16" y="108" fill="#afafaf" font-size="12">Source 0 chars · Output 0 chars · Tokens 0 · Truncated No</text>
+      <text x="16" y="132" fill="#8f8f8f" font-size="12">Duration 2.17 s · Warnings 0 · Errors 0</text>
+    </g>
+  </g>
+
+  <rect y="822" width="1400" height="38" fill="#151515"/>
+  <text x="18" y="847" fill="#b8b8b8" font-family="Segoe UI,Arial" font-size="13">Ready</text>
+</svg>
