@@ -33,6 +33,7 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 - Oversized file summarization
 - `.xccignore` support and root `.gitignore` filtering in folder/tree modes
 - Pre-copy warnings for likely secrets, credentials, and sensitive filenames
+- Typed run outcomes: success, success with warnings, cancelled, or failed
 
 📋 **Fast Clipboard Workflow**
 - One-click **Collect & Copy**
@@ -41,6 +42,8 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 - Background collection worker keeps the GUI responsive on large projects
 - Live collection phases and processed-file counts
 - Cooperative Cancel action with no partial clipboard copy
+- Runtime duration, coverage, warning, and error statistics
+- History records successful, cancelled, and failed runs without storing file contents or detected values
 - Last selected source and settings are restored between launches
 
 🖥 **Windows Desktop Integration**
@@ -59,7 +62,7 @@ Layered Python design:
 
 ```text
 config      → constants and supported extensions
-models      → typed collection result models
+models      → typed collection results, outcomes, statistics, and runtime history records
 scanner     → project folder scanning
 collector   → file reading, progress reporting, and cancellation checks
 pipeline    → background-safe collection orchestration
@@ -240,6 +243,22 @@ Folder scanning, Git inspection, file reading, safety analysis, formatting, and 
 The status bar reports the active phase and available progress counts. Source, mode, and context-option controls are locked for the duration of the job, while the primary action becomes **Cancel**. Cancellation is cooperative between files and never copies a partial result. Clipboard access and safety confirmation dialogs remain on the GUI thread.
 
 
+📊 **Result Health and Runtime History**
+
+Every collection run has one explicit outcome:
+
+```text
+SUCCESS
+SUCCESS_WITH_WARNINGS
+CANCELLED
+FAILED
+```
+
+Recoverable file-level issues and safety findings remain separate counters. A completed result becomes `SUCCESS_WITH_WARNINGS` when either counter is non-zero, while worker exceptions are `FAILED` and cooperative cancellation is `CANCELLED`.
+
+Last Run and Runtime History show duration, included/omitted/summarized/partial file counts, truncation, warning count, and error count. History stores metadata only: it never stores collected file contents, Git diff payloads, detected secret values, or failure message bodies.
+
+
 🗃 **Data Storage**
 
 All settings are stored locally.
@@ -387,6 +406,7 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 - Summarize для слишком больших файлов
 - Поддержка `.xccignore` и фильтрация по корневому `.gitignore` в folder/tree modes
 - Предупреждения перед копированием для вероятных секретов, credentials и чувствительных имён файлов
+- Typed outcomes запуска: success, success with warnings, cancelled или failed
 
 📋 **Быстрый clipboard workflow**
 - One-click **Collect & Copy**
@@ -395,6 +415,8 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 - Background worker сохраняет отзывчивость GUI на больших проектах
 - Текущая фаза и количество обработанных файлов отображаются во время сборки
 - Cooperative Cancel не копирует частичный результат в clipboard
+- Runtime duration, coverage, warning и error statistics
+- History учитывает successful, cancelled и failed runs без хранения содержимого файлов и найденных значений
 - Last selected source и настройки восстанавливаются между запусками
 
 🖥 **Интеграция с Windows**
@@ -413,7 +435,7 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 
 ```text
 config      → константы и поддерживаемые расширения
-models      → typed модели результата
+models      → typed результаты, outcomes, statistics и runtime history records
 scanner     → сканирование папки проекта
 collector   → чтение файлов, progress reporting и cancellation checks
 pipeline    → background-safe orchestration процесса сборки
@@ -592,6 +614,22 @@ Full Folder и Project Tree modes по умолчанию также учиты�
 Сканирование папки, Git inspection, чтение файлов, safety analysis, форматирование и budget processing выполняются вне Qt main thread. Во время сборки окно остаётся отзывчивым: его можно перемещать, сворачивать, восстанавливать из tray и открывать страницы, не конфликтующие с активной операцией.
 
 Status bar показывает текущую фазу и доступные progress counts. Source, mode и context-option controls блокируются до завершения job, а основная кнопка превращается в **Cancel**. Отмена выполняется между файлами и никогда не копирует частичный результат. Clipboard access и safety confirmation dialogs остаются в GUI thread.
+
+
+📊 **Result health и runtime history**
+
+Каждый collection run получает один явный outcome:
+
+```text
+SUCCESS
+SUCCESS_WITH_WARNINGS
+CANCELLED
+FAILED
+```
+
+Recoverable file-level errors и safety warnings учитываются отдельными счётчиками. Успешно завершённый результат становится `SUCCESS_WITH_WARNINGS`, когда хотя бы один из этих счётчиков ненулевой. Worker exceptions получают `FAILED`, cooperative cancellation — `CANCELLED`.
+
+Last Run и Runtime History показывают duration, included/omitted/summarized/partial file counts, truncation, warnings и errors. History хранит только metadata: содержимое файлов, Git diff payloads, найденные secret values и тексты failure messages в неё не записываются.
 
 
 🗃 **Хранение данных**

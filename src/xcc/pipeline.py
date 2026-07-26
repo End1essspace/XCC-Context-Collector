@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
+from time import perf_counter
 
 from .cancellation import CollectionCancelled
 from .collector import collect_files
@@ -30,12 +31,24 @@ class CollectionRequest:
     compact: bool
     max_output_chars: int
 
+    @property
+    def source_label(self) -> str:
+        if self.mode == "files":
+            count = len(self.selected_paths)
+            return f"{count} selected file{'s' if count != 1 else ''}"
+
+        if self.project_root is not None:
+            return str(self.project_root)
+
+        return "Unknown source"
+
 
 @dataclass(slots=True)
 class CollectionJobResult:
     result: CollectionResult
     mode_name: str
     source: str
+    duration_seconds: float
 
 
 def execute_collection(
@@ -45,6 +58,7 @@ def execute_collection(
     cancel_check: CancelCheck | None = None,
 ) -> CollectionJobResult:
     """Run one collection job without touching the GUI or clipboard."""
+    started_at = perf_counter()
     _emit(progress_callback, "Preparing", 0, 0)
     _raise_if_cancelled(cancel_check)
 
@@ -92,10 +106,10 @@ def execute_collection(
             request.max_output_chars,
         )
 
-        return CollectionJobResult(
+        return _complete_job(
+            request=request,
             result=result,
-            mode_name=request.mode_name,
-            source=str(project_root),
+            started_at=started_at,
         )
 
     if mode == "files":
@@ -206,17 +220,10 @@ def execute_collection(
         request.max_output_chars,
     )
 
-    source = (
-        f"{len(request.selected_paths)} selected "
-        f"file{'s' if len(request.selected_paths) != 1 else ''}"
-        if mode == "files"
-        else str(project_root)
-    )
-
-    return CollectionJobResult(
+    return _complete_job(
+        request=request,
         result=result,
-        mode_name=request.mode_name,
-        source=source,
+        started_at=started_at,
     )
 
 
@@ -233,3 +240,20 @@ def _emit(
 def _raise_if_cancelled(cancel_check: CancelCheck | None) -> None:
     if cancel_check is not None and cancel_check():
         raise CollectionCancelled("Collection cancelled.")
+
+
+def _complete_job(
+    *,
+    request: CollectionRequest,
+    result: CollectionResult,
+    started_at: float,
+) -> CollectionJobResult:
+    duration_seconds = max(0.0, perf_counter() - started_at)
+    result.stats.duration_seconds = duration_seconds
+
+    return CollectionJobResult(
+        result=result,
+        mode_name=request.mode_name,
+        source=request.source_label,
+        duration_seconds=duration_seconds,
+    )

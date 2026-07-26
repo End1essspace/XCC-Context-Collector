@@ -304,7 +304,7 @@ Status: DONE
 
 ## v1.2.0 Context Integrity & Reliability
 
-**Status: PLANNED**
+**Status: IN PROGRESS**
 
 ### Release Goal
 
@@ -607,23 +607,25 @@ Implementation completed in the sixth v1.2.0 batch. The milestone remains open o
 
 ### M7 — Result Model and Runtime History Upgrade
 
+**Status: DONE**
+
 **Priority: MEDIUM**
 
-- [ ] expand `CollectionStats`
-- [ ] add included file count
-- [ ] add omitted file count
-- [ ] add summarized file count
-- [ ] add partial file count
+- [x] expand `CollectionStats`
+- [x] add included file count
+- [x] add omitted file count
+- [x] add summarized file count
+- [x] add partial file count
 - [x] add warning count
-- [ ] add collection duration
-- [ ] add collection outcome enum
-- [ ] distinguish errors from warnings
-- [ ] distinguish cancellation from failure
-- [ ] update Last Run metrics
-- [ ] update runtime history entries
-- [ ] add clear health status for completed-with-warnings
-- [ ] keep history free of file contents and detected secret values
-- [ ] add tests for result statistics
+- [x] add collection duration
+- [x] add collection outcome enum
+- [x] distinguish errors from warnings
+- [x] distinguish cancellation from failure
+- [x] update Last Run metrics
+- [x] update runtime history entries
+- [x] add clear health status for completed-with-warnings
+- [x] keep history free of file contents and detected secret values
+- [x] add tests for result statistics
 
 #### Suggested Outcomes
 
@@ -633,6 +635,9 @@ SUCCESS_WITH_WARNINGS
 CANCELLED
 FAILED
 ```
+
+
+Completed in the seventh v1.2.0 implementation batch. `CollectionOutcome` now distinguishes successful, warning-bearing, cancelled, and failed runs. Last Run and Runtime History use typed metadata-only records with duration, coverage, warning, and error statistics. Cancellation after a safety warning is recorded as `CANCELLED`, while fatal worker or clipboard failures are recorded as `FAILED`.
 
 ---
 
@@ -892,23 +897,19 @@ Large projects do not block the interface, and collection can be cancelled safel
 
 Proceed with:
 
-> **M6 — Responsive Collection Pipeline**
+> **M8 — Dependency and Project Structure Cleanup**
 
 Required files for the next stage:
 
 ```text
+requirements.txt
+README.md
+docs/roadmap.md
+scripts/build_release.ps1
+src/xcc/__init__.py
 src/xcc/gui.py
-src/xcc/collector.py
-src/xcc/scanner.py
-src/xcc/git_utils.py
-src/xcc/formatter.py
-src/xcc/models.py
-src/xcc/tree.py
 
-tests/test_collector.py
-tests/test_scanner.py
-tests/test_git_utils.py
-tests/test_formatter.py
+tests/test_project_metadata.py
 ```
 
-The full project is not required for the initial worker-pipeline implementation.
+A new root `pyproject.toml` will be added. The full project is not required for the initial dependency and metadata cleanup.

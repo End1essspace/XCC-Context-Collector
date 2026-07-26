@@ -223,6 +223,8 @@ def format_project_tree(
     full_text = join_sections(full_sections)
 
     if max_output_chars is None or len(full_text) <= max_output_chars:
+        stats.included_files = file_count
+        stats.omitted_files = 0
         stats.output_chars = len(full_text)
 
         return CollectionResult(
@@ -250,6 +252,8 @@ def format_project_tree(
 
     if rendered is None:
         text = minimal_budget_notice(max_output_chars)
+        stats.included_files = 0
+        stats.omitted_files = file_count
         stats.output_chars = len(text)
         return CollectionResult(
             text=text,
@@ -302,6 +306,19 @@ def format_project_tree(
                 best_text = rendered
 
         rendered = best_text
+        included_tree_lines = lines[:best_count]
+        included_file_count = sum(
+            1
+            for line in included_tree_lines
+            if line.strip()
+            and line.strip() != "# Project Tree"
+            and not line.rstrip("\n").endswith("/")
+        )
+        stats.included_files = included_file_count
+        stats.omitted_files = max(0, file_count - included_file_count)
+    else:
+        stats.included_files = 0
+        stats.omitted_files = file_count
 
     stats.output_chars = len(rendered)
 

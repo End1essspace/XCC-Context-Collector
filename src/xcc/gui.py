@@ -37,7 +37,7 @@ from .git_utils import is_git_repository
 from .settings import AppSettings, load_settings_result, save_settings
 from .autostart import is_autostart_enabled, set_autostart_enabled
 from .native_hotkey import NativeHotkeyError, NativeHotkeyManager
-from .models import SafetyWarning
+from .models import CollectionOutcome, CollectionRunRecord, SafetyWarning
 from .pipeline import CollectionJobResult, CollectionRequest
 from .qt_worker import CollectionWorker
 from .safety import build_warning_confirmation_text
@@ -97,7 +97,7 @@ class XccMainWindow(QMainWindow):
 
         self.selected_paths: list[Path] = []
         self.project_root: Path | None = None
-        self.history_entries: list[dict[str, object]] = []
+        self.history_entries: list[CollectionRunRecord] = []
         settings_result = load_settings_result()
         self.app_settings: AppSettings = settings_result.settings
         self._settings_recovery_message = settings_result.message
@@ -109,6 +109,7 @@ class XccMainWindow(QMainWindow):
         self._hotkey_status_message = "Not registered"
         self._collection_thread: QThread | None = None
         self._collection_worker: CollectionWorker | None = None
+        self._active_collection_request: CollectionRequest | None = None
         self._collection_active = False
         self._close_after_collection = False
         self._quit_after_collection = False
@@ -748,13 +749,18 @@ class XccMainWindow(QMainWindow):
 
         self.output_chars_metric = self._metric_capsule("Output Chars", "-")
         self.tokens_metric = self._metric_capsule("Output Tokens", "-")
-
         self.truncated_metric = self._metric_capsule("Truncated", "-")
-        self.warnings_metric = self._metric_capsule("Warnings", "-")
-        self.errors_metric = self._metric_capsule("Errors", "-")
+
+        self.included_metric = self._metric_capsule("Included", "-")
+        self.omitted_metric = self._metric_capsule("Omitted", "-")
+        self.coverage_metric = self._metric_capsule("Summ. / Partial", "-")
+
+        self.outcome_metric = self._metric_capsule("Outcome", "-")
+        self.duration_metric = self._metric_capsule("Duration", "-")
+        self.issues_metric = self._metric_capsule("Warnings / Errors", "-")
 
         columns_row = QHBoxLayout()
-        columns_row.setSpacing(20)
+        columns_row.setSpacing(14)
         columns_row.setContentsMargins(0, 0, 0, 0)
 
         volume_column = QVBoxLayout()
@@ -775,7 +781,17 @@ class XccMainWindow(QMainWindow):
         output_column.addWidget(output_title)
         output_column.addWidget(self.output_chars_metric)
         output_column.addWidget(self.tokens_metric)
-        output_column.addStretch(1)
+        output_column.addWidget(self.truncated_metric)
+
+        coverage_column = QVBoxLayout()
+        coverage_column.setContentsMargins(0, 0, 0, 0)
+        coverage_column.setSpacing(8)
+        coverage_title = QLabel("Coverage")
+        coverage_title.setObjectName("MetricGroupTitle")
+        coverage_column.addWidget(coverage_title)
+        coverage_column.addWidget(self.included_metric)
+        coverage_column.addWidget(self.omitted_metric)
+        coverage_column.addWidget(self.coverage_metric)
 
         health_column = QVBoxLayout()
         health_column.setContentsMargins(0, 0, 0, 0)
@@ -783,13 +799,13 @@ class XccMainWindow(QMainWindow):
         health_title = QLabel("Health")
         health_title.setObjectName("MetricGroupTitle")
         health_column.addWidget(health_title)
-        health_column.addWidget(self.truncated_metric)
-        health_column.addWidget(self.warnings_metric)
-        health_column.addWidget(self.errors_metric)
-        health_column.addStretch(1)
+        health_column.addWidget(self.outcome_metric)
+        health_column.addWidget(self.duration_metric)
+        health_column.addWidget(self.issues_metric)
 
         columns_row.addLayout(volume_column, 1)
         columns_row.addLayout(output_column, 1)
+        columns_row.addLayout(coverage_column, 1)
         columns_row.addLayout(health_column, 1)
 
         stats_layout.addLayout(columns_row)
@@ -1070,6 +1086,7 @@ class XccMainWindow(QMainWindow):
 
         self._collection_thread = thread
         self._collection_worker = worker
+        self._active_collection_request = request
         self._set_collection_active(True)
         self._on_collection_progress("Preparing", 0, 0)
         thread.start()
@@ -1140,63 +1157,87 @@ class XccMainWindow(QMainWindow):
         self.header_status.setText(phase if len(phase) <= 18 else "Working")
 
     def _on_collection_completed(self, job: CollectionJobResult) -> None:
-        copied = False
+        result = job.result
+        result.stats.duration_seconds = job.duration_seconds
 
-        try:
-            result = job.result
-            if not result.text.strip():
-                raise ValueError("Nothing to copy.")
-
-            if result.warnings:
-                self._on_collection_progress("Reviewing warnings", 0, 0)
-                if not self._confirm_safety_warnings(result.warnings):
-                    self._set_status("Copy cancelled after safety warning.")
-                    self.header_status.setText("Cancelled")
-                    return
-
-            self._on_collection_progress("Copying", 0, 0)
-            copy_to_clipboard(result.text)
-
-            output_chars = len(result.text)
-            output_tokens = output_chars // 4
-
-            self._update_metrics(
-                files=result.stats.files,
-                lines=result.stats.lines,
-                source_chars=result.stats.chars,
-                output_chars=output_chars,
-                output_tokens=output_tokens,
-                truncated=result.was_truncated,
-                warnings=result.stats.warning_count,
-                errors=len(result.errors),
-            )
-            self._add_history_entry(
+        if not result.text.strip():
+            record = CollectionRunRecord.from_result(
+                timestamp=self._current_history_time(),
                 mode_name=job.mode_name,
                 source=job.source,
-                files=result.stats.files,
-                lines=result.stats.lines,
-                source_chars=result.stats.chars,
-                output_chars=output_chars,
-                output_tokens=output_tokens,
-                truncated=result.was_truncated,
-                warnings=result.stats.warning_count,
-                errors=len(result.errors),
+                result=result,
+                outcome=CollectionOutcome.FAILED,
+                output_copied=False,
             )
-
-            self._on_collection_progress("Completed", 0, 0)
-            copied = True
-
-        except Exception as exc:
-            self._set_status("Error.")
-            self.header_status.setText("Error")
-            QMessageBox.critical(self, "XCC", str(exc))
-        finally:
+            self._record_run(record)
             self._set_collection_active(False)
+            self._set_status("Nothing to copy.")
+            self.header_status.setText("Failed")
+            QMessageBox.warning(self, "XCC", "Nothing to copy.")
+            return
 
-        if copied:
-            self._show_success_feedback()
+        if result.warnings:
+            self._on_collection_progress("Reviewing warnings", 0, 0)
+            if not self._confirm_safety_warnings(result.warnings):
+                record = CollectionRunRecord.from_result(
+                    timestamp=self._current_history_time(),
+                    mode_name=job.mode_name,
+                    source=job.source,
+                    result=result,
+                    outcome=CollectionOutcome.CANCELLED,
+                    output_copied=False,
+                )
+                self._record_run(record)
+                self._set_collection_active(False)
+                self._set_status("Copy cancelled after safety warning.")
+                self.header_status.setText("Cancelled")
+                return
 
-    def _on_collection_failed(self, message: str) -> None:
+        try:
+            self._on_collection_progress("Copying", 0, 0)
+            copy_to_clipboard(result.text)
+        except Exception as exc:
+            record = CollectionRunRecord.from_result(
+                timestamp=self._current_history_time(),
+                mode_name=job.mode_name,
+                source=job.source,
+                result=result,
+                outcome=CollectionOutcome.FAILED,
+                output_copied=False,
+            )
+            self._record_run(record)
+            self._set_collection_active(False)
+            self._set_status("Clipboard copy failed.")
+            self.header_status.setText("Failed")
+            QMessageBox.critical(self, "XCC", str(exc))
+            return
+
+        record = CollectionRunRecord.from_result(
+            timestamp=self._current_history_time(),
+            mode_name=job.mode_name,
+            source=job.source,
+            result=result,
+        )
+        self._record_run(record)
+        self._on_collection_progress("Completed", 0, 0)
+        self._set_collection_active(False)
+        self._show_success_feedback(record)
+
+    def _on_collection_failed(
+        self,
+        message: str,
+        duration_seconds: float,
+    ) -> None:
+        mode_name, source = self._active_run_identity()
+        self._record_run(
+            CollectionRunRecord.terminal(
+                timestamp=self._current_history_time(),
+                mode_name=mode_name,
+                source=source,
+                outcome=CollectionOutcome.FAILED,
+                duration_seconds=duration_seconds,
+            )
+        )
         self._set_collection_active(False)
 
         if message == "No supported Git changes found.":
@@ -1212,10 +1253,20 @@ class XccMainWindow(QMainWindow):
             return
 
         self._set_status("Error.")
-        self.header_status.setText("Error")
+        self.header_status.setText("Failed")
         QMessageBox.critical(self, "XCC", message)
 
-    def _on_collection_cancelled(self) -> None:
+    def _on_collection_cancelled(self, duration_seconds: float) -> None:
+        mode_name, source = self._active_run_identity()
+        self._record_run(
+            CollectionRunRecord.terminal(
+                timestamp=self._current_history_time(),
+                mode_name=mode_name,
+                source=source,
+                outcome=CollectionOutcome.CANCELLED,
+                duration_seconds=duration_seconds,
+            )
+        )
         self._set_collection_active(False)
         self._set_status("Collection cancelled.")
         self.header_status.setText("Cancelled")
@@ -1223,6 +1274,7 @@ class XccMainWindow(QMainWindow):
     def _on_collection_thread_finished(self) -> None:
         self._collection_worker = None
         self._collection_thread = None
+        self._active_collection_request = None
         self._run_deferred_close_or_quit()
 
     def _set_collection_active(self, active: bool) -> None:
@@ -1272,11 +1324,7 @@ class XccMainWindow(QMainWindow):
             QMessageBox.StandardButton.Cancel,
         )
 
-        if response == QMessageBox.StandardButton.Yes:
-            return True
-
-        self._set_status("Copy cancelled after safety warning.")
-        return False
+        return response == QMessageBox.StandardButton.Yes
 
     def _read_max_output_chars(self) -> int:
         raw_value = self.max_chars_input.text().strip()
@@ -1291,26 +1339,42 @@ class XccMainWindow(QMainWindow):
 
         return value
 
-    def _update_metrics(
-        self,
-        *,
-        files: int,
-        lines: int,
-        source_chars: int,
-        output_chars: int,
-        output_tokens: int,
-        truncated: bool,
-        warnings: int,
-        errors: int,
-    ) -> None:
-        self._set_metric_value(self.files_metric, str(files))
-        self._set_metric_value(self.lines_metric, str(lines))
-        self._set_metric_value(self.source_chars_metric, str(source_chars))
-        self._set_metric_value(self.output_chars_metric, str(output_chars))
-        self._set_metric_value(self.tokens_metric, str(output_tokens))
-        self._set_metric_value(self.truncated_metric, "Yes" if truncated else "No")
-        self._set_metric_value(self.warnings_metric, str(warnings))
-        self._set_metric_value(self.errors_metric, str(errors))
+    def _active_run_identity(self) -> tuple[str, str]:
+        request = self._active_collection_request
+        if request is not None:
+            return request.mode_name, request.source_label
+
+        return self._current_mode_name(), "Unknown source"
+
+    def _current_history_time(self) -> str:
+        return datetime.now().strftime("%H:%M:%S")
+
+    def _record_run(self, record: CollectionRunRecord) -> None:
+        self._update_metrics(record)
+        self._add_history_entry(record)
+
+    def _update_metrics(self, record: CollectionRunRecord) -> None:
+        self._set_metric_value(self.files_metric, str(record.files))
+        self._set_metric_value(self.lines_metric, str(record.lines))
+        self._set_metric_value(self.source_chars_metric, str(record.source_chars))
+        self._set_metric_value(self.output_chars_metric, str(record.output_chars))
+        self._set_metric_value(self.tokens_metric, str(record.output_tokens))
+        self._set_metric_value(
+            self.truncated_metric,
+            "Yes" if record.truncated else "No",
+        )
+        self._set_metric_value(self.included_metric, str(record.included_files))
+        self._set_metric_value(self.omitted_metric, str(record.omitted_files))
+        self._set_metric_value(
+            self.coverage_metric,
+            f"{record.summarized_files} / {record.partial_files}",
+        )
+        self._set_metric_value(self.outcome_metric, record.outcome.metric_label)
+        self._set_metric_value(self.duration_metric, record.duration_label)
+        self._set_metric_value(
+            self.issues_metric,
+            f"{record.warning_count} / {record.error_count}",
+        )
 
     def _set_metric_value(self, metric: QFrame, value: str) -> None:
         metric.value_label.setText(value)
@@ -1328,11 +1392,15 @@ class XccMainWindow(QMainWindow):
         self.status_label.setText(message)
         self.header_status.setText(message if len(message) <= 18 else "Ready")
 
-    def _show_success_feedback(self) -> None:
-        self._set_status("Copied to clipboard.")
-        self.header_status.setText("Copied")
-        self.collect_button.setText("Copied!")
+    def _show_success_feedback(self, record: CollectionRunRecord) -> None:
+        if record.outcome == CollectionOutcome.SUCCESS_WITH_WARNINGS:
+            self._set_status("Copied to clipboard with warnings.")
+            self.header_status.setText("Warnings")
+        else:
+            self._set_status("Copied to clipboard.")
+            self.header_status.setText("Copied")
 
+        self.collect_button.setText("Copied!")
         QTimer.singleShot(1500, self._reset_success_feedback)
 
     def _reset_success_feedback(self) -> None:
@@ -1617,37 +1685,10 @@ class XccMainWindow(QMainWindow):
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         return layout
     
-    def _add_history_entry(
-        self,
-        *,
-        mode_name: str,
-        source: str,
-        files: int,
-        lines: int,
-        source_chars: int,
-        output_chars: int,
-        output_tokens: int,
-        truncated: bool,
-        warnings: int,
-        errors: int,
-    ) -> None:
-        entry = {
-            "time": datetime.now().strftime("%H:%M:%S"),
-            "mode_name": mode_name,
-            "source": source,
-            "files": files,
-            "lines": lines,
-            "source_chars": source_chars,
-            "output_chars": output_chars,
-            "output_tokens": output_tokens,
-            "truncated": truncated,
-            "warnings": warnings,
-            "errors": errors,
-        }
-
-        self.history_entries.insert(0, entry)
+    def _add_history_entry(self, record: CollectionRunRecord) -> None:
+        self.history_entries.insert(0, record)
         self._render_history_entries()
-        
+
     def _render_history_entries(self) -> None:
         while self.history_list_layout.count():
             item = self.history_list_layout.takeAt(0)
@@ -1661,15 +1702,17 @@ class XccMainWindow(QMainWindow):
             self.history_list_layout.addStretch(1)
             return
 
-        for entry in self.history_entries[:20]:
-            self.history_list_layout.addWidget(self._history_entry_widget(entry))
+        for record in self.history_entries[:20]:
+            self.history_list_layout.addWidget(
+                self._history_entry_widget(record)
+            )
 
         self.history_list_layout.addStretch(1)
 
-    def _history_entry_widget(self, entry: dict[str, object]) -> QWidget:
+    def _history_entry_widget(self, record: CollectionRunRecord) -> QWidget:
         row = QFrame()
         row.setObjectName("HistoryEntry")
-        row.setFixedHeight(96)
+        row.setFixedHeight(142)
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
 
         layout = QVBoxLayout(row)
@@ -1680,44 +1723,56 @@ class XccMainWindow(QMainWindow):
         top_row.setContentsMargins(0, 0, 0, 0)
         top_row.setSpacing(8)
 
-        time_label = QLabel(str(entry["time"]))
+        time_label = QLabel(record.timestamp)
         time_label.setObjectName("HistoryTime")
 
-        mode_label = QLabel(str(entry["mode_name"]))
+        outcome_label = QLabel(record.health_label)
+        outcome_label.setObjectName("HistoryOutcomeCapsule")
+        outcome_label.setFixedHeight(26)
+
+        mode_label = QLabel(record.mode_name)
         mode_label.setObjectName("HistoryModeCapsule")
         mode_label.setFixedHeight(26)
 
         top_row.addWidget(time_label)
+        top_row.addWidget(outcome_label)
         top_row.addStretch(1)
         top_row.addWidget(mode_label)
 
-        source_label = QLabel(str(entry["source"]))
+        source_label = QLabel(record.source)
         source_label.setObjectName("HistorySource")
         source_label.setWordWrap(False)
 
         stats_label = QLabel(
-            f"Files {entry['files']} · "
-            f"Lines {entry['lines']} · "
-            f"Source {entry['source_chars']} chars · "
-            f"Output {entry['output_chars']} chars"
+            f"Files {record.files} · Included {record.included_files} · "
+            f"Omitted {record.omitted_files} · Summarized "
+            f"{record.summarized_files} · Partial {record.partial_files}"
         )
         stats_label.setObjectName("HistoryStats")
 
+        output_label = QLabel(
+            f"Source {record.source_chars} chars · "
+            f"Output {record.output_chars} chars · "
+            f"Tokens {record.output_tokens} · "
+            f"Truncated {'Yes' if record.truncated else 'No'}"
+        )
+        output_label.setObjectName("HistoryStats")
+
         health_label = QLabel(
-            f"Tokens {entry['output_tokens']} · "
-            f"Truncated {'Yes' if entry['truncated'] else 'No'} · "
-            f"Warnings {entry['warnings']} · "
-            f"Errors {entry['errors']}"
+            f"Duration {record.duration_label} · "
+            f"Warnings {record.warning_count} · "
+            f"Errors {record.error_count}"
         )
         health_label.setObjectName("HistoryHealth")
 
         layout.addLayout(top_row)
         layout.addWidget(source_label)
         layout.addWidget(stats_label)
+        layout.addWidget(output_label)
         layout.addWidget(health_label)
 
         return row
-    
+
     def _about_info_row(self, label: str, value: str) -> QFrame:
         row = QFrame()
         row.setObjectName("AboutInfoRow")
@@ -2024,7 +2079,8 @@ class XccMainWindow(QMainWindow):
                 background: transparent;
             }
 
-            #HistoryModeCapsule {
+            #HistoryModeCapsule,
+            #HistoryOutcomeCapsule {
                 background: #101010;
                 border: 1px solid #5A4820;
                 border-radius: 8px;
@@ -2032,6 +2088,10 @@ class XccMainWindow(QMainWindow):
                 color: #F2F2F2;
                 font-size: 11px;
                 font-weight: 700;
+            }
+
+            #HistoryOutcomeCapsule {
+                color: #D6A93A;
             }
 
             #HistorySource {

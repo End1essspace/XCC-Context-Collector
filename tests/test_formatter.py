@@ -9,7 +9,13 @@ from src.xcc.formatter import (
     make_display_path,
     make_display_paths,
 )
-from src.xcc.models import FileContent, GitChange, GitContext, SafetyWarning
+from src.xcc.models import (
+    CollectionOutcome,
+    FileContent,
+    GitChange,
+    GitContext,
+    SafetyWarning,
+)
 
 
 def _file(path: str, content: str) -> FileContent:
@@ -61,6 +67,9 @@ def test_formats_errors() -> None:
     assert "# XCC Errors" in result.text
     assert "- Cannot decode file: bad.py" in result.text
     assert result.errors == ["Cannot decode file: bad.py"]
+    assert result.stats.error_count == 1
+    assert result.stats.warning_count == 0
+    assert result.outcome == CollectionOutcome.SUCCESS_WITH_WARNINGS
 
 
 def test_make_display_path_relative_to_project_root(tmp_path: Path) -> None:
@@ -115,6 +124,8 @@ def test_formats_project_tree_without_file_contents(tmp_path: Path) -> None:
     assert "secret content" not in result.text
     assert "Files: 1" in result.text
     assert "Directories: 1" in result.text
+    assert result.stats.included_files == 1
+    assert result.stats.omitted_files == 0
 
 
 def test_format_file_preserves_repeated_blank_lines() -> None:
@@ -488,6 +499,9 @@ def test_project_tree_budget_keeps_complete_tree_lines(tmp_path: Path) -> None:
     assert len(result.text) <= 450
     assert result.was_truncated is True
     assert "Project tree: partial" in result.text
+    assert result.stats.included_files < 50
+    assert result.stats.omitted_files > 0
+    assert result.stats.included_files + result.stats.omitted_files == 50
 
     for line in result.text.splitlines():
         if line.startswith("src/"):
@@ -621,6 +635,8 @@ def test_formats_safety_warnings_without_secret_values() -> None:
     warning_section = result.text.split("# XCC Safety Warnings", 1)[1].split("# Files", 1)[0]
     assert "supersecret123" not in warning_section
     assert result.stats.warning_count == 1
+    assert result.stats.error_count == 0
+    assert result.outcome == CollectionOutcome.SUCCESS_WITH_WARNINGS
     assert result.warnings == [warning]
 
 

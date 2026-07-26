@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 from src.xcc.cancellation import CollectionCancelled
+from src.xcc.models import CollectionOutcome
 from src.xcc.pipeline import CollectionRequest, execute_collection
 
 
@@ -59,6 +60,9 @@ def test_folder_pipeline_reports_phases_and_complete_read_progress(
     assert "===== file: src/first.py =====" in job.result.text
     assert "===== file: src/second.py =====" in job.result.text
     assert job.source == str(root)
+    assert job.duration_seconds >= 0
+    assert job.result.stats.duration_seconds == job.duration_seconds
+    assert job.result.outcome == CollectionOutcome.SUCCESS
 
 
 def test_selected_files_pipeline_preserves_explicit_source_label(

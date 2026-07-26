@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from time import perf_counter
 from tkinter import Tk, messagebox
 
 from .clipboard import copy_to_clipboard
@@ -23,6 +24,7 @@ from .safety import (
 
 
 def main() -> None:
+    started_at = perf_counter()
     mode = ask_mode()
 
     if mode is None:
@@ -113,6 +115,7 @@ def main() -> None:
 
     estimated_tokens = sum(file.char_count for file in files) // 4
 
+    result.stats.duration_seconds = max(0.0, perf_counter() - started_at)
     output_chars = len(result.text)
     output_tokens = output_chars // 4
 
@@ -132,9 +135,11 @@ def main() -> None:
             f"Output Characters: {output_chars}\n"
             f"Source Tokens: {estimated_tokens}\n"
             f"Output Tokens: {output_tokens}\n"
+            f"Outcome: {result.outcome.value}\n"
+            f"Duration: {result.stats.duration_seconds:.2f} s\n"
             f"Truncated: {'Yes' if result.was_truncated else 'No'}\n"
             f"Warnings: {result.stats.warning_count}\n"
-            f"Errors: {len(result.errors)}"
+            f"Errors: {result.stats.error_count}"
         ),
     )
 
