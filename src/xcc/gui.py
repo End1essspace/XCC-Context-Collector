@@ -41,10 +41,12 @@ from .models import CollectionOutcome, CollectionRunRecord, SafetyWarning
 from .pipeline import CollectionJobResult, CollectionRequest
 from .qt_worker import CollectionWorker
 from .safety import build_warning_confirmation_text
+from .resources import resource_path
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
-APP_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_app.ico"
-TRAY_ICON_PATH = PROJECT_ROOT / "assets" / "xcc_tray.ico"
+APP_ICON_PATH = resource_path("assets", "xcc_app.ico")
+APP_IMAGE_PATH = resource_path("assets", "xcc_app.png")
+TRAY_ICON_PATH = resource_path("assets", "xcc_tray.ico")
+TRAY_IMAGE_PATH = resource_path("assets", "xcc_tray.png")
 INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
 INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
 
@@ -382,8 +384,9 @@ class XccMainWindow(QMainWindow):
         icon_label.setObjectName("HeaderAppIcon")
         icon_label.setFixedSize(28, 28)
 
-        if APP_ICON_PATH.exists():
-            pixmap = QPixmap(str(APP_ICON_PATH))
+        app_image_path = APP_IMAGE_PATH if APP_IMAGE_PATH.exists() else APP_ICON_PATH
+        if app_image_path.exists():
+            pixmap = QPixmap(str(app_image_path))
             icon_label.setPixmap(
                 pixmap.scaled(
                     28,
@@ -415,8 +418,18 @@ class XccMainWindow(QMainWindow):
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
 
-        icon_path = TRAY_ICON_PATH if TRAY_ICON_PATH.exists() else APP_ICON_PATH
-        tray_icon = QIcon(str(icon_path)) if icon_path.exists() else self.windowIcon()
+        icon_path = next(
+            (
+                path
+                for path in (TRAY_ICON_PATH, TRAY_IMAGE_PATH, APP_ICON_PATH, APP_IMAGE_PATH)
+                if path.exists()
+            ),
+            None,
+        )
+        tray_icon = QIcon(str(icon_path)) if icon_path is not None else self.windowIcon()
+        if tray_icon.isNull():
+            self._set_event_status("Tray icon asset is unavailable.")
+            return
 
         self.tray_icon = QSystemTrayIcon(tray_icon, self)
         self.tray_icon.setToolTip("XCC Context Collector")
@@ -1572,8 +1585,9 @@ class XccMainWindow(QMainWindow):
         icon_label.setObjectName("AboutAppIcon")
         icon_label.setFixedSize(56, 56)
 
-        if APP_ICON_PATH.exists():
-            pixmap = QPixmap(str(APP_ICON_PATH))
+        app_image_path = APP_IMAGE_PATH if APP_IMAGE_PATH.exists() else APP_ICON_PATH
+        if app_image_path.exists():
+            pixmap = QPixmap(str(app_image_path))
             icon_label.setPixmap(
                 pixmap.scaled(
                     56,
@@ -2360,6 +2374,8 @@ class XccMainWindow(QMainWindow):
 
 def run_gui() -> None:
     app = QApplication(sys.argv)
+    if APP_ICON_PATH.exists():
+        app.setWindowIcon(QIcon(str(APP_ICON_PATH)))
 
     instance_lock = QLockFile(str(INSTANCE_LOCK_PATH))
     instance_lock.setStaleLockTime(0)

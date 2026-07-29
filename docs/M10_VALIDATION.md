@@ -30,7 +30,16 @@ artifacts\XCC-Context-Collector-v1.2.0-win64.zip.sha256
 artifacts\XCC-v1.2.0-automated-gate.json
 ```
 
-## 2. Validate the four collection modes
+## 2. Validate packaged visual assets
+
+Use the packaged executable and confirm:
+
+- the Windows title bar and taskbar show the XCC application icon;
+- the header and About page show the XCC artwork;
+- the notification-area icon is visible (it may initially be inside the Windows overflow menu);
+- the tray icon menu can be opened and is not a blank/invisible entry.
+
+## 3. Validate the four collection modes
 
 Use the packaged executable, not `python gui.py`.
 
@@ -41,7 +50,7 @@ Use the packaged executable, not `python gui.py`.
 
 For each successful run, confirm the clipboard output, Last Run metrics, outcome, and History entry.
 
-## 3. Validate responsiveness and cancellation
+## 4. Validate responsiveness and cancellation
 
 Use a repository large enough for progress to remain visible.
 
@@ -56,7 +65,7 @@ Use a repository large enough for progress to remain visible.
 
 This closes the remaining M6 manual acceptance gate.
 
-## 4. Validate Windows integration
+## 5. Validate Windows integration
 
 On each clean host:
 
@@ -68,7 +77,7 @@ On each clean host:
 - second launch restores the existing instance;
 - packaged application starts without Python installed.
 
-## 5. Record one evidence file per OS
+## 6. Record one evidence file per OS
 
 Run on the host after completing all checks:
 
@@ -87,7 +96,7 @@ one complete Windows 11 record
 
 The records contain OS metadata, booleans, operator name, UTC time, and optional notes. They do not contain project files, clipboard content, secrets, or user configuration values.
 
-## 6. Validate combined evidence
+## 7. Validate combined evidence
 
 ```powershell
 python scripts\validate_release_evidence.py `
@@ -98,7 +107,7 @@ python scripts\validate_release_evidence.py `
 
 The validator rejects missing operating systems, mixed versions, absent gates, and any failed check.
 
-## 7. Publication gate
+## 8. Publication gate
 
 After the release candidate commit is pushed and Windows CI is green:
 

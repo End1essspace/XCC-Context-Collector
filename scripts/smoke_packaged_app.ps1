@@ -9,6 +9,29 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
 
 $ResolvedExecutable = (Resolve-Path $ExecutablePath).Path
+$DistRoot = Split-Path -Parent $ResolvedExecutable
+$CandidateAssetRoots = @(
+    (Join-Path $DistRoot "_internal\assets"),
+    (Join-Path $DistRoot "assets")
+)
+$AssetRoot = $CandidateAssetRoots | Where-Object { Test-Path $_ } | Select-Object -First 1
+if ([string]::IsNullOrWhiteSpace($AssetRoot)) {
+    throw "Packaged assets directory was not found beside the executable."
+}
+
+$RequiredAssets = @(
+    "xcc_app.ico",
+    "xcc_app.png",
+    "xcc_tray.ico",
+    "xcc_tray.png"
+)
+$MissingAssets = @(
+    $RequiredAssets | Where-Object { -not (Test-Path (Join-Path $AssetRoot $_)) }
+)
+if ($MissingAssets.Count -gt 0) {
+    throw "Packaged icon assets are missing: $($MissingAssets -join ', ')"
+}
+
 $Process = $null
 $PreviousQtPlatform = $env:QT_QPA_PLATFORM
 
@@ -25,6 +48,7 @@ try {
         throw "Packaged executable exited during startup smoke test with code $($Process.ExitCode)."
     }
 
+    Write-Host "Packaged icon assets found: $AssetRoot" -ForegroundColor Green
     Write-Host "Packaged executable startup smoke test passed." -ForegroundColor Green
 }
 finally {

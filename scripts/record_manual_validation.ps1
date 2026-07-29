@@ -39,6 +39,7 @@ Write-Host "Record results for packaged XCC v$AppVersion on $ReleaseLabel." -For
 
 $Gates = [ordered]@{
     packaged_startup = (Read-GateResult "Packaged application starts cleanly")
+    application_icons = (Read-GateResult "Window, header, About, taskbar, and tray icons render correctly")
     selected_files_mode = (Read-GateResult "Selected Files mode passes")
     full_folder_mode = (Read-GateResult "Full Folder mode passes")
     git_changed_files_mode = (Read-GateResult "Git Changed Files mode passes")

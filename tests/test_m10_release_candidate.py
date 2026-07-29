@@ -162,6 +162,9 @@ def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
     build = (PROJECT_ROOT / "scripts" / "build_release.ps1").read_text(
         encoding="utf-8"
     )
+    smoke = (
+        PROJECT_ROOT / "scripts" / "smoke_packaged_app.ps1"
+    ).read_text(encoding="utf-8")
 
     for marker in (
         "compileall",
@@ -180,3 +183,6 @@ def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
 
     assert 'Get-Process -Name "XCC Context Collector"' in build
     assert "Remove-DirectoryWithRetry" in build
+    assert "_internal\\assets" in smoke
+    assert "xcc_app.ico" in smoke
+    assert "xcc_tray.png" in smoke

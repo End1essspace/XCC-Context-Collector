@@ -36,6 +36,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Selected files with identical basenames no longer receive ambiguous output headers.
 - Character budgeting no longer cuts source files or Git diff sections in the middle.
 - Cancellation no longer copies partial output or leaves conflicting controls active.
+- Packaged builds now resolve application and tray artwork from the PyInstaller runtime data directory.
 
 ### Security
 

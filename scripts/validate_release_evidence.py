@@ -11,6 +11,7 @@ SCHEMA_VERSION = 1
 REQUIRED_OS_RELEASES = {"Windows 10", "Windows 11"}
 REQUIRED_GATES = (
     "packaged_startup",
+    "application_icons",
     "selected_files_mode",
     "full_folder_mode",
     "git_changed_files_mode",
