@@ -421,6 +421,19 @@ def format_warning_lines(
     return lines
 
 
+
+def should_show_safety_confirmation(
+    warnings: Sequence[SafetyWarning],
+    *,
+    enabled: bool,
+) -> bool:
+    """Return whether the GUI should interrupt copy with a confirmation dialog.
+
+    Warning detection remains active even when confirmation is disabled so the
+    generated context, outcome, metrics, and history stay transparent.
+    """
+    return enabled and bool(warnings)
+
 def build_warning_confirmation_text(
     warnings: Sequence[SafetyWarning],
     *,

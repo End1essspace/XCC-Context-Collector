@@ -20,7 +20,7 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 
 | Collect and result health | Metadata-only runtime history |
 |---|---|
-| ![XCC Collect page](docs/screenshots/xcc-collect.png) | ![XCC History page](docs/screenshots/xcc-history.png) |
+| ![XCC Collect page](docs/screenshots/xcc-collect.svg) | ![XCC History page](docs/screenshots/xcc-history.svg) |
 
 These previews show the v1.2.0 release layout. The portable build is published through GitHub Releases after the complete Windows validation gate.
 
@@ -46,7 +46,7 @@ These previews show the v1.2.0 release layout. The portable build is published t
 - Character budget with truncation status
 - Oversized file summarization
 - `.xccignore` support and root `.gitignore` filtering in folder/tree modes
-- Pre-copy warnings for likely secrets, credentials, and sensitive filenames
+- Optional pre-copy confirmation for likely secrets, credentials, and sensitive filenames
 - Typed run outcomes: success, success with warnings, cancelled, or failed
 
 📋 **Fast Clipboard Workflow**
@@ -247,7 +247,7 @@ Before copying file content or Git diffs, XCC performs a lightweight heuristic s
 - likely password assignments;
 - connection strings containing credentials.
 
-When findings exist, XCC shows a confirmation dialog and allows the operation to be cancelled. Warning summaries contain only the relative filename, line number, and warning category. Detected values are not displayed in the warning dialog or stored in runtime history.
+When findings exist, XCC shows a confirmation dialog by default and allows the operation to be cancelled. The **Safety confirmation** toggle in Settings can disable this modal interruption. Detection remains active when the dialog is disabled: findings still appear in generated context, warning counts, outcomes, and runtime history metadata. Warning summaries contain only the relative filename, line number, and warning category. Detected values are not displayed or stored in runtime history.
 
 Detection is heuristic. It can produce false positives and is not a security guarantee. XCC warns but does not silently redact or modify collected source code.
 
@@ -426,9 +426,9 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 
 🖼 **Интерфейс**
 
-| Сбор и состояние результата | История работы — только метаданные |
+| Сбор и состояние результата | Metadata-only runtime history |
 |---|---|
-| ![Страница Collect](docs/screenshots/xcc-collect.png) | ![Страница History](docs/screenshots/xcc-history.png) |
+| ![Страница Collect](docs/screenshots/xcc-collect.svg) | ![Страница History](docs/screenshots/xcc-history.svg) |
 
 Эти repository previews соответствуют текущему layout разработки v1.2. Нативные снимки packaged build обновляются во время финального release gate.
 
@@ -454,7 +454,7 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 - Лимит символов с truncation status
 - Summarize для слишком больших файлов
 - Поддержка `.xccignore` и фильтрация по корневому `.gitignore` в folder/tree modes
-- Предупреждения перед копированием для вероятных секретов, credentials и чувствительных имён файлов
+- Опциональное подтверждение перед копированием при вероятных секретах, credentials и чувствительных именах файлов
 - Typed outcomes запуска: success, success with warnings, cancelled или failed
 
 📋 **Быстрый clipboard workflow**
@@ -655,7 +655,7 @@ Full Folder и Project Tree modes по умолчанию также учиты�
 - вероятные password assignments;
 - connection strings с credentials.
 
-При наличии findings XCC показывает confirmation dialog и позволяет отменить операцию. Warning summary содержит только относительный путь, номер строки и категорию предупреждения. Найденные значения не показываются в warning dialog и не сохраняются в runtime history.
+При наличии findings XCC по умолчанию показывает confirmation dialog и позволяет отменить операцию. Новый переключатель **Safety confirmation** в Settings позволяет отключить это модальное окно. Detection при этом остаётся активной: findings продолжают попадать в generated context, warning counters, outcome и metadata runtime history. Warning summary содержит только относительный путь, номер строки и категорию предупреждения. Найденные значения не показываются и не сохраняются в runtime history.
 
 Проверка является эвристической, может давать false positives и не является гарантией безопасности. XCC предупреждает пользователя, но не выполняет скрытую redaction и не изменяет исходный код.
 

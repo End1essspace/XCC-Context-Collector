@@ -47,6 +47,7 @@ def test_save_and_load_settings_roundtrip(tmp_path: Path) -> None:
         close_to_tray=False,
         start_maximized=False,
         show_tray_notifications=False,
+        confirm_safety_warnings=False,
     )
 
     save_settings(original, path)
@@ -117,6 +118,7 @@ def test_validate_settings_falls_back_on_invalid_behavior_flags() -> None:
             "close_to_tray": "no",
             "start_maximized": None,
             "show_tray_notifications": "true",
+            "confirm_safety_warnings": "off",
         }
     )
 
@@ -125,3 +127,16 @@ def test_validate_settings_falls_back_on_invalid_behavior_flags() -> None:
     assert settings.close_to_tray is True
     assert settings.start_maximized is True
     assert settings.show_tray_notifications is True
+    assert settings.confirm_safety_warnings is True
+
+
+def test_validate_settings_accepts_disabled_safety_confirmation() -> None:
+    settings = validate_settings({"confirm_safety_warnings": False})
+
+    assert settings.confirm_safety_warnings is False
+
+
+def test_safety_confirmation_defaults_to_enabled_for_older_configs() -> None:
+    settings = validate_settings({"default_mode": "folder"})
+
+    assert settings.confirm_safety_warnings is True

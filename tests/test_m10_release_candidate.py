@@ -186,3 +186,19 @@ def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
     assert "_internal\\assets" in smoke
     assert "xcc_app.ico" in smoke
     assert "xcc_tray.png" in smoke
+
+
+def test_gui_exposes_persistent_optional_safety_confirmation() -> None:
+    gui_source = (PROJECT_ROOT / "src" / "xcc" / "gui.py").read_text(
+        encoding="utf-8"
+    )
+    settings_source = (
+        PROJECT_ROOT / "src" / "xcc" / "settings.py"
+    ).read_text(encoding="utf-8")
+
+    assert '"Safety confirmation"' in gui_source
+    assert "self.safety_confirmation_checkbox" in gui_source
+    assert "enabled=self.app_settings.confirm_safety_warnings" in gui_source
+    assert "confirm_safety_warnings: bool" in settings_source
+    assert "DEFAULT_CONFIRM_SAFETY_WARNINGS = True" in settings_source
+    assert "safety_confirmation_setting" in REQUIRED_GATES

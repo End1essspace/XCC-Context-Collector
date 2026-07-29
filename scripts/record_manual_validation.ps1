@@ -44,6 +44,7 @@ $Gates = [ordered]@{
     full_folder_mode = (Read-GateResult "Full Folder mode passes")
     git_changed_files_mode = (Read-GateResult "Git Changed Files mode passes")
     project_tree_mode = (Read-GateResult "Project Tree mode passes")
+    safety_confirmation_setting = (Read-GateResult "Safety confirmation can be disabled and remains disabled after restart")
     large_project_responsiveness = (Read-GateResult "Large-project GUI remains responsive")
     cooperative_cancellation = (Read-GateResult "Cooperative cancellation passes")
     second_job_prevented = (Read-GateResult "Second concurrent collection is prevented")

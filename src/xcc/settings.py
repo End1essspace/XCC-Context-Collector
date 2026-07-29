@@ -18,6 +18,7 @@ DEFAULT_START_MINIMIZED_TO_TRAY = False
 DEFAULT_CLOSE_TO_TRAY = True
 DEFAULT_START_MAXIMIZED = True
 DEFAULT_SHOW_TRAY_NOTIFICATIONS = True
+DEFAULT_CONFIRM_SAFETY_WARNINGS = True
 
 
 @dataclass(slots=True)
@@ -38,6 +39,7 @@ class AppSettings:
     close_to_tray: bool = DEFAULT_CLOSE_TO_TRAY
     start_maximized: bool = DEFAULT_START_MAXIMIZED
     show_tray_notifications: bool = DEFAULT_SHOW_TRAY_NOTIFICATIONS
+    confirm_safety_warnings: bool = DEFAULT_CONFIRM_SAFETY_WARNINGS
 
 
 def default_settings_path() -> Path:
@@ -131,6 +133,11 @@ def validate_settings(raw_data: dict[str, Any]) -> AppSettings:
         "show_tray_notifications",
         DEFAULT_SHOW_TRAY_NOTIFICATIONS,
     )
+    confirm_safety_warnings = _read_bool(
+        raw_data,
+        "confirm_safety_warnings",
+        DEFAULT_CONFIRM_SAFETY_WARNINGS,
+    )
 
     return AppSettings(
         default_mode=default_mode,
@@ -142,6 +149,7 @@ def validate_settings(raw_data: dict[str, Any]) -> AppSettings:
         close_to_tray=close_to_tray,
         start_maximized=start_maximized,
         show_tray_notifications=show_tray_notifications,
+        confirm_safety_warnings=confirm_safety_warnings,
     )
 
 

@@ -65,7 +65,19 @@ Use a repository large enough for progress to remain visible.
 
 This closes the remaining M6 manual acceptance gate.
 
-## 5. Validate Windows integration
+
+## 5. Validate the Safety confirmation setting
+
+Use a source that reliably produces at least one safety finding.
+
+- With **Safety confirmation** enabled, confirm that XCC shows the pre-copy dialog.
+- Disable **Safety confirmation** in Settings.
+- Collect the same source again and confirm that XCC copies without showing the dialog.
+- Confirm that warning detection still remains visible in the generated context, Last Run counters, outcome, and History metadata.
+- Restart XCC and confirm that the disabled setting persists.
+- Re-enable the setting and confirm that the dialog returns.
+
+## 6. Validate Windows integration
 
 On each clean host:
 
@@ -77,7 +89,7 @@ On each clean host:
 - second launch restores the existing instance;
 - packaged application starts without Python installed.
 
-## 6. Record one evidence file per OS
+## 7. Record one evidence file per OS
 
 Run on the host after completing all checks:
 
@@ -96,7 +108,7 @@ one complete Windows 11 record
 
 The records contain OS metadata, booleans, operator name, UTC time, and optional notes. They do not contain project files, clipboard content, secrets, or user configuration values.
 
-## 7. Validate combined evidence
+## 8. Validate combined evidence
 
 ```powershell
 python scripts\validate_release_evidence.py `
@@ -107,7 +119,7 @@ python scripts\validate_release_evidence.py `
 
 The validator rejects missing operating systems, mixed versions, absent gates, and any failed check.
 
-## 8. Publication gate
+## 9. Publication gate
 
 After the release candidate commit is pushed and Windows CI is green:
 

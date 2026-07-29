@@ -16,6 +16,7 @@ REQUIRED_GATES = (
     "full_folder_mode",
     "git_changed_files_mode",
     "project_tree_mode",
+    "safety_confirmation_setting",
     "large_project_responsiveness",
     "cooperative_cancellation",
     "second_job_prevented",

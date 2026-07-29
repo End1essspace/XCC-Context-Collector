@@ -40,7 +40,10 @@ from .native_hotkey import NativeHotkeyError, NativeHotkeyManager
 from .models import CollectionOutcome, CollectionRunRecord, SafetyWarning
 from .pipeline import CollectionJobResult, CollectionRequest
 from .qt_worker import CollectionWorker
-from .safety import build_warning_confirmation_text
+from .safety import (
+    build_warning_confirmation_text,
+    should_show_safety_confirmation,
+)
 from .resources import resource_path
 
 APP_ICON_PATH = resource_path("assets", "xcc_app.ico")
@@ -176,6 +179,7 @@ class XccMainWindow(QMainWindow):
         self.start_maximized_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.close_to_tray_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+        self.safety_confirmation_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
 
     def _setup_global_hotkey(self) -> None:
         self._cleanup_global_hotkey()
@@ -300,6 +304,7 @@ class XccMainWindow(QMainWindow):
             close_to_tray=self.close_to_tray_checkbox.isChecked(),
             start_maximized=self.start_maximized_checkbox.isChecked(),
             show_tray_notifications=self.tray_notifications_checkbox.isChecked(),
+            confirm_safety_warnings=self.safety_confirmation_checkbox.isChecked(),
         )
 
         save_settings(settings)
@@ -1189,7 +1194,10 @@ class XccMainWindow(QMainWindow):
             QMessageBox.warning(self, "XCC", "Nothing to copy.")
             return
 
-        if result.warnings:
+        if should_show_safety_confirmation(
+            result.warnings,
+            enabled=self.app_settings.confirm_safety_warnings,
+        ):
             self._on_collection_progress("Reviewing warnings", 0, 0)
             if not self._confirm_safety_warnings(result.warnings):
                 record = CollectionRunRecord.from_result(
@@ -1446,6 +1454,10 @@ class XccMainWindow(QMainWindow):
             "",
             self.app_settings.show_tray_notifications,
         )
+        self.safety_confirmation_checkbox = self._settings_toggle(
+            "",
+            self.app_settings.confirm_safety_warnings,
+        )
 
         behavior_group = self._settings_group(
             "Behavior",
@@ -1511,6 +1523,11 @@ class XccMainWindow(QMainWindow):
                 self.settings_current_mode,
                 self.settings_compact_mode,
                 self.settings_current_max_chars,
+                self._settings_row(
+                    "Safety confirmation",
+                    "Ask before copying when potentially sensitive context is detected.",
+                    control=self.safety_confirmation_checkbox,
+                ),
                 self.settings_hotkey,
                 self._settings_row(
                     "Version",

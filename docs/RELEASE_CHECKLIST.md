@@ -38,6 +38,7 @@ Record evidence with `scripts\record_manual_validation.ps1`.
 - [ ] Full Folder mode
 - [ ] Git Changed Files mode
 - [ ] Project Tree mode
+- [ ] Safety confirmation can be disabled, persists after restart, and does not disable warning detection
 - [ ] Large-project GUI responsiveness
 - [ ] Cooperative cancellation
 - [ ] Second concurrent job is prevented

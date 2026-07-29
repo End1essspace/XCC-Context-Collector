@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from xcc.models import FileContent, GitContext
+from xcc.models import FileContent, GitContext, SafetyWarning
 from xcc.safety import (
     WARNING_API_TOKEN,
     WARNING_CONNECTION_STRING,
@@ -13,6 +13,7 @@ from xcc.safety import (
     scan_git_context_for_warnings,
     scan_project_filename_warnings,
     scan_text_for_warnings,
+    should_show_safety_confirmation,
 )
 
 
@@ -130,3 +131,21 @@ def test_project_filename_scan_respects_project_ignore_rules(tmp_path: Path) -> 
 
     assert "config/secrets.json" in paths
     assert "private/credentials.json" not in paths
+
+
+def test_safety_confirmation_can_be_disabled_without_hiding_findings() -> None:
+    warnings = [
+        SafetyWarning(
+            path="config.py",
+            category=WARNING_CREDENTIAL,
+            line_number=4,
+        )
+    ]
+
+    assert should_show_safety_confirmation(warnings, enabled=True) is True
+    assert should_show_safety_confirmation(warnings, enabled=False) is False
+    assert warnings[0].category == WARNING_CREDENTIAL
+
+
+def test_safety_confirmation_is_not_requested_without_findings() -> None:
+    assert should_show_safety_confirmation([], enabled=True) is False

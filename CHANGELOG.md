@@ -21,6 +21,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Windows GitHub Actions CI, packaged startup smoke testing, portable ZIP validation, and SHA-256 generation.
 - Repository contribution, security, bug-reporting, portable-use, and release documentation.
 - Automated release-candidate gate and machine-readable Windows 10/11 validation evidence contract.
+- Persistent Safety confirmation setting; enabled by default and optional for repeated trusted-project workflows.
 
 ### Changed
 
@@ -28,6 +29,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Legacy Tkinter and `keyboard` workflows are retained only as unsupported development compatibility tools.
 - Release builds read the application version from `xcc.__version__` and embed the same value in executable metadata and `VERSION.txt`.
 - Runtime history now records successful, warning-bearing, cancelled, and failed operations without storing collected payloads.
+- Disabling Safety confirmation suppresses only the modal prompt; warning detection, generated summaries, counters, and outcomes remain active.
 
 ### Fixed
 
