@@ -1548,8 +1548,16 @@ class XccMainWindow(QMainWindow):
         groups_layout = QHBoxLayout(groups_row)
         groups_layout.setContentsMargins(0, 0, 0, 0)
         groups_layout.setSpacing(18)
-        groups_layout.addWidget(behavior_group, 1)
-        groups_layout.addWidget(context_group, 1)
+        groups_layout.addWidget(
+            behavior_group,
+            1,
+            Qt.AlignmentFlag.AlignTop,
+        )
+        groups_layout.addWidget(
+            context_group,
+            1,
+            Qt.AlignmentFlag.AlignTop,
+        )
 
         layout.addWidget(groups_row)
         layout.addStretch(1)
