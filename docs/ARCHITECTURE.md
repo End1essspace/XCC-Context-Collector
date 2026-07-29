@@ -70,7 +70,7 @@ The supported application must import and run without the `legacy` group. `keybo
 `src/xcc/__init__.py` is the single source of the application version:
 
 ```python
-__version__ = "1.1.2"
+__version__ = "1.2.0"
 ```
 
 `pyproject.toml` reads this value through setuptools dynamic metadata. The PyInstaller build script reads the same attribute to:
@@ -144,3 +144,28 @@ scripts/validate_release_archive.py
 ```
 
 `.github/workflows/ci.yml` executes the supported Python 3.13 test gate and the complete Windows package gate on GitHub-hosted `windows-latest`. M10 adds final manual Windows 10/11 release validation and publication evidence.
+
+## v1.2.0 Release Boundary
+
+The release-candidate gate is intentionally split into automated and manual evidence:
+
+```text
+scripts/validate_release_candidate.ps1
+    -> compileall and canonical version consistency
+    -> full pytest suite
+    -> isolated clean-install validation
+    -> clean PyInstaller build
+    -> packaged startup smoke
+    -> portable ZIP and SHA-256 validation
+    -> machine-readable automated gate report
+
+scripts/record_manual_validation.ps1
+    -> records one clean-host Windows validation session
+    -> stores only OS metadata, pass/fail gates, and operator notes
+
+scripts/validate_release_evidence.py
+    -> requires complete Windows 10 and Windows 11 evidence
+    -> rejects mixed versions, missing gates, and failed checks
+```
+
+The final `v1.2.0` tag must not be created until the automated artifact and both manual OS records pass validation.

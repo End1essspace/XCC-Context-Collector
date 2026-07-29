@@ -9,6 +9,30 @@ Set-Location $ProjectRoot
 
 $VersionInfoPath = Join-Path $env:TEMP "xcc-version-info-$PID.txt"
 
+function Remove-DirectoryWithRetry([string]$Path) {
+    if (-not (Test-Path $Path)) {
+        return
+    }
+
+    for ($Attempt = 1; $Attempt -le 3; $Attempt++) {
+        try {
+            Remove-Item $Path -Recurse -Force -ErrorAction Stop
+            return
+        }
+        catch {
+            if ($Attempt -eq 3) {
+                throw "Could not clean $Path. Close every packaged XCC process, including tray instances, and retry. $($_.Exception.Message)"
+            }
+            Start-Sleep -Milliseconds 500
+        }
+    }
+}
+
+$RunningPackagedProcess = @(Get-Process -Name "XCC Context Collector" -ErrorAction SilentlyContinue)
+if ($RunningPackagedProcess.Count -gt 0) {
+    throw "A packaged XCC process is running. Use the tray menu to Quit XCC before building."
+}
+
 try {
     $AppVersion = (& $PythonExecutable -c "import sys; sys.path.insert(0, 'src'); from xcc import __version__; print(__version__)").Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($AppVersion)) {
@@ -24,13 +48,8 @@ try {
 
     Write-Host "Cleaning previous build artifacts..." -ForegroundColor Yellow
 
-    if (Test-Path "build") {
-        Remove-Item "build" -Recurse -Force
-    }
-
-    if (Test-Path "dist") {
-        Remove-Item "dist" -Recurse -Force
-    }
+    Remove-DirectoryWithRetry "build"
+    Remove-DirectoryWithRetry "dist"
 
     if (Test-Path "XCC Context Collector.spec") {
         Remove-Item "XCC Context Collector.spec" -Force

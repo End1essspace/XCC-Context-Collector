@@ -15,7 +15,7 @@ from scripts.validate_release_archive import (
 def _write_release_archive(
     path: Path,
     *,
-    version: str = "1.1.2",
+    version: str = "1.2.0",
     unsafe_name: str | None = None,
 ) -> None:
     with zipfile.ZipFile(path, "w") as archive:
@@ -44,14 +44,14 @@ def _write_checksum(archive_path: Path, checksum_path: Path) -> None:
 
 
 def test_release_archive_and_checksum_validation_pass(tmp_path: Path) -> None:
-    archive_path = tmp_path / "XCC-Context-Collector-v1.1.2-win64.zip"
+    archive_path = tmp_path / "XCC-Context-Collector-v1.2.0-win64.zip"
     checksum_path = tmp_path / f"{archive_path.name}.sha256"
     _write_release_archive(archive_path)
     _write_checksum(archive_path, checksum_path)
 
     validate_archive(
         archive_path,
-        expected_version="1.1.2",
+        expected_version="1.2.0",
         checksum_path=checksum_path,
     )
 
@@ -63,7 +63,7 @@ def test_release_archive_rejects_version_mismatch(tmp_path: Path) -> None:
     with pytest.raises(ReleaseArchiveError, match="VERSION.txt mismatch"):
         validate_archive(
             archive_path,
-            expected_version="1.1.2",
+            expected_version="1.2.0",
         )
 
 
@@ -77,7 +77,7 @@ def test_release_archive_rejects_path_traversal(tmp_path: Path) -> None:
     with pytest.raises(ReleaseArchiveError, match="unsafe path"):
         validate_archive(
             archive_path,
-            expected_version="1.1.2",
+            expected_version="1.2.0",
         )
 
 
@@ -91,7 +91,7 @@ def test_release_archive_rejects_source_files(tmp_path: Path) -> None:
     with pytest.raises(ReleaseArchiveError, match="forbidden"):
         validate_archive(
             archive_path,
-            expected_version="1.1.2",
+            expected_version="1.2.0",
         )
 
 
@@ -107,6 +107,6 @@ def test_release_archive_rejects_modified_checksum(tmp_path: Path) -> None:
     with pytest.raises(ReleaseArchiveError, match="Checksum mismatch"):
         validate_archive(
             archive_path,
-            expected_version="1.1.2",
+            expected_version="1.2.0",
             checksum_path=checksum_path,
         )

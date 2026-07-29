@@ -14,7 +14,7 @@ body:
     attributes:
       label: XCC version
       description: Copy the version from About or VERSION.txt.
-      placeholder: "1.1.2"
+      placeholder: "1.2.0"
     validations:
       required: true
 

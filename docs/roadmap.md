@@ -553,7 +553,7 @@ Completed in the fifth v1.2.0 implementation batch. Safety scanning covers curre
 
 ### M6 — Responsive Collection Pipeline
 
-**Status: IMPLEMENTED — WINDOWS MANUAL VALIDATION PENDING**
+**Status: RELEASE CANDIDATE — FINAL WINDOWS VALIDATION PENDING**
 
 **Priority: HIGH**
 
@@ -686,7 +686,7 @@ Implementation completed in the eighth v1.2.0 batch. The repository now uses a s
 
 ### M9 — GitHub Repository Maturity
 
-**Status: IMPLEMENTED — GITHUB-HOSTED CI VALIDATION PENDING**
+**Status: DONE**
 
 **Priority: HIGH**
 
@@ -723,15 +723,17 @@ release archive structure validation
 
 Implementation completed in the ninth v1.2.0 batch. The repository now has a Windows-only Python 3.13 CI gate, safe pip caching through `setup-python`, deterministic source compilation and tests, canonical version checks, clean PyInstaller packaging, offscreen packaged startup smoke validation, portable ZIP generation, SHA-256 checksums, and archive-structure validation. Governance and support documentation now includes changelog, contribution, security, diagnostics, issue/PR templates, portable usage, release checklist, release links, CI badge, and current UI previews.
 
-The milestone remains open only until the new workflow completes successfully on the GitHub-hosted `windows-latest` runner after push to `main`.
+The local 162-test, build, packaged-smoke, portable-archive, and checksum gates passed. The committed M9 workflow also completed successfully on the GitHub-hosted `windows-latest` runner after push to `main`.
 
 ---
 
 ### M10 — v1.2.0 Validation and Release Gate
 
+**Status: RELEASE CANDIDATE PREPARED — FINAL WINDOWS VALIDATION PENDING**
+
 **Priority: RELEASE BLOCKER**
 
-- [ ] all automated tests pass
+- [ ] all automated tests pass on the v1.2.0 release candidate
 - [ ] no regression in existing four collection modes
 - [ ] source fidelity regression suite passes
 - [ ] staged Git changes test passes
@@ -748,13 +750,26 @@ The milestone remains open only until the new workflow completes successfully on
 - [ ] hotkey conflict remains non-fatal
 - [ ] autostart shortcut test passes
 - [ ] invalid-config recovery test passes
-- [ ] release ZIP contents verified
-- [ ] SHA-256 checksum generated
-- [ ] README updated to v1.2.0
-- [ ] roadmap updated
-- [ ] changelog updated
-- [ ] release notes created
+- [ ] release ZIP contents verified for v1.2.0
+- [ ] SHA-256 checksum generated for v1.2.0
+- [x] README updated to v1.2.0
+- [x] roadmap updated for the release-candidate gate
+- [x] changelog updated and v1.2.0 section dated
+- [x] release notes created
 - [ ] final release tag created
+
+#### Release-Candidate Tooling
+
+```text
+scripts/validate_release_candidate.ps1
+scripts/record_manual_validation.ps1
+scripts/validate_release_evidence.py
+scripts/check_release_readiness.py
+```
+
+The automated gate builds the canonical v1.2.0 package and emits a machine-readable report. Manual packaged validation is recorded separately on clean Windows 10 and Windows 11 hosts. Both records must reference the same final archive SHA-256. The final tag remains blocked until the combined evidence and repository readiness checks pass.
+
+See `docs/M10_VALIDATION.md` for the exact procedure.
 
 ---
 

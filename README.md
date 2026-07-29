@@ -22,7 +22,7 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 |---|---|
 | ![XCC Collect page](docs/screenshots/xcc-collect.svg) | ![XCC History page](docs/screenshots/xcc-history.svg) |
 
-These repository previews follow the current v1.2 development layout. Native packaged-build captures are refreshed during the final release gate.
+These previews show the v1.2.0 release layout. The portable build is published through GitHub Releases after the complete Windows validation gate.
 
 
 🚀 **Core Features**
@@ -367,6 +367,14 @@ Run the isolated M8 installation gate:
 powershell -ExecutionPolicy Bypass -File scripts\validate_clean_install.ps1
 ```
 
+Run the complete v1.2.0 release-candidate gate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
+```
+
+Manual Windows 10/11 validation and final publication are documented in [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
+
 
 🖥 **System Requirements**
 
@@ -377,7 +385,7 @@ powershell -ExecutionPolicy Bypass -File scripts\validate_clean_install.ps1
 
 🔄 **Versioning**
 
-Current version: **v1.1.2**
+Current version: **v1.2.0**
 
 
 👨‍💻 **Author**
@@ -767,6 +775,14 @@ Portable usage и проверка checksum описаны в [`docs/PORTABLE_ZI
 powershell -ExecutionPolicy Bypass -File scripts\validate_clean_install.ps1
 ```
 
+Полный v1.2.0 release-candidate gate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
+```
+
+Ручная Windows 10/11 validation и финальная публикация описаны в [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
+
 
 🖥 **Системные требования**
 
@@ -777,7 +793,7 @@ powershell -ExecutionPolicy Bypass -File scripts\validate_clean_install.ps1
 
 🔄 **Версионирование**
 
-Текущая версия: **v1.1.2**
+Текущая версия: **v1.2.0**
 
 
 👨‍💻 **Автор**
