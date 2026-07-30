@@ -68,11 +68,14 @@ from .ui_components import (
     make_card_title,
     make_helper_text,
     make_primary_button,
+    make_runtime_status_capsule,
     make_secondary_button,
     make_section_title,
     make_status_capsule,
     set_metric_value,
+    set_widget_state,
 )
+from .ui_shell import RuntimeState, default_footer_message
 from .ui_theme import (
     METRICS,
     PALETTE,
@@ -137,22 +140,33 @@ class SidebarItemDelegate(QStyledItemDelegate):
             -self.ITEM_MARGIN_Y,
         )
 
+        focused = bool(option.state & QStyle.StateFlag.State_HasFocus)
+
         if selected:
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(PALETTE.accent))
+            painter.setBrush(QColor(PALETTE.selected_surface))
             painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
-        elif hovered:
+
+            indicator_rect = QRectF(
+                float(item_rect.left() + 1),
+                float(item_rect.top() + 9),
+                3.0,
+                float(max(12, item_rect.height() - 18)),
+            )
+            painter.setBrush(QColor(PALETTE.accent))
+            painter.drawRoundedRect(indicator_rect, 1.5, 1.5)
+        elif hovered or focused:
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor("#211D12"))
+            painter.setBrush(QColor(PALETTE.hover_surface))
             painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
 
         if not enabled:
             icon_color = PALETTE.disabled_text
             text_color = PALETTE.muted_text
         elif selected:
-            icon_color = PALETTE.dark_text
-            text_color = PALETTE.dark_text
-        elif hovered:
+            icon_color = PALETTE.accent
+            text_color = PALETTE.primary_text
+        elif hovered or focused:
             icon_color = PALETTE.accent
             text_color = PALETTE.primary_text
         else:
@@ -279,7 +293,7 @@ class SidebarNavigation(QFrame):
     ) -> QListWidget:
         nav = QListWidget(self)
         nav.setObjectName("SidebarList")
-        nav.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        nav.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         nav.setSpacing(0)
         nav.setMouseTracking(True)
         nav.setUniformItemSizes(True)
@@ -288,10 +302,14 @@ class SidebarNavigation(QFrame):
         nav.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         nav.setItemDelegate(SidebarItemDelegate(nav))
         nav.setFixedHeight(len(items) * SidebarItemDelegate.ITEM_HEIGHT)
+        nav.setAccessibleName(
+            "Primary navigation" if len(items) > 1 else "About navigation"
+        )
 
         for icon_path, title in items:
             item = QListWidgetItem(title)
             item.setData(NAV_ICON_PATH_ROLE, str(icon_path))
+            item.setData(Qt.ItemDataRole.AccessibleTextRole, title)
             item.setSizeHint(QSize(0, SidebarItemDelegate.ITEM_HEIGHT))
             nav.addItem(item)
 
@@ -788,6 +806,7 @@ class XccMainWindow(QMainWindow):
         self._collection_active = False
         self._close_after_collection = False
         self._quit_after_collection = False
+        self._footer_status_revision = 0
 
         self._setup_ui()
         self._apply_loaded_settings()
@@ -836,7 +855,15 @@ class XccMainWindow(QMainWindow):
         status_layout.setContentsMargins(18, 0, 18, 0)
         status_layout.setSpacing(12)
 
-        self.status_label = QLabel("Ready")
+        self.footer_status_dot = QLabel()
+        self.footer_status_dot.setObjectName("FooterStatusDot")
+        self.footer_status_dot.setFixedSize(8, 8)
+        set_widget_state(
+            self.footer_status_dot,
+            RuntimeState.READY.semantic_state,
+        )
+
+        self.status_label = QLabel("Ready · Select a source to begin")
         self.status_label.setObjectName("StatusText")
 
         self.status_version_label = QLabel(f"v{__version__}")
@@ -845,6 +872,11 @@ class XccMainWindow(QMainWindow):
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
 
+        status_layout.addWidget(
+            self.footer_status_dot,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
         status_layout.addWidget(self.status_label, 1)
         status_layout.addWidget(self.status_version_label)
 
@@ -889,6 +921,9 @@ class XccMainWindow(QMainWindow):
             self._hotkey_manager = None
             self._hotkey_available = False
             self._hotkey_status_message = f"Unavailable: {exc}"
+            self.hotkey_capsule.setText("Hotkey unavailable")
+            self.hotkey_capsule.set_state("warning")
+            self._set_runtime_state(RuntimeState.WARNINGS)
             self._set_event_status(f"Hotkey unavailable: {exc}")
             self._refresh_settings_page()
 
@@ -908,7 +943,10 @@ class XccMainWindow(QMainWindow):
         self._hotkey_manager = manager
         self._hotkey_available = True
         self._hotkey_status_message = DEFAULT_HOTKEY
-        self._set_event_status("Ready")
+        self.hotkey_capsule.setText(f"Hotkey: {DEFAULT_HOTKEY}")
+        self.hotkey_capsule.set_state(None)
+        self._set_runtime_state(RuntimeState.READY)
+        self._restore_default_footer_status()
         self._refresh_settings_page()
 
     def _restore_from_hotkey(self) -> None:
@@ -994,6 +1032,7 @@ class XccMainWindow(QMainWindow):
             self.start_with_windows_checkbox.setChecked(real_autostart_state)
 
         self._refresh_source_controls()
+        self._restore_default_footer_status()
 
     def _save_current_settings(self) -> None:
         settings = AppSettings(
@@ -1084,7 +1123,7 @@ class XccMainWindow(QMainWindow):
         header.setFixedHeight(METRICS.header_height)
 
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(18, 0, 18, 0)
+        layout.setContentsMargins(20, 0, 20, 0)
         layout.setSpacing(12)
 
         icon_label = QLabel()
@@ -1106,20 +1145,20 @@ class XccMainWindow(QMainWindow):
         title = QLabel("XCC Context Collector")
         title.setObjectName("HeaderTitle")
 
-        self.header_status = make_status_capsule(
-            "Ready",
-            object_name="StatusCapsule",
-        )
+        self.header_status = make_runtime_status_capsule("Ready")
+        self.header_status.set_state(RuntimeState.READY.semantic_state)
+        self.header_status.setAccessibleName("Runtime status")
 
-        hotkey = make_status_capsule(
+        self.hotkey_capsule = make_status_capsule(
             f"Hotkey: {DEFAULT_HOTKEY}",
             object_name="HotkeyCapsule",
         )
+        self.hotkey_capsule.setAccessibleName("Restore hotkey")
 
         layout.addWidget(icon_label)
         layout.addWidget(title, 1)
         layout.addWidget(self.header_status)
-        layout.addWidget(hotkey)
+        layout.addWidget(self.hotkey_capsule)
 
         return header
 
@@ -1165,11 +1204,41 @@ class XccMainWindow(QMainWindow):
         self.tray_icon.activated.connect(self._on_tray_activated)
         self.tray_icon.show()
 
-    def _set_transient_event_status(self, message: str, timeout_ms: int = 1800) -> None:
+    def _set_runtime_state(self, state: RuntimeState) -> None:
+        self.header_status.setText(state.label)
+        self.header_status.set_state(state.semantic_state)
+        set_widget_state(self.footer_status_dot, state.semantic_state)
+
+    def _default_footer_message(self) -> str:
+        mode = self._current_mode() if hasattr(self, "mode_group") else "folder"
+        return default_footer_message(
+            mode=mode,
+            selected_count=len(self.selected_paths),
+            has_source=self.project_root is not None,
+        )
+
+    def _restore_default_footer_status(self) -> None:
+        self._footer_status_revision += 1
+        self.status_label.setText(self._default_footer_message())
+
+    def _set_transient_event_status(
+        self,
+        message: str,
+        timeout_ms: int = 1800,
+    ) -> None:
+        self._footer_status_revision += 1
+        revision = self._footer_status_revision
         self.status_label.setText(message)
-        QTimer.singleShot(timeout_ms, lambda: self.status_label.setText("Ready"))
+
+        def restore() -> None:
+            if revision != self._footer_status_revision:
+                return
+            self._restore_default_footer_status()
+
+        QTimer.singleShot(timeout_ms, restore)
 
     def _set_event_status(self, message: str) -> None:
+        self._footer_status_revision += 1
         self.status_label.setText(message)
 
     def _show_main_window(self) -> None:
@@ -2129,7 +2198,7 @@ class XccMainWindow(QMainWindow):
         self.collect_button.setEnabled(False)
         self.collect_button.setText("Cancelling…")
         self._set_status("Cancelling collection…")
-        self.header_status.setText("Cancelling")
+        self._set_runtime_state(RuntimeState.CANCELLING)
 
     def _on_collection_progress(
         self,
@@ -2147,8 +2216,8 @@ class XccMainWindow(QMainWindow):
         else:
             message = phase
 
-        self.status_label.setText(message)
-        self.header_status.setText(phase if len(phase) <= 18 else "Working")
+        self._set_event_status(message)
+        self._set_runtime_state(RuntimeState.WORKING)
 
     def _on_collection_completed(self, job: CollectionJobResult) -> None:
         result = job.result
@@ -2166,7 +2235,7 @@ class XccMainWindow(QMainWindow):
             self._record_run(record)
             self._set_collection_active(False)
             self._set_status("Nothing to copy.")
-            self.header_status.setText("Failed")
+            self._set_runtime_state(RuntimeState.FAILED)
             QMessageBox.warning(self, "XCC", "Nothing to copy.")
             return
 
@@ -2187,7 +2256,7 @@ class XccMainWindow(QMainWindow):
                 self._record_run(record)
                 self._set_collection_active(False)
                 self._set_status("Copy cancelled after safety warning.")
-                self.header_status.setText("Cancelled")
+                self._set_runtime_state(RuntimeState.CANCELLED)
                 return
 
         try:
@@ -2205,7 +2274,7 @@ class XccMainWindow(QMainWindow):
             self._record_run(record)
             self._set_collection_active(False)
             self._set_status("Clipboard copy failed.")
-            self.header_status.setText("Failed")
+            self._set_runtime_state(RuntimeState.FAILED)
             QMessageBox.critical(self, "XCC", str(exc))
             return
 
@@ -2239,18 +2308,18 @@ class XccMainWindow(QMainWindow):
 
         if message == "No supported Git changes found.":
             self._set_status(message)
-            self.header_status.setText("No changes")
+            self._set_runtime_state(RuntimeState.WARNINGS)
             QMessageBox.information(self, "XCC", message)
             return
 
         if message == "No files selected or found.":
             self._set_status(message)
-            self.header_status.setText("No files")
+            self._set_runtime_state(RuntimeState.WARNINGS)
             QMessageBox.warning(self, "XCC", message)
             return
 
         self._set_status("Error.")
-        self.header_status.setText("Failed")
+        self._set_runtime_state(RuntimeState.FAILED)
         QMessageBox.critical(self, "XCC", message)
 
     def _on_collection_cancelled(self, duration_seconds: float) -> None:
@@ -2266,7 +2335,7 @@ class XccMainWindow(QMainWindow):
         )
         self._set_collection_active(False)
         self._set_status("Collection cancelled.")
-        self.header_status.setText("Cancelled")
+        self._set_runtime_state(RuntimeState.CANCELLED)
 
     def _on_collection_thread_finished(self) -> None:
         self._collection_worker = None
@@ -2398,22 +2467,21 @@ class XccMainWindow(QMainWindow):
             self._set_status("Source cleared.")
 
     def _set_status(self, message: str) -> None:
-        self.status_label.setText(message)
-        self.header_status.setText(message if len(message) <= 18 else "Ready")
+        self._set_event_status(message)
 
     def _show_success_feedback(self, record: CollectionRunRecord) -> None:
         if record.outcome == CollectionOutcome.SUCCESS_WITH_WARNINGS:
             self._set_status("Copied to clipboard with warnings.")
-            self.header_status.setText("Warnings")
+            self._set_runtime_state(RuntimeState.WARNINGS)
         else:
             self._set_status("Copied to clipboard.")
-            self.header_status.setText("Copied")
+            self._set_runtime_state(RuntimeState.COPIED)
 
         self.collect_button.setText("Copied!")
         QTimer.singleShot(1500, self._reset_success_feedback)
 
     def _reset_success_feedback(self) -> None:
-        self.header_status.setText("Ready")
+        self._set_runtime_state(RuntimeState.READY)
         self.collect_button.setText("Collect && Copy")
 
     def _build_settings_page(self) -> QWidget:

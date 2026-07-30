@@ -11,15 +11,18 @@ from PySide6.QtWidgets import QApplication, QLabel
 
 from xcc.ui_components import (
     MetricCapsule,
+    RuntimeStatusCapsule,
     StatusCapsule,
     make_card,
     make_card_layout,
     make_card_title,
     make_helper_text,
     make_primary_button,
+    make_runtime_status_capsule,
     make_secondary_button,
     make_section_title,
     set_metric_value,
+    set_widget_state,
 )
 
 
@@ -71,6 +74,27 @@ def test_status_capsule_and_dynamic_state(qapp: QApplication) -> None:
 
     capsule.set_state("unsupported")
     assert capsule.property("state") == ""
+
+
+def test_runtime_status_capsule_preserves_text_and_state_api(
+    qapp: QApplication,
+) -> None:
+    capsule = make_runtime_status_capsule("Ready")
+
+    assert isinstance(capsule, RuntimeStatusCapsule)
+    assert capsule.objectName() == "RuntimeStatusCapsule"
+    assert capsule.text() == "Ready"
+    assert capsule.indicator.objectName() == "RuntimeStatusDot"
+
+    capsule.setText("Working")
+    capsule.set_state("neutral")
+
+    assert capsule.text() == "Working"
+    assert capsule.property("state") == "neutral"
+    assert capsule.indicator.property("state") == "neutral"
+
+    set_widget_state(capsule.indicator, "warning")
+    assert capsule.indicator.property("state") == "warning"
 
 
 def test_button_and_helper_factories(qapp: QApplication) -> None:

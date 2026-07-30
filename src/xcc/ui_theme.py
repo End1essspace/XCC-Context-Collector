@@ -14,6 +14,8 @@ class UiPalette:
     card_surface: str = "#17181A"
     raised_surface: str = "#1B1C1F"
     input_surface: str = "#101113"
+    selected_surface: str = "#242016"
+    hover_surface: str = "#1A1916"
     quiet_border: str = "#302D26"
     accent_border: str = "#57471F"
     accent: str = "#D2A533"
@@ -78,18 +80,37 @@ QWidget {
 }
 
 #HeaderTitle {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
-    color: #D6A93A;
+    color: #F2F2F2;
     background: transparent;
 }
 
 #StatusCapsule {
     background: #1A1A1A;
-    border: 1px solid #5A4820;
+    border: 1px solid #302A1D;
     border-radius: 10px;
     padding: 4px 12px;
     color: #F2F2F2;
+}
+
+#RuntimeStatusCapsule {
+    background: #1A1A1A;
+    border: 1px solid #302A1D;
+    border-radius: 10px;
+}
+
+#RuntimeStatusText {
+    color: #F2F2F2;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#RuntimeStatusDot {
+    background: #90959D;
+    border: none;
+    border-radius: 4px;
 }
 
 #HotkeyCapsule {
@@ -97,7 +118,8 @@ QWidget {
     border: 1px solid #302A1D;
     border-radius: 10px;
     padding: 4px 11px;
-    color: #A98B48;
+    color: #ADB1B7;
+    font-size: 11px;
 }
 
 #Sidebar {
@@ -285,6 +307,12 @@ QCheckBox::indicator:checked {
 #StatusBar {
     background: #151515;
     border-top: 1px solid #2F2A1C;
+}
+
+#FooterStatusDot {
+    background: #90959D;
+    border: none;
+    border-radius: 4px;
 }
 
 #StatusText {
@@ -827,6 +855,26 @@ def _semantic_state_stylesheet() -> str:
     QLabel[state="neutral"],
     #MetricValue[state="neutral"] {
         color: @neutral;
+    }
+
+    #RuntimeStatusDot[state="success"],
+    #FooterStatusDot[state="success"] {
+        background: @success;
+    }
+
+    #RuntimeStatusDot[state="warning"],
+    #FooterStatusDot[state="warning"] {
+        background: @warning;
+    }
+
+    #RuntimeStatusDot[state="error"],
+    #FooterStatusDot[state="error"] {
+        background: @error;
+    }
+
+    #RuntimeStatusDot[state="neutral"],
+    #FooterStatusDot[state="neutral"] {
+        background: @neutral;
     }
 
     #SecondaryButton {

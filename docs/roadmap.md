@@ -491,7 +491,7 @@ docs: define v1.3.0 interface reference
 
 ## M15.3 — Theme and Reusable UI Foundation
 
-**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 ### Goal
 
@@ -518,7 +518,7 @@ tests/test_ui_components.py
 - [x] add primary and secondary button variants;
 - [x] add helper-text component;
 - [x] preserve all existing behavior;
-- [ ] verify source and packaged resource loading.
+- [x] verify source and packaged resource loading.
 
 ### Implementation Result
 
@@ -547,38 +547,52 @@ refactor: extract reusable UI foundation
 
 ## M15.4 — Application Shell Redesign
 
-**Status: PLANNED**
+**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
 
 ### Header
 
-- [ ] refine logo and title alignment;
-- [ ] add restrained runtime-state capsule;
-- [ ] keep separate hotkey capsule;
-- [ ] support Ready, Working, Cancelling, Copied, Warnings, and Failed states;
-- [ ] prevent clipping at compact widths.
+- [x] refine logo and title alignment;
+- [x] add restrained runtime-state capsule with semantic indicator;
+- [x] keep separate lower-emphasis hotkey capsule;
+- [x] enforce the Ready, Working, Cancelling, Copied, Warnings, Failed, and Cancelled vocabulary;
+- [x] keep the header limited to short runtime state.
 
 ### Sidebar
 
-- [ ] reduce active-state visual weight;
-- [ ] add slim accent line;
-- [ ] use quiet dark selected surface;
-- [ ] align icons and labels consistently;
-- [ ] preserve hover, focus, and keyboard behavior;
-- [ ] keep About anchored at the bottom.
+- [x] reduce active-state visual weight;
+- [x] add a slim gold accent line;
+- [x] use a quiet dark selected surface;
+- [x] keep selected text light and the icon gold;
+- [x] preserve hover, focus, arrow-key, and activation behavior;
+- [x] add accessible navigation names;
+- [x] keep About anchored at the bottom.
 
 ### Footer
 
-- [ ] use footer for the current event or next-action guidance;
-- [ ] keep version on the right;
-- [ ] remove duplicate `Ready` semantics;
-- [ ] support collection progress and issue summaries.
+- [x] use the footer for current event, progress, or next-action guidance;
+- [x] keep version on the right;
+- [x] remove duplicate header/footer `Ready` semantics;
+- [x] add a semantic status indicator;
+- [x] support detailed collection progress and issue summaries;
+- [x] restore useful idle guidance after transient tray/hotkey events.
+
+### Implementation Result
+
+- `RuntimeState` in `src/xcc/ui_shell.py` freezes the supported header vocabulary and semantic states;
+- the runtime capsule now uses a small colored indicator instead of a bright filled block;
+- arbitrary event sentences no longer leak into the header;
+- footer guidance distinguishes an empty source, a selected folder, and selected-file counts;
+- the selected sidebar item uses a quiet dark-gold surface and slim indicator rather than black text on a large gold block;
+- shell policy has dedicated non-Qt tests and reusable Qt component coverage.
 
 ### Acceptance Criteria
 
-- runtime state is understandable at a glance;
-- header and footer do not repeat the same message;
-- sidebar does not overpower the working area;
-- tray, hotkey, single-instance, and window behavior remain unchanged.
+- [x] runtime state is understandable at a glance;
+- [x] header and footer have distinct responsibilities;
+- [x] sidebar no longer overpowers the working area;
+- [x] no custom frameless title bar was introduced;
+- [ ] tray, hotkey, single-instance, and window behavior pass local Windows validation;
+- [ ] minimum-size and maximized screenshots are reviewed.
 
 ### Intended commit
 
@@ -1078,10 +1092,10 @@ Every PowerShell command in project instructions must be written on one physical
 
 # Immediate Next Step
 
-Apply the M15.2 documentation patch, run the metadata and full test gates, review `docs/UI_REFERENCE_v1.3.0.md`, then commit and push it as a standalone milestone.
+Apply and validate **M15.4 — Application Shell Redesign**, including the full test suite and manual checks for header state, sidebar navigation, footer guidance, tray, hotkey, and the 920×620 minimum window.
 
-After M15.2 is confirmed, continue with:
+After M15.4 is committed and pushed, continue with:
 
-> **M15.3 — Theme and Reusable UI Foundation**
+> **M15.5 — Collect Setup Redesign**
 
-M15.1 still requires explicit local PASS and commit/push confirmation if that evidence has not already been recorded. The v1.3.0 tag and public release remain blocked until M15.11 is complete.
+The v1.3.0 tag and public release remain blocked until M15.11 is complete.

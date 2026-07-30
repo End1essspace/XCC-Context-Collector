@@ -15,6 +15,8 @@ def test_ui_palette_matches_frozen_v130_contract() -> None:
     assert PALETTE.card_surface == "#17181A"
     assert PALETTE.raised_surface == "#1B1C1F"
     assert PALETTE.input_surface == "#101113"
+    assert PALETTE.selected_surface == "#242016"
+    assert PALETTE.hover_surface == "#1A1916"
     assert PALETTE.quiet_border == "#302D26"
     assert PALETTE.accent_border == "#57471F"
     assert PALETTE.accent == "#D2A533"
@@ -47,11 +49,16 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
         "#SecondaryButton",
         "#MetricCapsule",
         "#StatusCapsule",
+        "#RuntimeStatusCapsule",
+        "#RuntimeStatusDot",
+        "#FooterStatusDot",
         "#HelperText",
         '#MetricValue[state="success"]',
         '#MetricValue[state="warning"]',
         '#MetricValue[state="error"]',
         '#MetricValue[state="neutral"]',
+        '#RuntimeStatusDot[state="success"]',
+        '#FooterStatusDot[state="warning"]',
     ):
         assert selector in stylesheet
 

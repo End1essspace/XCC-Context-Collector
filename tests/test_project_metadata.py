@@ -135,3 +135,34 @@ def test_v130_ui_foundation_modules_are_registered() -> None:
     assert "self.setStyleSheet(build_application_stylesheet())" in gui
     assert "tray_menu.setStyleSheet(build_tray_menu_stylesheet())" in gui
     assert "## M15.3 — Theme and Reusable UI Foundation" in roadmap
+
+
+def test_v130_application_shell_redesign_is_registered() -> None:
+    shell_path = PROJECT_ROOT / "src" / "xcc" / "ui_shell.py"
+    components_path = PROJECT_ROOT / "src" / "xcc" / "ui_components.py"
+    gui_path = PROJECT_ROOT / "src" / "xcc" / "gui.py"
+    roadmap_path = PROJECT_ROOT / "docs" / "roadmap.md"
+
+    assert shell_path.is_file()
+
+    shell = shell_path.read_text(encoding="utf-8")
+    components = components_path.read_text(encoding="utf-8")
+    gui = gui_path.read_text(encoding="utf-8")
+    roadmap = roadmap_path.read_text(encoding="utf-8")
+
+    assert "class RuntimeState(Enum)" in shell
+    assert "def default_footer_message" in shell
+    assert "class RuntimeStatusCapsule" in components
+    assert "make_runtime_status_capsule" in gui
+    assert "FooterStatusDot" in gui
+    assert "PALETTE.selected_surface" in gui
+    assert "PALETTE.dark_text" not in gui[
+        gui.index("class SidebarItemDelegate"):
+        gui.index("class SidebarNavigation")
+    ]
+    assert "## M15.4 — Application Shell Redesign" in roadmap
+    m154 = roadmap[
+        roadmap.index("## M15.4"):
+        roadmap.index("## M15.5")
+    ]
+    assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in m154

@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
+    QHBoxLayout,
     QLabel,
     QPushButton,
     QVBoxLayout,
@@ -45,6 +46,48 @@ class MetricCapsule(QFrame):
 
     def set_state(self, state: str | None) -> None:
         _set_dynamic_state(self.value_label, state)
+
+
+class RuntimeStatusCapsule(QFrame):
+    """Header runtime state with a restrained semantic indicator and fixed text API."""
+
+    def __init__(
+        self,
+        text: str,
+        *,
+        height: int = 34,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName("RuntimeStatusCapsule")
+        self.setFixedHeight(height)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(12, 0, 12, 0)
+        layout.setSpacing(8)
+
+        self.indicator = QLabel(self)
+        self.indicator.setObjectName("RuntimeStatusDot")
+        self.indicator.setFixedSize(8, 8)
+
+        self.text_label = QLabel(text, self)
+        self.text_label.setObjectName("RuntimeStatusText")
+        self.text_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+
+        layout.addWidget(self.indicator, 0, Qt.AlignmentFlag.AlignVCenter)
+        layout.addWidget(self.text_label)
+
+    def text(self) -> str:
+        return self.text_label.text()
+
+    def setText(self, text: str) -> None:
+        self.text_label.setText(text)
+
+    def set_state(self, state: str | None) -> None:
+        _set_dynamic_state(self, state)
+        _set_dynamic_state(self.indicator, state)
 
 
 class StatusCapsule(QLabel):
@@ -119,6 +162,19 @@ def make_card_layout(
     return layout
 
 
+def make_runtime_status_capsule(
+    text: str,
+    *,
+    height: int = 34,
+    parent: QWidget | None = None,
+) -> RuntimeStatusCapsule:
+    return RuntimeStatusCapsule(
+        text,
+        height=height,
+        parent=parent,
+    )
+
+
 def make_status_capsule(
     text: str,
     *,
@@ -185,6 +241,10 @@ def set_metric_value(metric: MetricCapsule | QFrame, value: str) -> None:
         raise TypeError("metric must expose a QLabel value_label")
 
     value_label.setText(value)
+
+
+def set_widget_state(widget: QWidget, state: str | None) -> None:
+    _set_dynamic_state(widget, state)
 
 
 def _set_dynamic_state(widget: QWidget, state: str | None) -> None:
