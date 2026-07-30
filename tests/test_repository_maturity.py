@@ -58,8 +58,8 @@ def test_readme_contains_ci_release_and_screenshot_links() -> None:
 
     assert "actions/workflows/ci.yml/badge.svg" in readme
     assert "xcc-context-collector/releases" in readme
-    assert "docs/screenshots/xcc-collect.svg" in readme
-    assert "docs/screenshots/xcc-history.svg" in readme
+    assert "docs/screenshots/xcc-collect.png" in readme
+    assert "docs/screenshots/xcc-history.png" in readme
     assert "docs/PORTABLE_ZIP.md" in readme
 
 
