@@ -210,12 +210,12 @@ XCC has no cloud account requirement and does not upload collected context. The 
 
 ## Portable package
 
-The official Windows x64 package is a portable ZIP:
+The official Windows x64 release consists of one portable application archive and one checksum file:
 
-```text
-XCC-Context-Collector-v1.2.0-win64.zip
-XCC-Context-Collector-v1.2.0-win64.zip.sha256
-```
+- `XCC-Context-Collector-v1.2.0-win64.zip` — the portable application archive;
+- `XCC-Context-Collector-v1.2.0-win64.zip.sha256` — a SHA-256 checksum file used to verify the archive.
+
+Download the ZIP to use XCC. The `.sha256` file is optional, but recommended for integrity verification.
 
 Extract the complete `XCC Context Collector` directory and run:
 
@@ -505,12 +505,12 @@ XCC не требует облачного аккаунта и не загруж
 
 ## Portable ZIP
 
-Официальный Windows x64 package распространяется как portable ZIP:
+Официальный Windows x64 release состоит из одного portable-архива с приложением и отдельного файла контрольной суммы:
 
-```text
-XCC-Context-Collector-v1.2.0-win64.zip
-XCC-Context-Collector-v1.2.0-win64.zip.sha256
-```
+- `XCC-Context-Collector-v1.2.0-win64.zip` — portable-архив с приложением;
+- `XCC-Context-Collector-v1.2.0-win64.zip.sha256` — файл SHA-256 для проверки целостности архива.
+
+Для использования XCC достаточно скачать ZIP. Файл `.sha256` необязателен, но рекомендуется для проверки целостности.
 
 Распакуй всю папку `XCC Context Collector` и запусти:
 
