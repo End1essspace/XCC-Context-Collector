@@ -1,867 +1,1078 @@
 # XCC Roadmap
 
-## v0.1 Core MVP
-
-**Status: DONE**
-
-- [x] project structure
-- [x] data models
-- [x] file collector
-- [x] formatter
-- [x] clipboard support
-- [x] file picker
-- [x] folder picker
-- [x] recursive project scanner
-- [x] basic config
-- [x] root launcher
-- [x] test suite stable
-- [x] manual real-project test
-
-
-## v0.2 Context Optimization
-
-**Status: DONE**
-
-- [x] compact mode
-- [x] project tree in output
-- [x] token/character budget
-- [x] skip large files
-- [x] output metadata
-- [x] summarize oversized files
-- [x] truncation status through model result
-- [x] cache directories excluded
-
-
-## v0.3 Git Context Mode
-
-**Status: DONE**
-
-- [x] detect git repository
-- [x] collect modified files
-- [x] collect untracked files
-- [x] filter git files by allowed extensions
-- [x] filter git files by excluded directories
-- [x] include git diff
-- [x] add mode metadata
-- [x] test git diff extraction
-- [x] git tests
-
-
-## v0.4 Hotkey Mode
-
-**Status: DONE**
-
-- [x] global hotkey
-- [x] safe hotkey selected: Ctrl+Alt+X
-- [x] no conflict with XClip
-- [x] background listener
-- [x] background process
-- [x] prevent concurrent runs
-- [x] graceful Ctrl+C shutdown
-- [x] hotkey launcher
-
-
-## v0.5 PySide6 GUI
-
-**Status: DONE**
-
-- [x] PySide6 dependency
-- [x] gui.py launcher
-- [x] main window
-- [x] black/yellow theme
-- [x] header
-- [x] sidebar navigation
-- [x] Collect page
-- [x] Settings placeholder
-- [x] History placeholder
-- [x] About placeholder
-- [x] Select Source works
-- [x] Full Folder mode works
-- [x] Selected Files mode works
-- [x] Git Changed Files mode works
-- [x] Collect & Copy works
-- [x] clipboard copy works
-- [x] metrics update after run
-- [x] success popup removed
-- [x] inline success feedback
-- [x] max chars validator
-- [x] Setup layout alignment
-- [x] Options row composition
-- [x] dark strip behind Mode removed
-- [x] Sidebar hover polish
-- [x] Last Run visual hierarchy
-- [x] History page runtime entries
-- [x] History empty state
-- [x] History newest-first ordering
-- [x] History scroll area
-- [x] History row height polish
-- [x] Settings page basic controls
-- [x] Settings tile layout
-- [x] Settings runtime values refresh
-- [x] Settings final polish
-- [x] manual GUI test
-- [x] test suite pass
-
-
-## v0.6 Settings Persistence
-
-**Status: DONE**
-
-- [x] config.json
-- [x] save default mode
-- [x] save max chars
-- [x] save compact mode
-- [x] save last source
-- [x] load settings on GUI startup
-- [x] validate config values
-- [x] fallback to defaults on invalid config
-- [x] manual persistence test
-- [x] test suite pass
-- [x] files mode restore guarded
-- [x] startup save guard
-
-
-## v0.7 Tray Mode
-
-**Status: DONE**
-
-- [x] tray icon
-- [x] show/hide GUI
-- [x] quit from tray
-- [x] background GUI behavior
-- [x] safe shutdown from tray
-- [x] tray menu polish
-- [x] first minimize notification
-- [x] double click restore
-- [x] maximized startup
-
-
-## v0.8 Settings Expansion
-
-**Status: DONE**
-
-- [x] autostart with Windows
-- [x] start minimized to tray
-- [x] close to tray option
-- [x] start maximized option
-- [x] tray behavior settings
-- [x] settings controls UI
-- [x] persist new settings
-- [x] validate new settings
-- [x] manual settings test
-- [x] test suite pass
-
-
-## v0.9 Optimization
-
-**Status: DONE**
-
-- [x] code cleanup
-- [x] remove unused imports
-- [x] remove duplicate model definitions
-- [x] remove unused placeholder helpers
-- [x] normalize GUI helper naming
-- [x] reduce duplicated settings layout code
-- [x] improve settings page spacing
-- [x] optimize startup flow
-- [x] verify tray startup edge cases
-- [x] verify start minimized behavior
-- [x] verify close-to-tray behavior
-- [x] verify invalid config recovery
-- [x] improve error messages
-- [x] update README for GUI usage
-- [x] update roadmap before release
-- [x] full manual app test
-- [x] full pytest pass
-- [x] measure idle CPU/RAM usage
-- [x] verify no background scanning in tray mode
-- [x] verify collect-only workload behavior
-
-
-## v0.9.5 Settings/About Polish
-
-**Status: DONE**
-
-- [x] redesign Settings as control panel
-- [x] separate behavior settings from read-only system info
-- [x] replace checkbox cards with setting rows
-- [x] simplify Settings visual hierarchy
-- [x] redesign About page
-- [x] add app identity block to About
-- [x] add product badges to About
-- [x] add config/startup path info to About
-- [x] manual visual review
-- [x] tune yellow accent to muted amber
-- [x] reduce bright yellow usage in secondary UI
-- [x] soften checkbox and radio checked color
-- [x] soften card and row borders
-- [x] manual color review
-
-
-## v0.9.6 Integrated Restore Hotkey
-
-**Status: DONE**
-
-- [x] add GUI global hotkey listener
-- [x] restore window with Ctrl+Alt+X
-- [x] route hotkey callback through Qt signal
-- [x] cleanup hotkey on app exit
-- [x] keep legacy hotkey.py as dev-only mode
-- [x] update README for integrated restore hotkey
-- [x] manual hotkey test
-- [x] test suite pass
-
-
-## v1.0 Windows Release
-
-**Status: DONE**
-
-- [x] define GUI as primary release entry point
-- [x] exclude legacy scripts from primary release flow
-- [x] Esc hides window to tray
-- [x] PyInstaller dependency
-- [x] PyInstaller build
-- [x] release build script
-- [x] repeatable clean build
-- [x] app icon
-- [x] tray icon
-- [x] PyInstaller resource paths
-- [x] packaged exe resource loading
-- [x] single-instance protection
-- [x] second launch restores existing window
-- [x] verify single-instance protection in exe
-- [x] packaged exe autostart target
-- [x] verify autostart shortcut in exe mode
-- [x] clean gitignore for build artifacts
-- [x] release folder
-- [x] README release update
-- [x] basic install instructions
-- [x] manual release test
-- [x] release zip package
-- [x] verify ZIP contains exe and _internal folder
-- [x] final v1.0 package smoke test
-
-
-## v1.0.1 Hotkey Reliability Patch
-
-**Status: DONE**
-
-- [x] replace GUI `keyboard` listener with native Windows `RegisterHotKey` restore hotkey
-- [x] route `WM_HOTKEY` through Qt native event filter
-- [x] keep legacy `hotkey.py` as development-only workflow
-- [x] show hotkey unavailable status in UI/tray/settings
-- [x] acquire single-instance lock before creating the main window
-- [x] register restore hotkey only after single-instance server is ready
-- [x] add native hotkey parser tests
-
-
-## v1.1 Source Coverage Expansion
-
-**Status: DONE**
-
-- [x] expand supported source file extensions
-- [x] add filename-based allowlist
-- [x] support Dockerfile, Makefile, package/config files
-- [x] avoid sensitive defaults like .env, .pem, .key
-- [x] update scanner and collector filtering
-- [x] update tests
-- [x] update README supported file types
-
-
-## v1.1.1 Context Filtering Patch
-
-**Status: DONE**
-
-- [x] centralize context file allowlist logic in `config.py`
-- [x] generate GUI file picker filters from supported context file definitions
-- [x] update Selected Files mode to use the expanded extension list
-- [x] update legacy picker file filters
-- [x] apply filename-based allowlist support to Git Changed Files mode
-- [x] remove duplicated file allowlist checks from scanner and collector
-- [x] add tests for allowed extensions, allowed filenames, and sensitive file exclusion
-- [x] add tests for GUI/Tk file filter generation
-- [x] add tests for Dockerfile support in scanner, collector, and Git mode
-- [x] verify expanded source coverage works consistently across files, folder, and git modes
-
-
-## v1.1.2 Project Tree Mode Patch
-
-**Status: DONE**
-
-- [x] add Project Tree collection mode to GUI
-- [x] persist Project Tree as a valid settings mode
-- [x] add tree-only formatter output
-- [x] build full project directory tree without reading file contents
-- [x] include both files and directories in Project Tree mode
-- [x] exclude cache, build, dependency, IDE, and VCS folders from Project Tree mode
-- [x] remove Project Tree from Selected Files output
-- [x] keep Project Tree in Full Folder and Git Changed Files modes
-- [x] add tests for directory tree builder
-- [x] add tests for tree-only formatter output
-- [x] add settings validation test for Project Tree mode
-- [x] verify Project Tree output does not include file content sections
-
-## v1.2.0 Context Integrity & Reliability
-
-**Status: RELEASE CANDIDATE PREPARED — FINAL VALIDATION PENDING**
-
-### Release Goal
-
-Make XCC safe and reliable for everyday use across real-world repositories.
-
-The release must guarantee that:
-
-- source content is not modified during formatting;
-- Git mode correctly represents staged and unstaged changes;
-- selected files retain distinguishable project paths;
-- character limits do not silently cut arbitrary source code;
-- large collections do not freeze the main window;
-- potentially sensitive context is surfaced before copying;
-- public builds are validated through repeatable CI and release checks.
+Last updated: 2026-07-30  
+Current source version: `1.3.0`  
+Current release state: **v1.3.0 IN DEVELOPMENT — UI FINALIZATION AND RELEASE VALIDATION**  
+Supported product boundary: `gui.py -> xcc.gui -> xcc.pipeline`
 
 ---
 
-### M1 — Source Content Fidelity
+## 1. Product Direction
+
+XCC Context Collector is a local-first Windows desktop utility that converts project files, folders, Git changes, or a project tree into one structured context block for AI coding assistants.
+
+The roadmap follows four product principles:
+
+1. **Context integrity** — collected source and Git payloads must not be silently rewritten or cut.
+2. **Workflow speed** — repeated AI coding workflows should require as little manual file handling as possible.
+3. **Operational transparency** — omissions, warnings, errors, truncation, and runtime state must be explicit.
+4. **Release discipline** — every completed milestone must pass automated and manual validation, then be committed and pushed before the next milestone begins.
+
+The supported release application is the PySide6 desktop GUI. Legacy Tkinter and standalone hotkey entry points remain development-only compatibility paths and do not receive new product features.
+
+---
+
+## 2. Current Status Summary
+
+| Release / milestone | Status | Result |
+|---|---|---|
+| v1.0.x Windows release foundation | DONE | Packaged PySide6 app, tray, native hotkey, autostart, single instance |
+| v1.1.x Source coverage | DONE | Expanded language/config support and centralized allowlist |
+| v1.1.2 Project Tree patch | DONE | Standalone structure-only collection mode |
+| v1.2.0 Context Integrity & Reliability | DONE — RELEASED | Fidelity, Git completeness, safety visibility, background worker, release gates |
+| M11 Paste Paths Core | DONE | AI path lists can be parsed, validated, and imported |
+| M12 Selected Files Review | DONE | Selected files can be reviewed and edited transactionally |
+| M13 Workflow Regression & UX Polish | DONE | Edge cases and end-to-end workflow coverage completed |
+| M14 Documentation & Version Integration | DONE | Source and release documentation moved to v1.3.0 |
+| M15 v1.3.0 Validation and Release | IN PROGRESS | Release hardening, final interface redesign, packaged validation, publication |
+| v1.4.0 Windows Workflow & Distribution | PLANNED | Installer, editable hotkeys, persistent history, update availability |
+| v1.5.0 Advanced Context Rules | PLANNED | Profiles, rule editor, preview, advanced output controls |
+
+---
+
+# Completed Releases
+
+## v0.1–v0.4 Core Foundation
 
 **Status: DONE**
 
-**Priority: CRITICAL**
+Completed foundations:
 
-- [x] stop applying global compact processing to source file contents
-- [x] preserve repeated empty lines inside collected files
-- [x] preserve trailing spaces inside collected files
-- [x] preserve final blank lines where they are part of file content
-- [x] remove destructive `rstrip()` processing from file content formatting
-- [x] apply compact mode only to XCC-generated metadata and separators
-- [x] separate structural output formatting from source content rendering
-- [x] guarantee that compact and non-compact modes contain identical source content
-- [x] add regression tests for multiline strings
-- [x] add regression tests for Markdown whitespace
-- [x] add regression tests for YAML block content
-- [x] add regression tests for trailing spaces
-- [x] add regression tests for repeated blank lines
-- [x] add source-content fidelity test using exact string comparison
+- project structure and typed data models;
+- file and folder collection;
+- formatter and clipboard output;
+- recursive scanner;
+- compact generated output;
+- character budget;
+- Git changed-file collection and diff support;
+- background hotkey workflow;
+- baseline automated tests.
 
-#### Acceptance Criteria
-
-```text
-input FileContent.content == content extracted from final XCC file section
-```
-
-The only permitted differences are XCC section delimiters surrounding the file.
-
-Compact mode must never rewrite collected file content.
-
-Completed in the first v1.2.0 implementation batch.
+These releases established the functional prototype that later moved into the supported PySide6 application.
 
 ---
 
-### M2 — Git Context Correctness
+## v0.5–v0.9.6 PySide6 Desktop Foundation
 
 **Status: DONE**
 
-**Priority: CRITICAL**
+Completed:
 
-- [x] replace line-based `git status --porcelain` parsing with null-delimited parsing
-- [x] use `git status --porcelain=v1 -z`
-- [x] introduce a typed Git change model
-- [x] represent working-tree and index status separately
-- [x] support unstaged modified files
-- [x] support staged modified files
-- [x] support staged added files
-- [x] support untracked files
-- [x] support renamed files
-- [x] support copied files
-- [x] support deleted files
-- [x] handle paths containing spaces
-- [x] handle quoted paths
-- [x] handle non-ASCII paths
-- [x] remove duplicate paths from combined Git results
-- [x] collect unstaged diff
-- [x] collect staged diff with `git diff --cached`
-- [x] combine staged and unstaged diff into clearly labelled sections
-- [x] represent untracked files through full file content
-- [x] represent deleted files through status and diff without attempting file reads
-- [x] include old and new paths for renamed files
-- [x] expose Git command failures instead of silently returning an empty result
-- [x] distinguish a clean repository from a failed Git command
-- [x] add tests for all supported Git statuses
-- [x] add tests for staged-only changes
-- [x] add tests for mixed staged and unstaged changes
-- [x] add tests for rename and delete scenarios
-- [x] add tests for paths containing spaces and Unicode
-
-#### Proposed Output Structure
-
-```text
-# Git Changes
-
-- [ M] src/main.py
-- [A ] tests/test_new_feature.py
-- [R ] src/old_name.py -> src/new_name.py
-- [D ] docs/obsolete.md
-- [??] notes.md
-
-# Git Diff — Staged
-
-...
-
-## Git Diff — Unstaged
-
-...
-```
-
-#### Acceptance Criteria
-
-A repository containing modified, staged, renamed, deleted, and untracked files must produce complete and deterministic context without silently losing any supported change.
-
-Completed in the fourth v1.2.0 implementation batch.
+- PySide6 main window;
+- black and gold interface identity;
+- header, sidebar, Collect, History, Settings, and About pages;
+- Selected Files, Full Folder, and Git Changed Files modes;
+- Last Run metrics;
+- in-memory runtime history;
+- persistent settings;
+- system tray integration;
+- close-to-tray and `Esc` hide behavior;
+- native `Ctrl+Alt+X` restore path;
+- autostart support;
+- GUI-focused regression coverage.
 
 ---
 
-### M3 — Stable File Identity and Relative Paths
-
-**Status: DONE**
-
-**Priority: HIGH**
-
-- [x] calculate a common source root for Selected Files mode
-- [x] preserve relative directory paths where possible
-- [x] prevent different files from receiving the same display path
-- [x] support selected files from different directories
-- [x] support selected files from different drives
-- [x] add a safe fallback when no common project root exists
-- [x] avoid exposing unnecessary absolute user-profile paths
-- [x] add stable path normalization for Windows
-- [x] use forward slashes in generated AI context
-- [x] add tests for duplicate filenames
-- [x] add tests for nested selected files
-- [x] add tests for cross-root selections
-- [x] add tests for non-ASCII directory names
-
-#### Example
-
-Instead of:
-
-```text
-===== file: config.py =====
-===== file: config.py =====
-```
-
-XCC must produce distinguishable paths:
-
-```text
-===== file: backend/config.py =====
-===== file: frontend/config.py =====
-```
-
-Completed in the second v1.2.0 implementation batch.
-
----
-
-### M4 — Structure-Aware Character Budget
-
-**Status: DONE**
-
-**Priority: CRITICAL**
-
-- [x] replace arbitrary whole-text slicing with section-aware budgeting
-- [x] calculate budget before adding each output section
-- [x] reserve space for truncation metadata
-- [x] keep XCC header complete whenever the configured budget can hold mandatory metadata
-- [x] emit a bounded budget-too-small notice for extremely small limits
-- [x] keep file section headers complete
-- [x] avoid cutting source files in the middle by default
-- [x] avoid cutting Git diff lines in the middle
-- [x] add complete files until the remaining budget is insufficient
-- [x] keep partial-file inclusion disabled by default and report `Partial files: 0`
-- [x] list files omitted because of the output budget
-- [x] distinguish oversized-file summaries from budget omissions
-- [x] track included file count
-- [x] track omitted file count
-- [x] track partially included file count
-- [x] track summarized file count
-- [x] expose budget usage in result statistics
-- [x] preserve deterministic file ordering
-- [x] add tests for very small budgets
-- [x] add tests for exact-boundary budgets
-- [x] add tests for file omission order
-- [x] add tests proving that output never exceeds the configured limit
-
-#### Proposed Budget Summary
-
-```text
-## XCC Budget Summary
-
-Limit: 120000
-Used: 118742
-Included files: 14
-Omitted files: 6
-Partial files: 0
-
-Omitted:
-- tests/large_fixture.py
-- docs/reference.md
-- src/generated/schema.py
-```
-
-#### Acceptance Criteria
-
-The final output must never exceed the configured limit and must never silently end in the middle of an unmarked source file.
-
----
-
-Completed in the third v1.2.0 implementation batch.
-
----
-
-### M5 — Context Safety Guardrails
-
-**Status: DONE**
-
-**Priority: HIGH**
-
-- [x] add `.xccignore` support
-- [x] define documented `.xccignore` pattern semantics
-- [x] optionally respect `.gitignore` in Full Folder mode
-- [x] allow built-in exclusions and project exclusions to work together
-- [x] add suspicious filename detection
-- [x] warn about credential and secret configuration files
-- [x] add lightweight secret-pattern warnings
-- [x] detect common private key headers
-- [x] detect likely API tokens and access keys
-- [x] detect likely password and connection-string assignments
-- [x] never write detected secret values to logs or history
-- [x] report only filename, line number, and warning category
-- [x] show a warning summary before clipboard copy when findings exist
-- [x] allow the user to cancel collection after a warning
-- [x] clearly state that detection is heuristic and not a security guarantee
-- [x] add tests for obvious secret patterns
-- [x] add false-positive regression tests
-- [x] update README security wording
-
-#### Scope Boundary
-
-v1.2.0 should provide **warnings**, not automatic redaction.
-
-Silent redaction could corrupt code and produce misleading context. Automatic redaction may be considered later as an explicit opt-in mode.
-
-Completed in the fifth v1.2.0 implementation batch. Safety scanning covers current file payloads, staged and unstaged Git diffs, and sensitive filenames in Project Tree mode. Warning output never includes detected secret values.
-
----
-
-### M6 — Responsive Collection Pipeline
-
-**Status: RELEASE CANDIDATE — FINAL WINDOWS VALIDATION PENDING**
-
-**Priority: HIGH**
-
-- [x] move scanning and collection out of the Qt main thread
-- [x] introduce a dedicated collection worker
-- [x] keep clipboard interaction on the GUI thread
-- [x] expose worker progress through Qt signals
-- [x] show current collection phase
-- [x] show scanned and processed file counts
-- [x] disable conflicting controls while collection is running
-- [x] prevent multiple simultaneous collection jobs
-- [x] add a Cancel action
-- [x] implement cooperative cancellation between files
-- [x] restore UI state after success
-- [x] restore UI state after failure
-- [x] restore UI state after cancellation
-- [x] prevent closing or mode switching from leaving an orphan worker
-- [x] preserve single-instance and tray behavior during collection
-- [x] add worker and pipeline unit tests
-- [x] add automated cancellation and progress regression tests
-- [ ] complete final Windows manual large-project responsiveness validation
-
-#### Collection Phases
-
-```text
-Preparing
-Scanning
-Reading files
-Inspecting Git changes
-Inspecting context
-Formatting
-Applying budget
-Copying
-Completed
-```
-
-#### Acceptance Criteria
-
-During collection of a large repository:
-
-- the window remains responsive;
-- the user can move or minimize it;
-- the operation can be cancelled;
-- no second collection can start concurrently;
-- partial results are not copied after cancellation.
-
-Implementation completed in the sixth v1.2.0 batch. The milestone remains open only for the final packaged Windows manual responsiveness check.
-
----
-
-
-### M7 — Result Model and Runtime History Upgrade
-
-**Status: DONE**
-
-**Priority: MEDIUM**
-
-- [x] expand `CollectionStats`
-- [x] add included file count
-- [x] add omitted file count
-- [x] add summarized file count
-- [x] add partial file count
-- [x] add warning count
-- [x] add collection duration
-- [x] add collection outcome enum
-- [x] distinguish errors from warnings
-- [x] distinguish cancellation from failure
-- [x] update Last Run metrics
-- [x] update runtime history entries
-- [x] add clear health status for completed-with-warnings
-- [x] keep history free of file contents and detected secret values
-- [x] add tests for result statistics
-
-#### Suggested Outcomes
-
-```text
-SUCCESS
-SUCCESS_WITH_WARNINGS
-CANCELLED
-FAILED
-```
-
-
-Completed in the seventh v1.2.0 implementation batch. `CollectionOutcome` now distinguishes successful, warning-bearing, cancelled, and failed runs. Last Run and Runtime History use typed metadata-only records with duration, coverage, warning, and error statistics. Cancellation after a safety warning is recorded as `CANCELLED`, while fatal worker or clipboard failures are recorded as `FAILED`.
-
----
-
-### M8 — Dependency and Project Structure Cleanup
-
-**Status: DONE**
-
-**Priority: MEDIUM**
-
-- [x] add `pyproject.toml`
-- [x] define project metadata in one canonical location
-- [x] define supported Python version
-- [x] separate runtime dependencies from development dependencies
-- [x] separate build dependencies from runtime dependencies
-- [x] make legacy `keyboard` dependency optional
-- [x] pin compatible dependency ranges
-- [x] document reproducible source setup
-- [x] remove version duplication where possible
-- [x] ensure packaged build reads the canonical version
-- [x] evaluate removal of legacy Tkinter entry points
-- [x] clearly mark retained legacy modules as unsupported development tools
-- [x] update architecture documentation
-- [x] verify clean installation in a new virtual environment
-
-#### Dependency Groups
-
-```text
-runtime:
-- PySide6 >=6.8,<6.12
-- pyperclip >=1.9,<2
-
-dev:
-- pytest >=8.3,<10
-- pytest-cov >=6,<8
-
-build:
-- pyinstaller >=6.11,<7
-
-legacy:
-- keyboard ==0.13.5
-```
-
-Implementation completed in the eighth v1.2.0 batch. The repository now uses a standard installable `src` layout with import package `xcc`, canonical PEP 621 metadata in `pyproject.toml`, dynamic version metadata sourced from `xcc.__version__`, separated optional dependency groups, and version-aware PyInstaller resources. Legacy Tkinter and `keyboard` workflows are retained only as unsupported development compatibility tools. Clean-install validation covers a fresh Windows CPython 3.13 virtual environment, editable package installation, canonical version verification, the full regression suite, GUI import checks, and confirmation that the optional legacy `keyboard` dependency is absent from the normal runtime install.
-
----
-
-### M9 — GitHub Repository Maturity
-
-**Status: DONE**
-
-**Priority: HIGH**
-
-- [x] add Windows GitHub Actions test workflow
-- [x] run tests on supported Python versions
-- [x] add source compilation check
-- [x] add packaged build smoke check
-- [x] cache Python dependencies safely
-- [x] add `CHANGELOG.md`
-- [x] add `CONTRIBUTING.md`
-- [x] add `SECURITY.md`
-- [x] verify repository contains a root `LICENSE`
-- [x] add issue templates
-- [x] add pull request template
-- [x] document bug-report diagnostics
-- [x] add CI status badge to README
-- [x] add release link to README
-- [x] add screenshots to README
-- [x] document portable ZIP usage
-- [x] generate SHA-256 checksum for release archives
-- [x] verify release archive contents automatically
-- [x] add release checklist
-- [x] ensure version consistency across code, README, and release notes
-
-#### CI Minimum Gate
-
-```text
-pytest
-compileall
-clean PyInstaller build
-packaged executable startup smoke test
-release archive structure validation
-```
-
-Implementation completed in the ninth v1.2.0 batch. The repository now has a Windows-only Python 3.13 CI gate, safe pip caching through `setup-python`, deterministic source compilation and tests, canonical version checks, clean PyInstaller packaging, offscreen packaged startup smoke validation, portable ZIP generation, SHA-256 checksums, and archive-structure validation. Governance and support documentation now includes changelog, contribution, security, diagnostics, issue/PR templates, portable usage, release checklist, release links, CI badge, and current UI previews.
-
-The M9 local compile, regression, build, packaged-smoke, portable-archive, and checksum gates passed, and the committed Windows CI workflow completed successfully on the GitHub-hosted `windows-latest` runner. Later v1.2.0 work extended the same repository gate with packaged artwork checks, optional Safety confirmation coverage, workspace cleanup, and final documentation consistency.
-
----
-
-### M10 — v1.2.0 Validation and Release Gate
+## v1.0.0 Windows Release
 
 **Status: DONE — RELEASED**
 
-- [x] complete automated release-candidate gate
-- [x] canonical version and package validation
-- [x] source fidelity, Git, budget, ignore, safety, worker, and history regression coverage
-- [x] clean-install and packaged startup validation
-- [x] portable ZIP and SHA-256 validation
-- [x] Windows release evidence and publication workflow
-- [x] annotated v1.2.0 release baseline
+Completed:
 
-v1.2.0 is the completed Context Integrity & Reliability baseline used by all later releases.
-
----
-
-## v1.3.0 Selected Files Workflow
-
-**Status: IMPLEMENTED — M15 RELEASE VALIDATION PENDING**
-
-### Release goal
-
-Reduce the repeated AI coding workflow from manual file-by-file selection to one copied path list, one validated import, one review step, and one normal Collect & Copy run.
-
-### M11 — Paste Paths Core
-
-**Status: DONE**
-
-- [x] add ordered path-list parser
-- [x] support plain lines, Markdown bullets, numbering, quotes, backticks, and fenced blocks
-- [x] support relative and absolute Windows paths
-- [x] add explicit project-root resolution
-- [x] validate existence, file type, directory state, and root traversal
-- [x] preserve order and deduplicate canonically
-- [x] merge pasted paths with manual Selected Files state
-- [x] add Paste Paths button and guarded Ctrl+V workflow
-- [x] add parser and importer tests
-
-### M12 — Selected Files Review
-
-**Status: DONE**
-
-- [x] make Source summary open review
-- [x] display relative paths and effective project root
-- [x] support mixed locations
-- [x] support multi-select removal and Clear All
-- [x] keep Cancel transactional
-- [x] apply reviewed changes explicitly
-- [x] preserve remaining order
-- [x] add review-model tests
-
-### M13 — Workflow Regression and UX Polish
-
-**Status: DONE**
-
-- [x] recover from stale or deleted roots
-- [x] keep absolute external files importable
-- [x] distinguish separate repositories from one common project
-- [x] prefer repository roots in monorepository layouts
-- [x] expose external and issue counts
-- [x] keep duplicate-only imports non-modal
-- [x] disable inactive clear/apply controls
-- [x] add Delete shortcut and accessibility metadata
-- [x] add end-to-end import-review-collection regression coverage
-
-### M14 — Documentation and Version Integration
-
-**Status: DONE**
-
-- [x] bump canonical version to 1.3.0
-- [x] update bilingual README
-- [x] update changelog and comparison links
-- [x] document parser/importer/review architecture and security boundary
-- [x] create v1.3.0 release notes
-- [x] create M15 validation procedure
-- [x] update portable, security, issue-template, and release-checklist version references
-- [x] update release-candidate default version
-- [x] update repository version/document regression tests
-- [x] run the complete local test suite after applying the M14 archive
-- [x] manually inspect the updated About/version labels
-- [x] commit and push M14
-
-### M15 — v1.3.0 Validation and Release
-
-**Status: IN PROGRESS — RELEASE GATE HARDENING**
-
-- [x] require an explicit Selected Files regression sub-gate in the automated report
-- [x] require explicit v1.3.0 Paste Paths and review gates in Windows evidence
-- [x] bind final readiness to the automated report filename, version, pass state, and archive SHA-256
-- [ ] run complete compileall and pytest gates
-- [ ] validate all four source collection modes
-- [ ] validate Paste Paths and Selected Files Review in the packaged executable
-- [ ] build the clean PyInstaller package
-- [ ] validate portable ZIP and SHA-256
-- [ ] complete Windows 10/11 evidence for the same archive hash
-- [ ] run final readiness validation
-- [ ] create annotated v1.3.0 tag
-- [ ] create and review GitHub draft release
-- [ ] publish and verify downloaded assets
-- [ ] mark v1.3.0 released in the roadmap
-
-See `docs/M15_VALIDATION.md`.
+- supported GUI entry point;
+- PyInstaller build pipeline;
+- packaged icon and resource loading;
+- single-instance protection;
+- second-launch restore;
+- packaged autostart target;
+- repeatable clean build;
+- portable release directory and ZIP;
+- packaged smoke validation.
 
 ---
 
-## v1.4.0 Windows Workflow & Distribution
+## v1.0.1 Hotkey Reliability Patch
+
+**Status: DONE — RELEASED**
+
+Completed:
+
+- native Windows `RegisterHotKey`;
+- Qt native event filter;
+- safe GUI-thread restore scheduling;
+- conflict/error visibility;
+- native hotkey parsing tests;
+- release-path cleanup.
+
+---
+
+## v1.1.0–v1.1.1 Source Coverage Expansion
+
+**Status: DONE — RELEASED**
+
+Completed:
+
+- broader source-language support;
+- frontend, backend, system, scripting, database, and documentation types;
+- exact filename support for common project files;
+- centralized context-file allowlist;
+- consistent filtering in picker, scanner, collector, and Git mode;
+- sensitive file types kept excluded by default.
+
+---
+
+## v1.1.2 Project Tree Mode
+
+**Status: DONE — RELEASED**
+
+Completed:
+
+- standalone Project Tree mode;
+- metadata-only structure output;
+- folders and files rendered in one clean tree;
+- standard cache, build, dependency, IDE, and Git exclusions;
+- Selected Files no longer receives an incorrect project tree section.
+
+---
+
+# v1.2.0 Context Integrity & Reliability
+
+**Status: DONE — RELEASED**
+
+## Release Goal
+
+Turn XCC from a useful utility into a dependable context-collection tool whose output, Git state, safety signals, and release artifacts can be trusted.
+
+## M1 — Source Content Fidelity
+
+**Status: DONE**
+
+- [x] preserve collected source payloads verbatim;
+- [x] restrict compacting to XCC-generated structural text;
+- [x] avoid whitespace, newline, comment, or content normalization;
+- [x] add fidelity regression tests.
+
+## M2 — Complete Git Context
+
+**Status: DONE**
+
+- [x] null-delimited porcelain parsing;
+- [x] typed staged and unstaged state;
+- [x] untracked, renamed, copied, and deleted semantics;
+- [x] staged and unstaged diff separation;
+- [x] literal pathspec handling;
+- [x] spaces and Unicode path coverage.
+
+## M3 — Stable File Identity
+
+**Status: DONE**
+
+- [x] stable display paths;
+- [x] duplicate basename disambiguation;
+- [x] cross-root selection support;
+- [x] no ambiguous filename-only collapse.
+
+## M4 — Structure-Aware Character Budget
+
+**Status: DONE**
+
+- [x] hard output limit;
+- [x] complete-section planning;
+- [x] explicit included and omitted counts;
+- [x] budget summary;
+- [x] no silent mid-file or mid-diff cuts;
+- [x] partial source-file inclusion disabled by default.
+
+## M5 — Ignore Rules and Safety Visibility
+
+**Status: DONE**
+
+- [x] `.xccignore`;
+- [x] root `.gitignore` integration where applicable;
+- [x] built-in exclusions remain authoritative;
+- [x] sensitive filename detection;
+- [x] private-key, token, credential, and connection-string heuristics;
+- [x] warning-only behavior without silent redaction;
+- [x] optional modal confirmation without disabling detection metadata.
+
+## M6 — Background Collection Pipeline
+
+**Status: DONE**
+
+- [x] worker-thread collection;
+- [x] progress reporting;
+- [x] cooperative cancellation;
+- [x] single active job;
+- [x] partial results never copied after cancellation;
+- [x] safe deferred close and quit behavior.
+
+## M7 — Result Health and Runtime History
+
+**Status: DONE**
+
+- [x] `SUCCESS`;
+- [x] `SUCCESS_WITH_WARNINGS`;
+- [x] `CANCELLED`;
+- [x] `FAILED`;
+- [x] Last Run coverage and health metrics;
+- [x] metadata-only in-memory history;
+- [x] no source contents, diff payloads, detected values, or failure bodies stored in history.
+
+## M8–M9 — Repository and Release Maturity
+
+**Status: DONE**
+
+- [x] package metadata;
+- [x] Windows CI;
+- [x] clean workspace tooling;
+- [x] clean-install validation;
+- [x] packaged startup and asset smoke tests;
+- [x] portable ZIP and SHA-256 generation;
+- [x] archive validation;
+- [x] release evidence schema;
+- [x] release-readiness validation;
+- [x] architecture, security, contribution, diagnostics, and release documentation.
+
+## M10 — v1.2.0 Validation and Release Gate
+
+**Status: DONE — RELEASED**
+
+- [x] final automated release gate;
+- [x] clean-host Windows validation;
+- [x] release archive and checksum validation;
+- [x] GitHub tag and release publication;
+- [x] downloaded-asset verification;
+- [x] stable v1.2.0 baseline.
+
+---
+
+# v1.3.0 Selected Files Workflow and Final Interface
+
+**Status: IN DEVELOPMENT — M15 IN PROGRESS**  
+Selected Files Workflow Status: IMPLEMENTED — M15 RELEASE VALIDATION PENDING
+
+## Release Goal
+
+Complete the direct AI-to-XCC workflow:
+
+```text
+AI returns a path list
+        ↓
+Copy once
+        ↓
+Paste Paths or Ctrl+V
+        ↓
+Resolve and validate paths
+        ↓
+Review the final ordered selection
+        ↓
+Collect & Copy
+```
+
+v1.3.0 also completes a release-quality visual redesign of the supported PySide6 application before the final release candidate is built.
+
+## Scope Freeze
+
+The following are in scope for v1.3.0:
+
+- Paste Paths;
+- Selected Files Review;
+- edge-case hardening;
+- final Collect-page and application-shell redesign;
+- responsive layout;
+- dialog visual integration;
+- UI regression coverage;
+- packaged validation;
+- release publication.
+
+The following remain outside v1.3.0:
+
+- installer;
+- automatic updater;
+- editable global hotkey;
+- persistent runtime history;
+- advanced rule editor;
+- full output preview editor;
+- per-project profiles.
+
+No additional feature work should enter v1.3.0 unless it fixes a release-blocking defect or is explicitly included below.
+
+---
+
+## M11 — Paste Paths Core
+
+**Status: DONE**
+
+- [x] ordered path-list parser;
+- [x] plain line lists;
+- [x] Markdown bullets and numbering;
+- [x] quoted and backtick-wrapped paths;
+- [x] fenced code block extraction;
+- [x] relative and absolute Windows paths;
+- [x] visible project-root resolution;
+- [x] path existence validation;
+- [x] file/directory validation;
+- [x] supported-type validation;
+- [x] traversal protection;
+- [x] canonical Windows-aware deduplication;
+- [x] manual-selection merge;
+- [x] `Paste Paths` button;
+- [x] guarded `Ctrl+V`;
+- [x] parser and importer tests.
+
+### Release Guarantee
+
+Pasted text is treated only as path input. It is never executed as code or shell content.
+
+---
+
+## M12 — Selected Files Review
+
+**Status: DONE**
+
+- [x] clickable Source summary;
+- [x] relative path display;
+- [x] effective project-root display;
+- [x] `Mixed locations`;
+- [x] absolute-path tooltip;
+- [x] extended multi-selection;
+- [x] `Remove Selected`;
+- [x] `Delete` shortcut;
+- [x] `Clear All`;
+- [x] transactional `Cancel`;
+- [x] explicit `Apply Changes`;
+- [x] order preservation;
+- [x] root recalculation;
+- [x] review-model tests.
+
+---
+
+## M13 — Workflow Regression and UX Polish
+
+**Status: DONE**
+
+- [x] stale or deleted root recovery;
+- [x] absolute external files remain importable;
+- [x] outside-root paths rejected;
+- [x] separate repositories produce `Mixed locations`;
+- [x] repository roots preferred in monorepository layouts;
+- [x] external-path count visibility;
+- [x] duplicate-only imports remain non-modal;
+- [x] detailed issue reports;
+- [x] inactive clear/apply controls disabled;
+- [x] end-to-end import → review → collection coverage;
+- [x] real multi-file AI-list regression scenario.
+
+---
+
+## M14 — Documentation and Version Integration
+
+**Status: DONE**
+
+- [x] canonical source version set to `1.3.0`;
+- [x] bilingual README updated;
+- [x] changelog updated;
+- [x] parser/importer/review architecture documented;
+- [x] security boundary documented;
+- [x] v1.3.0 release notes created;
+- [x] M15 validation procedure created;
+- [x] portable and release documentation moved to v1.3.0;
+- [x] issue template updated;
+- [x] version and documentation regression tests updated;
+- [x] M14 changes validated, committed, and pushed.
+
+---
+
+# M15 — v1.3.0 Validation and Release
+
+**Status: IN PROGRESS — CURRENT MILESTONE**
+
+M15 is the release blocker. The `v1.3.0` tag must not be created until all M15 sub-milestones pass for the same final commit and archive.
+
+---
+
+## M15.1 — Release Gate Hardening
+
+**Status: IMPLEMENTED — LOCAL PASS, COMMIT, AND PUSH CONFIRMATION PENDING**
+
+### Goal
+
+Ensure final readiness cannot pass without the complete automated report, clean-install result, Selected Files regression gate, manual evidence, and exact final archive hash.
+
+### Planned / prepared work
+
+- [x] define the Selected Files regression gate;
+- [x] require automated-gate JSON in final readiness;
+- [x] validate report schema and XCC version;
+- [x] require every automated gate to pass;
+- [x] require canonical clean-install validation;
+- [x] bind readiness to the final ZIP name and SHA-256;
+- [x] extend Windows evidence questions for Paste Paths and Review;
+- [x] preserve compatibility with historical v1.2.0 evidence;
+- [ ] apply the M15 hardening archive to the repository;
+- [ ] run complete local tests;
+- [ ] inspect generated reports;
+- [ ] commit and push the hardening changes.
+
+### Intended commit
+
+```text
+build: harden v1.3.0 release gates
+```
+
+---
+
+## M15.2 — Final UI Reference Contract
+
+**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
+
+### Goal
+
+Freeze the visual and behavioral contract before changing implementation code.
+
+### Reference Direction
+
+The final interface keeps the current XCC product identity:
+
+- dark Windows desktop utility;
+- black and charcoal surfaces;
+- restrained gold accent;
+- dense but calm commercial layout;
+- clear runtime state;
+- four collection modes;
+- Setup and Last Run as the primary page structure.
+
+The generated reference is a visual direction, not a literal specification. The implementation must correct its semantic and responsive weaknesses.
+
+### Required corrections to the reference
+
+- [x] Selected Files Source displays `Project · N files selected` or `N files selected · Mixed locations`;
+- [x] Selected Files action is `Select Files`;
+- [x] folder and tree actions are `Select Folder`;
+- [x] Git action is `Select Repository`;
+- [x] Source remains clickable for review;
+- [x] clear affordance remains available;
+- [x] `Paste Paths` is visible only in Selected Files;
+- [x] Compact mode description states that source contents remain unchanged;
+- [x] number formatting is consistent;
+- [x] header and footer statuses have different roles;
+- [x] primary button and active sidebar use restrained emphasis;
+- [x] layout works from 920×620 through maximized 2K displays.
+
+### Deliverable
+
+```text
+docs/UI_REFERENCE_v1.3.0.md
+```
+
+- [x] authoritative UI contract created
+- [x] responsive breakpoints frozen
+- [x] mode-specific Source semantics frozen
+- [x] accessibility and behavioral invariants documented
+- [x] project metadata regression test added
+
+### Intended commit
+
+```text
+docs: define v1.3.0 interface reference
+```
+
+---
+
+## M15.3 — Theme and Reusable UI Foundation
 
 **Status: PLANNED**
 
-- [ ] editable restore hotkey with conflict validation
-- [ ] optional Collect & Copy hotkey
-- [ ] repository and release links in About
-- [ ] installer and clean uninstall
-- [ ] explicit settings preservation/removal behavior
-- [ ] portable mode
-- [ ] update-availability check
-- [ ] persistent runtime history and export
-- [ ] installer and portable validation gates
+### Goal
 
-An update-availability check is preferred to a full automatic self-updater at this stage.
+Reduce visual logic inside the monolithic `src/xcc/gui.py` before major layout changes.
+
+### Planned modules
+
+```text
+src/xcc/ui_theme.py
+src/xcc/ui_components.py
+tests/test_ui_theme.py
+tests/test_ui_components.py
+```
+
+### Work
+
+- [ ] extract color tokens;
+- [ ] extract spacing and radius constants;
+- [ ] extract typography sizes and weights;
+- [ ] extract shared QSS;
+- [ ] add reusable section/card headers;
+- [ ] add reusable status capsules;
+- [ ] add reusable metric rows;
+- [ ] add primary and secondary button variants;
+- [ ] add helper-text component;
+- [ ] preserve all existing behavior;
+- [ ] verify source and packaged resource loading.
+
+### Acceptance Criteria
+
+- no collection behavior changes;
+- all current tests pass;
+- current GUI remains functional;
+- reusable styles no longer depend on one page;
+- no Qt widget is duplicated solely for responsive layouts.
+
+### Intended commit
+
+```text
+refactor: extract reusable UI foundation
+```
 
 ---
 
-## v1.5.0 Advanced Context Rules
+## M15.4 — Application Shell Redesign
 
 **Status: PLANNED**
 
-- [ ] per-project presets
-- [ ] richer include/exclude profiles
-- [ ] preview editor
-- [ ] optional partial-file strategies
-- [ ] advanced tree and diff controls
-- [ ] configurable safety categories
+### Header
+
+- [ ] refine logo and title alignment;
+- [ ] add restrained runtime-state capsule;
+- [ ] keep separate hotkey capsule;
+- [ ] support Ready, Working, Cancelling, Copied, Warnings, and Failed states;
+- [ ] prevent clipping at compact widths.
+
+### Sidebar
+
+- [ ] reduce active-state visual weight;
+- [ ] add slim accent line;
+- [ ] use quiet dark selected surface;
+- [ ] align icons and labels consistently;
+- [ ] preserve hover, focus, and keyboard behavior;
+- [ ] keep About anchored at the bottom.
+
+### Footer
+
+- [ ] use footer for the current event or next-action guidance;
+- [ ] keep version on the right;
+- [ ] remove duplicate `Ready` semantics;
+- [ ] support collection progress and issue summaries.
+
+### Acceptance Criteria
+
+- runtime state is understandable at a glance;
+- header and footer do not repeat the same message;
+- sidebar does not overpower the working area;
+- tray, hotkey, single-instance, and window behavior remain unchanged.
+
+### Intended commit
+
+```text
+feat: redesign application shell
+```
 
 ---
 
-## Immediate Next Step
+## M15.5 — Collect Setup Redesign
 
-Apply and validate the M15 release-gate hardening patch, commit and push it, then run the canonical automated gate against that exact commit. No additional feature work should enter v1.3.0 unless it fixes a release-blocking defect.
+**Status: PLANNED**
+
+### Page Header
+
+```text
+Collect Context
+Configure what to collect and generate an AI-ready context snapshot.
+```
+
+### Mode Row
+
+- [ ] preserve all four modes;
+- [ ] improve radio control size and spacing;
+- [ ] add clear hover/focus behavior;
+- [ ] support compact wrapping when necessary.
+
+### Source Row Semantics
+
+#### Selected Files
+
+```text
+XCC · 14 files selected
+Paste Paths
+Select Files
+```
+
+or:
+
+```text
+14 files selected · Mixed locations
+Paste Paths
+Select Files
+```
+
+#### Full Folder
+
+```text
+D:\projects\GitHub\XCC
+Select Folder
+```
+
+#### Git Changed Files
+
+```text
+D:\projects\GitHub\XCC
+Select Repository
+```
+
+#### Project Tree
+
+```text
+D:\projects\GitHub\XCC
+Select Folder
+```
+
+### Work
+
+- [ ] implement mode-specific action labels;
+- [ ] retain clickable Source review;
+- [ ] retain clear action;
+- [ ] integrate `Paste Paths` into the Source row;
+- [ ] add mode-specific helper text;
+- [ ] clarify Compact mode;
+- [ ] keep Max chars aligned and validated;
+- [ ] disable controls during collection;
+- [ ] preserve mode-switch reset behavior.
+
+### Compact Mode Contract
+
+```text
+Reduce XCC-generated structural whitespace.
+Source file contents remain unchanged.
+```
+
+### Intended commit
+
+```text
+feat: redesign collect setup workflow
+```
+
+---
+
+## M15.6 — Last Run Metrics Redesign
+
+**Status: PLANNED**
+
+### Target Structure
+
+```text
+Last Run                                  Completed · 17:36:36
+
+Volume            Output            Coverage           Health
+Files             Characters        Included           Outcome
+Lines             Tokens            Omitted            Duration
+Source chars      Truncated         Summary / Partial  Warnings / Errors
+```
+
+### Work
+
+- [ ] group metrics into four semantic columns;
+- [ ] add restrained group icons;
+- [ ] replace heavy independent capsules with lighter metric rows;
+- [ ] add subtle column separators;
+- [ ] align labels and values;
+- [ ] add consistent thousands separators;
+- [ ] use semantic result colors;
+- [ ] preserve a clear pre-run empty state;
+- [ ] keep `CollectionRunRecord` as the data source;
+- [ ] align Last Run and History outcome semantics.
+
+### Semantic Colors
+
+- Success — restrained green;
+- With warnings — restrained amber;
+- Cancelled — neutral gray;
+- Failed — restrained red;
+- Gold remains an interface accent, not a universal result color.
+
+### Intended commit
+
+```text
+feat: redesign last run metrics
+```
+
+---
+
+## M15.7 — Responsive Layout
+
+**Status: PLANNED — HIGH RISK**
+
+### Goal
+
+Make the reference-quality design work in the real supported window range instead of only one screenshot size.
+
+### Breakpoints
+
+#### Large: 1350 px and wider
+
+- [ ] one-row Source controls;
+- [ ] four metric columns;
+- [ ] full page subtitle;
+- [ ] standard page margins and spacing.
+
+#### Medium: 1050–1349 px
+
+- [ ] Source actions may wrap;
+- [ ] metrics switch to a 2×2 grid;
+- [ ] reduced card spacing;
+- [ ] full sidebar remains available.
+
+#### Compact: 920–1049 px
+
+- [ ] Source actions move below the input;
+- [ ] metrics remain 2×2 or use a compact vertical arrangement;
+- [ ] page margins and gaps reduce safely;
+- [ ] no horizontal clipping or scrollbar;
+- [ ] all primary actions remain visible.
+
+### Validation Matrix
+
+- [ ] minimum window 920×620;
+- [ ] 1920×1080 at 100%;
+- [ ] 1920×1080 at 125%;
+- [ ] 1920×1080 at 150%;
+- [ ] 2560×1440;
+- [ ] maximized;
+- [ ] resize transitions without layout jitter.
+
+### Implementation Constraints
+
+- reuse the same widget instances;
+- avoid duplicate signal connections;
+- avoid rebuilding the entire page on every resize event;
+- debounce or guard layout switching;
+- preserve accessibility and tab order.
+
+### Intended commit
+
+```text
+feat: add responsive collect layouts
+```
+
+---
+
+## M15.8 — Dialog Visual Integration
+
+**Status: PLANNED**
+
+### Paste Paths Dialog
+
+- [ ] match final theme and typography;
+- [ ] refine project-root selector;
+- [ ] improve path input readability;
+- [ ] distinguish valid, warning, and error summaries;
+- [ ] keep disabled-state clarity;
+- [ ] preserve live validation.
+
+### Selected Files Review
+
+- [ ] refine project-root or Mixed locations presentation;
+- [ ] improve file-count badge;
+- [ ] use a calmer selected-row state;
+- [ ] preserve multi-select and `Delete`;
+- [ ] preserve `Remove Selected`;
+- [ ] preserve transactional `Cancel`;
+- [ ] preserve explicit `Apply Changes`;
+- [ ] handle long paths without layout breakage.
+
+### Acceptance Criteria
+
+- dialogs visually belong to the same product;
+- actions remain understandable without documentation;
+- no visual change weakens the existing workflow guarantees.
+
+### Intended commit
+
+```text
+feat: align selected files dialogs with new UI
+```
+
+---
+
+## M15.9 — UI Regression, Accessibility, and Final Polish
+
+**Status: PLANNED**
+
+### Automated Coverage
+
+Planned tests:
+
+```text
+tests/test_gui_semantics.py
+tests/test_gui_responsive_layout.py
+tests/test_ui_components.py
+```
+
+Required checks:
+
+- [ ] mode-specific action labels;
+- [ ] Paste Paths visibility;
+- [ ] Source summary and Mixed locations;
+- [ ] clear behavior;
+- [ ] review opening;
+- [ ] responsive breakpoint switching;
+- [ ] metric number formatting;
+- [ ] collection-active disabled state;
+- [ ] header/footer status separation;
+- [ ] version labels;
+- [ ] keyboard accessibility;
+- [ ] no regression in existing Selected Files workflow tests.
+
+### Manual UI Checklist
+
+- [ ] hover, pressed, disabled, and focus states;
+- [ ] keyboard-only navigation;
+- [ ] long folder path;
+- [ ] one selected file;
+- [ ] 100+ selected files;
+- [ ] mixed repositories;
+- [ ] warning result;
+- [ ] failure result;
+- [ ] truncated result;
+- [ ] cancellation;
+- [ ] no-history state;
+- [ ] minimum window;
+- [ ] maximized window;
+- [ ] Windows scaling 100%, 125%, and 150%.
+
+### Final Visual Review
+
+- [ ] spacing;
+- [ ] alignment;
+- [ ] typography;
+- [ ] icon sizing;
+- [ ] divider lengths;
+- [ ] active sidebar weight;
+- [ ] primary button saturation;
+- [ ] Source affordance;
+- [ ] Last Run density;
+- [ ] screenshot parity with the approved design direction.
+
+### Intended commit
+
+```text
+fix: complete v1.3.0 interface polish
+```
+
+---
+
+## M15.10 — Documentation Freeze and Release Candidate
+
+**Status: PLANNED**
+
+### Documentation
+
+Update after the final GUI is approved:
+
+```text
+README.md
+CHANGELOG.md
+docs/ARCHITECTURE.md
+docs/M15_VALIDATION.md
+docs/RELEASE_CHECKLIST.md
+docs/releases/v1.3.0.md
+docs/roadmap.md
+docs/screenshots/xcc-collect.png
+docs/screenshots/xcc-history.png
+```
+
+### Automated Gate
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0
+```
+
+Required outputs:
+
+```text
+artifacts\XCC-Context-Collector-v1.3.0-win64.zip
+artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256
+artifacts\XCC-v1.3.0-automated-gate.json
+```
+
+### Packaged Validation
+
+- [ ] correct header, sidebar, footer, cards, and responsive layout;
+- [ ] correct v1.3.0 labels;
+- [ ] Paste Paths;
+- [ ] guarded `Ctrl+V`;
+- [ ] Selected Files Review;
+- [ ] all four collection modes;
+- [ ] source fidelity;
+- [ ] staged and unstaged Git separation;
+- [ ] ignore rules;
+- [ ] safety warnings;
+- [ ] character budget;
+- [ ] cancellation;
+- [ ] Last Run and History;
+- [ ] tray;
+- [ ] native restore hotkey;
+- [ ] autostart;
+- [ ] config recovery;
+- [ ] single instance;
+- [ ] application and tray icons.
+
+### Release Evidence
+
+- [ ] automated report declares version `1.3.0`;
+- [ ] automated report declares `passed: true`;
+- [ ] manual evidence references the final ZIP SHA-256;
+- [ ] final readiness validation passes;
+- [ ] repository is clean;
+- [ ] local `main` equals `origin/main`;
+- [ ] CI is green for the release commit.
+
+### Intended commit
+
+```text
+docs: freeze v1.3.0 release candidate
+```
+
+---
+
+## M15.11 — Tag, Publish, and Verify v1.3.0
+
+**Status: PLANNED**
+
+- [ ] create annotated `v1.3.0` tag;
+- [ ] push the tag;
+- [ ] create GitHub draft release;
+- [ ] attach ZIP and checksum;
+- [ ] review final release notes;
+- [ ] publish release;
+- [ ] download published assets;
+- [ ] verify downloaded SHA-256;
+- [ ] extract and run the downloaded build;
+- [ ] confirm About and `VERSION.txt`;
+- [ ] confirm release badge;
+- [ ] confirm both assets are present;
+- [ ] update roadmap status to `DONE — RELEASED`;
+- [ ] publish Telegram release announcement.
+
+### Release Completion Rule
+
+v1.3.0 is complete only after the published downloadable artifact has been independently verified.
+
+---
+
+# v1.4.0 Windows Workflow & Distribution
+
+**Status: PLANNED**
+
+## Goal
+
+Improve installation, maintenance, and long-term Windows use without weakening the portable release path.
+
+### Planned Scope
+
+- [ ] editable restore hotkey;
+- [ ] conflict validation before saving;
+- [ ] reset-to-default hotkey;
+- [ ] optional Collect & Copy hotkey;
+- [ ] repository and release links in About;
+- [ ] Windows installer;
+- [ ] clean uninstall;
+- [ ] explicit settings preservation/removal behavior;
+- [ ] explicit portable mode;
+- [ ] update-availability check;
+- [ ] open release page from the app;
+- [ ] persistent runtime history;
+- [ ] history export;
+- [ ] installer and portable validation gates.
+
+An update-availability check is preferred to a full self-updater. A self-updater requires stronger signature, rollback, atomic replacement, and failure-recovery guarantees.
+
+---
+
+# v1.5.0 Advanced Context Rules
+
+**Status: PLANNED**
+
+## Goal
+
+Provide advanced control for large or specialized repositories without complicating the default workflow.
+
+### Planned Scope
+
+- [ ] per-project presets;
+- [ ] reusable collection profiles;
+- [ ] advanced include/exclude editor;
+- [ ] extension-specific file size rules;
+- [ ] context priority rules;
+- [ ] selected-directory scopes;
+- [ ] generated-code exclusion profiles;
+- [ ] configurable project-tree depth;
+- [ ] optional output preview;
+- [ ] optional partial-file strategies;
+- [ ] advanced tree and diff controls;
+- [ ] configurable safety categories;
+- [ ] opt-in secret redaction;
+- [ ] custom output templates;
+- [ ] provider-specific token estimation.
+
+---
+
+# Development and Validation Rules
+
+## Milestone Rule
+
+Every milestone must be completed in this order:
+
+1. implement one focused change set;
+2. provide only the changed files in a ZIP with repository-relative paths;
+3. extract into the repository root;
+4. run compile checks;
+5. run targeted tests;
+6. run the full test suite;
+7. perform the required manual GUI checks;
+8. inspect `git status`;
+9. commit the completed milestone;
+10. pull with rebase;
+11. push;
+12. continue only after the pushed milestone is confirmed.
+
+## Standard Local Gate
+
+```powershell
+python -m compileall -q src tests scripts gui.py run.py hotkey.py; python scripts\check_version_consistency.py; python -m pytest -q
+```
+
+## Repository Synchronization
+
+```powershell
+git status --short; git pull --rebase; git push
+```
+
+## Scope Rule
+
+Before each implementation stage, request only the exact files required for that stage. Do not request the complete project when a local subset is sufficient.
+
+## PowerShell Rule
+
+Every PowerShell command in project instructions must be written on one physical line without backtick continuations.
+
+---
+
+# Immediate Next Step
+
+Apply the M15.2 documentation patch, run the metadata and full test gates, review `docs/UI_REFERENCE_v1.3.0.md`, then commit and push it as a standalone milestone.
+
+After M15.2 is confirmed, continue with:
+
+> **M15.3 — Theme and Reusable UI Foundation**
+
+M15.1 still requires explicit local PASS and commit/push confirmation if that evidence has not already been recorded. The v1.3.0 tag and public release remain blocked until M15.11 is complete.

@@ -74,3 +74,37 @@ def test_build_script_reads_canonical_version() -> None:
     assert "generate_version_info.py" in script
     assert "--version-file" in script
     assert "VERSION.txt" in script
+
+
+def test_v130_ui_reference_contract_is_frozen() -> None:
+    reference_path = PROJECT_ROOT / "docs" / "UI_REFERENCE_v1.3.0.md"
+    roadmap_path = PROJECT_ROOT / "docs" / "roadmap.md"
+
+    assert reference_path.is_file()
+
+    reference = reference_path.read_text(encoding="utf-8")
+    roadmap = roadmap_path.read_text(encoding="utf-8")
+
+    required_reference_markers = (
+        "# XCC v1.3.0 Final UI Reference Contract",
+        "Status: **FROZEN FOR IMPLEMENTATION**",
+        "Minimum supported window: `920 × 620`",
+        "## 5. Application Shell",
+        "## 6. Collect Page Contract",
+        "## 7. Last Run Contract",
+        "## 8. Responsive Layout Contract",
+        "## 9. Dialog Contract",
+        "`Select Files`",
+        "`Select Folder`",
+        "`Select Repository`",
+        "Source file contents remain unchanged.",
+        "Transactional behavior is non-negotiable",
+    )
+
+    for marker in required_reference_markers:
+        assert marker in reference
+
+    assert "## M15.2 — Final UI Reference Contract" in roadmap
+    assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in roadmap
+    assert "docs/UI_REFERENCE_v1.3.0.md" in roadmap
+
