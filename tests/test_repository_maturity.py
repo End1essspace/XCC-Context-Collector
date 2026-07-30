@@ -23,6 +23,7 @@ def test_repository_governance_files_exist() -> None:
         "scripts/record_manual_validation.ps1",
         "scripts/validate_release_evidence.py",
         "scripts/check_release_readiness.py",
+        "scripts/clean_workspace.ps1",
         ".github/pull_request_template.md",
         ".github/ISSUE_TEMPLATE/bug_report.yml",
         ".github/ISSUE_TEMPLATE/feature_request.yml",
@@ -75,3 +76,50 @@ def test_release_packaging_defaults_to_non_public_artifacts_directory() -> None:
     assert '[string]$OutputDirectory = "artifacts"' in script
     assert "Get-FileHash" in script
     assert "validate_release_archive.py" in script
+
+def test_workspace_hygiene_covers_generated_outputs() -> None:
+    gitignore = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8")
+    cleanup = (
+        PROJECT_ROOT / "scripts" / "clean_workspace.ps1"
+    ).read_text(encoding="utf-8-sig")
+    build = (
+        PROJECT_ROOT / "scripts" / "build_release.ps1"
+    ).read_text(encoding="utf-8-sig")
+
+    for pattern in (
+        "__pycache__/",
+        ".pytest_cache/",
+        "*.egg-info/",
+        "build/",
+        "dist/",
+        "artifacts/",
+        "release/",
+        "*.spec",
+    ):
+        assert pattern in gitignore
+
+    for generated_path in (
+        "__pycache__",
+        ".pytest_cache",
+        "build",
+        "dist",
+        "XCC Context Collector.spec",
+        "src\\xcc_context_collector.egg-info",
+    ):
+        assert generated_path in cleanup
+
+    assert 'Remove-DirectoryWithRetry "build"' in build
+    assert "Test-Path $SpecPath" in build
+    assert '--add-data "assets;assets"' not in build
+    for asset_name in (
+        "xcc_app.ico",
+        "xcc_app.png",
+        "xcc_tray.ico",
+        "xcc_tray.png",
+        "nav-collect.svg",
+        "nav-history.svg",
+        "nav-settings.svg",
+        "nav-about.svg",
+    ):
+        assert asset_name in build
+

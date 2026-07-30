@@ -10,6 +10,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- Deterministic PowerShell workspace cleanup tooling for caches, packaging metadata, and local build outputs.
 - Source-content fidelity guarantees and regression coverage.
 - Complete typed Git change handling for staged, unstaged, renamed, copied, deleted, and untracked files.
 - Stable relative paths for selected files, including duplicate filenames and cross-root selections.
@@ -25,6 +26,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- Successful PyInstaller builds now remove intermediate `build` data and generated spec files automatically.
+- Release builds bundle only runtime assets instead of the entire source asset directory.
 - The supported runtime is the PySide6 GUI on CPython 3.13.x and Windows 10/11 x64.
 - Legacy Tkinter and `keyboard` workflows are retained only as unsupported development compatibility tools.
 - Release builds read the application version from `xcc.__version__` and embed the same value in executable metadata and `VERSION.txt`.

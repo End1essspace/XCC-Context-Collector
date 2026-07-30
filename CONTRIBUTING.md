@@ -32,6 +32,26 @@ powershell -ExecutionPolicy Bypass -File scripts\smoke_packaged_app.ps1
 powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
 ```
 
+## Workspace cleanup
+
+Generated caches, packaging metadata, PyInstaller intermediates, and local build outputs can be removed with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1
+```
+
+The default cleanup preserves `.venv`, `artifacts`, and the legacy local `release` archive. Remove them explicitly only when appropriate:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1 `
+    -IncludeArtifacts `
+    -IncludeLegacyReleaseArchives `
+    -IncludeVirtualEnvironment
+```
+
+Do not replace this with `git clean -xfd`: that command can delete release-candidate evidence and local environments without distinguishing generated data from intentional local files.
+
 ## Pull requests
 
 Keep each pull request focused on one roadmap milestone or defect. Include regression tests for behavior changes. Do not commit:

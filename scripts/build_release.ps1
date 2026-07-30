@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$PythonExecutable = "python"
 )
 
@@ -8,6 +8,7 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $ProjectRoot
 
 $VersionInfoPath = Join-Path $env:TEMP "xcc-version-info-$PID.txt"
+$SpecPath = Join-Path $ProjectRoot "XCC Context Collector.spec"
 
 function Remove-DirectoryWithRetry([string]$Path) {
     if (-not (Test-Path $Path)) {
@@ -51,8 +52,8 @@ try {
     Remove-DirectoryWithRetry "build"
     Remove-DirectoryWithRetry "dist"
 
-    if (Test-Path "XCC Context Collector.spec") {
-        Remove-Item "XCC Context Collector.spec" -Force
+    if (Test-Path $SpecPath) {
+        Remove-Item $SpecPath -Force
     }
 
     & $PythonExecutable -m PyInstaller `
@@ -61,7 +62,14 @@ try {
         --name "XCC Context Collector" `
         --paths "src" `
         --icon "assets\xcc_app.ico" `
-        --add-data "assets;assets" `
+        --add-data "assets\xcc_app.ico;assets" `
+        --add-data "assets\xcc_app.png;assets" `
+        --add-data "assets\xcc_tray.ico;assets" `
+        --add-data "assets\xcc_tray.png;assets" `
+        --add-data "assets\nav-collect.svg;assets" `
+        --add-data "assets\nav-history.svg;assets" `
+        --add-data "assets\nav-settings.svg;assets" `
+        --add-data "assets\nav-about.svg;assets" `
         --version-file $VersionInfoPath `
         --exclude-module PyQt5 `
         --exclude-module PyQt6 `
@@ -77,6 +85,8 @@ try {
     $DistRoot = "dist\XCC Context Collector"
     Set-Content -Path (Join-Path $DistRoot "VERSION.txt") -Value $AppVersion -Encoding ascii
 
+    Remove-DirectoryWithRetry "build"
+
     Write-Host "Build complete." -ForegroundColor Green
     Write-Host "Version: $AppVersion" -ForegroundColor Green
     Write-Host "Output: $DistRoot\XCC Context Collector.exe" -ForegroundColor Green
@@ -84,5 +94,9 @@ try {
 finally {
     if (Test-Path $VersionInfoPath) {
         Remove-Item $VersionInfoPath -Force
+    }
+
+    if (Test-Path $SpecPath) {
+        Remove-Item $SpecPath -Force
     }
 }

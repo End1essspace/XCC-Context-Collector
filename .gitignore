@@ -6,13 +6,31 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.hypothesis/
+.tox/
+.nox/
 .venv/
 venv/
 
-# PyInstaller
+# Python packaging / coverage
+*.egg-info/
+*.dist-info/
+.eggs/
+.coverage
+.coverage.*
+coverage.xml
+junit*.xml
+htmlcov/
+pip-wheel-metadata/
+wheelhouse/
+*.whl
+
+# PyInstaller / local release outputs
 build/
 dist/
 *.spec
+artifacts/
+release/
 
 # IDE
 .idea/
@@ -25,13 +43,3 @@ Desktop.ini
 # XCC local runtime
 .xcc/
 *.log
-
-release/
-artifacts/
-
-# Python packaging / coverage
-*.egg-info/
-.eggs/
-.coverage
-.coverage.*
-htmlcov/
