@@ -7,6 +7,7 @@ from PySide6.QtCore import QObject, QLockFile, QRect, QRectF, QSize, QThread, Qt
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QApplication,
+    QAbstractItemView,
     QButtonGroup,
     QCheckBox,
     QDialog,
@@ -65,6 +66,11 @@ from .selected_files_importer import (
     SelectedFilesImportResult,
     import_selected_files,
     infer_project_root,
+)
+from .selected_files_review import (
+    build_selected_file_review,
+    remove_selected_file_indices,
+    review_project_root,
 )
 
 APP_ICON_PATH = resource_path("assets", "xcc_app.ico")
@@ -352,6 +358,204 @@ class SingleInstanceServer(QObject):
         self.window._show_from_tray()
 
 
+
+class ClickableSourceLineEdit(QLineEdit):
+    """Read-only source summary that opens Selected Files review on click."""
+
+    clicked = Signal()
+
+    def mouseReleaseEvent(self, event) -> None:
+        super().mouseReleaseEvent(event)
+        if event.button() == Qt.MouseButton.LeftButton and self.isEnabled():
+            self.clicked.emit()
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() in {Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space}:
+            self.clicked.emit()
+            event.accept()
+            return
+
+        super().keyPressEvent(event)
+
+
+class SelectedFilesReviewDialog(QDialog):
+    """Review and edit the current Selected Files collection before a run."""
+
+    def __init__(
+        self,
+        paths: list[Path],
+        *,
+        project_root: Path | None,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+
+        self.setObjectName("SelectedFilesReviewDialog")
+        self.setWindowTitle("Selected Files")
+        self.setModal(True)
+        self.setMinimumSize(700, 480)
+        self.resize(780, 540)
+
+        self._selected_paths = list(paths)
+        self.project_root = review_project_root(
+            self._selected_paths,
+            preferred_root=project_root,
+        )
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(14)
+
+        title_row = QHBoxLayout()
+        title_row.setContentsMargins(0, 0, 0, 0)
+        title_row.setSpacing(12)
+
+        title = QLabel("Selected Files")
+        title.setObjectName("DialogTitle")
+
+        self.count_label = QLabel()
+        self.count_label.setObjectName("SelectedFilesCount")
+        self.count_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+
+        title_row.addWidget(title)
+        title_row.addStretch(1)
+        title_row.addWidget(self.count_label)
+        layout.addLayout(title_row)
+
+        description = QLabel(
+            "Review relative paths, remove individual files, or clear the "
+            "selection before collecting context."
+        )
+        description.setObjectName("DialogDescription")
+        description.setWordWrap(True)
+        layout.addWidget(description)
+
+        root_label = QLabel("Project root")
+        root_label.setObjectName("FieldLabel")
+        layout.addWidget(root_label)
+
+        self.root_value = QLineEdit()
+        self.root_value.setObjectName("ReviewRootInput")
+        self.root_value.setReadOnly(True)
+        self.root_value.setFixedHeight(40)
+        layout.addWidget(self.root_value)
+
+        files_label = QLabel("Files")
+        files_label.setObjectName("FieldLabel")
+        layout.addWidget(files_label)
+
+        self.files_list = QListWidget()
+        self.files_list.setObjectName("SelectedFilesReviewList")
+        self.files_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.ExtendedSelection
+        )
+        self.files_list.setAlternatingRowColors(False)
+        self.files_list.setMinimumHeight(250)
+        self.files_list.itemSelectionChanged.connect(
+            self._refresh_action_states
+        )
+        layout.addWidget(self.files_list, 1)
+
+        actions_row = QHBoxLayout()
+        actions_row.setContentsMargins(0, 0, 0, 0)
+        actions_row.setSpacing(10)
+
+        self.remove_button = QPushButton("Remove Selected")
+        self.remove_button.setFixedHeight(40)
+        self.remove_button.setMinimumWidth(150)
+
+        self.clear_button = QPushButton("Clear All")
+        self.clear_button.setFixedHeight(40)
+        self.clear_button.setMinimumWidth(110)
+
+        actions_row.addWidget(self.remove_button)
+        actions_row.addWidget(self.clear_button)
+        actions_row.addStretch(1)
+        layout.addLayout(actions_row)
+
+        footer_row = QHBoxLayout()
+        footer_row.setContentsMargins(0, 0, 0, 0)
+        footer_row.setSpacing(10)
+        footer_row.addStretch(1)
+
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.setFixedHeight(40)
+        self.cancel_button.setMinimumWidth(100)
+
+        self.apply_button = QPushButton("Apply Changes")
+        self.apply_button.setObjectName("DialogPrimaryButton")
+        self.apply_button.setFixedHeight(40)
+        self.apply_button.setMinimumWidth(138)
+
+        footer_row.addWidget(self.cancel_button)
+        footer_row.addWidget(self.apply_button)
+        layout.addLayout(footer_row)
+
+        self.remove_button.clicked.connect(self._remove_selected)
+        self.clear_button.clicked.connect(self._clear_all)
+        self.cancel_button.clicked.connect(self.reject)
+        self.apply_button.clicked.connect(self.accept)
+
+        self._render_files()
+
+    @property
+    def selected_paths(self) -> list[Path]:
+        return list(self._selected_paths)
+
+    def _render_files(self) -> None:
+        self.files_list.clear()
+
+        review_items = build_selected_file_review(
+            self._selected_paths,
+            project_root=self.project_root,
+        )
+        for review_item in review_items:
+            item = QListWidgetItem(review_item.display_path)
+            item.setToolTip(str(review_item.path))
+            item.setData(
+                Qt.ItemDataRole.UserRole,
+                str(review_item.path),
+            )
+            self.files_list.addItem(item)
+
+        count = len(self._selected_paths)
+        self.count_label.setText(
+            f"{count} file{'s' if count != 1 else ''}"
+        )
+        self.root_value.setText(
+            str(self.project_root)
+            if self.project_root is not None
+            else "Mixed locations"
+        )
+        self.root_value.setToolTip(self.root_value.text())
+        self._refresh_action_states()
+
+    def _refresh_action_states(self) -> None:
+        self.remove_button.setEnabled(bool(self.files_list.selectedItems()))
+        self.clear_button.setEnabled(bool(self._selected_paths))
+
+    def _remove_selected(self) -> None:
+        rows = [self.files_list.row(item) for item in self.files_list.selectedItems()]
+        if not rows:
+            return
+
+        self._selected_paths = list(
+            remove_selected_file_indices(self._selected_paths, rows)
+        )
+        self.project_root = review_project_root(
+            self._selected_paths,
+            preferred_root=self.project_root,
+        )
+        self._render_files()
+
+    def _clear_all(self) -> None:
+        self._selected_paths = []
+        self.project_root = None
+        self._render_files()
+
+
 class PastePathsDialog(QDialog):
     """Resolve pasted AI file lists against one visible project root."""
 
@@ -628,6 +832,7 @@ class XccMainWindow(QMainWindow):
         self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.safety_confirmation_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.paste_paths_button.clicked.connect(self._paste_paths_from_clipboard)
+        self.source_input.clicked.connect(self._open_selected_files_review)
 
         self.paste_paths_shortcut = QShortcut(
             QKeySequence(QKeySequence.StandardKey.Paste),
@@ -1127,12 +1332,13 @@ class XccMainWindow(QMainWindow):
         source_label.setObjectName("FieldLabel")
         source_label.setFixedWidth(90)
 
-        self.source_input = QLineEdit()
+        self.source_input = ClickableSourceLineEdit()
         self.source_input.setPlaceholderText("No source selected")
         self.source_input.setReadOnly(True)
         self.source_input.setFixedHeight(38)
         self.source_input.setFrame(False)
         self.source_input.setObjectName("SourceInputEmbedded")
+        self.source_input.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
 
         self.clear_source_button = QPushButton("×")
         self.clear_source_button.setObjectName("ClearSourceButton")
@@ -1489,7 +1695,10 @@ class XccMainWindow(QMainWindow):
         if not self.selected_paths:
             self.source_input.clear()
             self.source_input.setToolTip("")
+            self.source_input.setCursor(Qt.CursorShape.ArrowCursor)
             return
+
+        self.source_input.setCursor(Qt.CursorShape.PointingHandCursor)
 
         count = len(self.selected_paths)
         suffix = "file" if count == 1 else "files"
@@ -1656,6 +1865,46 @@ class XccMainWindow(QMainWindow):
             "Paste Paths Result",
             "\n".join(lines),
         )
+
+    def _open_selected_files_review(self) -> None:
+        if (
+            self._collection_active
+            or self._current_mode() != "files"
+            or not self.selected_paths
+        ):
+            return
+
+        dialog = SelectedFilesReviewDialog(
+            self.selected_paths,
+            project_root=self.project_root,
+            parent=self,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+
+        previous_count = len(self.selected_paths)
+        self.selected_paths = dialog.selected_paths
+        self.project_root = dialog.project_root
+
+        if self.project_root is not None:
+            self._recent_project_root = self.project_root
+
+        self._refresh_selected_files_source()
+        self._save_current_settings()
+        self._refresh_settings_page()
+
+        current_count = len(self.selected_paths)
+        if current_count == previous_count:
+            self._set_status("Selected files unchanged.")
+        elif current_count == 0:
+            self._set_status("Selected files cleared.")
+        else:
+            removed_count = previous_count - current_count
+            self._set_status(
+                f"Removed {removed_count} file"
+                f"{'s' if removed_count != 1 else ''}. "
+                f"Total: {current_count}."
+            )
 
     def _select_source(self) -> None:
         mode = self._current_mode()
@@ -1991,6 +2240,7 @@ class XccMainWindow(QMainWindow):
             self.select_source_button,
             self.paste_paths_button,
             self.clear_source_button,
+            self.source_input,
             self.compact_checkbox,
             self.max_chars_input,
         ):
@@ -3162,6 +3412,51 @@ class XccMainWindow(QMainWindow):
                 background: #2A2A2A;
                 border: 1px solid #3A3A3A;
                 color: #777777;
+            }
+
+            #SelectedFilesReviewDialog {
+                background: #0F0F10;
+            }
+
+            #SelectedFilesCount {
+                color: #D6A93A;
+                font-size: 12px;
+                font-weight: 800;
+                background: #171717;
+                border: 1px solid #3A311C;
+                border-radius: 8px;
+                padding: 5px 10px;
+            }
+
+            #ReviewRootInput {
+                color: #B9B9B9;
+            }
+
+            #SelectedFilesReviewList {
+                background: #101010;
+                border: 1px solid #5A4820;
+                border-radius: 10px;
+                padding: 6px;
+                outline: none;
+                color: #E7E7E7;
+                font-family: Consolas;
+                font-size: 12px;
+            }
+
+            #SelectedFilesReviewList::item {
+                min-height: 30px;
+                border-radius: 6px;
+                padding: 3px 8px;
+            }
+
+            #SelectedFilesReviewList::item:hover {
+                background: #211D12;
+                color: #F2F2F2;
+            }
+
+            #SelectedFilesReviewList::item:selected {
+                background: #D6A93A;
+                color: #111111;
             }
             """
         )

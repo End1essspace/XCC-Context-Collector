@@ -128,3 +128,22 @@ def test_infer_project_root_returns_none_for_cross_root_paths(
     # Explicitly use two independent absolute roots only to verify no crash and
     # that the helper returns a deterministic existing parent.
     assert infer_project_root([first, second]) == tmp_path.resolve()
+
+
+def test_import_selected_files_merges_with_manual_selection(
+    tmp_path: Path,
+) -> None:
+    manual = tmp_path / "src" / "manual.py"
+    pasted = tmp_path / "src" / "pasted.py"
+    manual.parent.mkdir()
+    manual.write_text("manual\n", encoding="utf-8")
+    pasted.write_text("pasted\n", encoding="utf-8")
+
+    result = import_selected_files(
+        "src/manual.py\nsrc/pasted.py",
+        project_root=tmp_path,
+        existing_paths=[manual],
+    )
+
+    assert result.duplicates == ("src/manual.py",)
+    assert result.added == (pasted.resolve(),)
