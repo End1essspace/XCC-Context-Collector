@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import tempfile
 from datetime import datetime
-from PySide6.QtCore import QObject, QLockFile, QSize, QThread, Qt, QTimer
+from PySide6.QtCore import QObject, QLockFile, QRect, QRectF, QSize, QThread, Qt, QTimer, Signal
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QApplication,
@@ -26,9 +26,12 @@ from PySide6.QtWidgets import (
     QWidget,
     QGridLayout,
     QScrollArea,
+    QStyledItemDelegate,
+    QStyle,
 )
-from PySide6.QtGui import QAction, QIcon, QPixmap, QIntValidator
+from PySide6.QtGui import QAction, QColor, QFont, QIcon, QIntValidator, QPainter, QPixmap
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
+from PySide6.QtSvg import QSvgRenderer
 from . import __version__
 from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS, qt_context_file_filter
 from pathlib import Path
@@ -56,6 +59,242 @@ NAV_SETTINGS_ICON_PATH = resource_path("assets", "nav-settings.svg")
 NAV_ABOUT_ICON_PATH = resource_path("assets", "nav-about.svg")
 INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
 INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
+
+NAV_ICON_PATH_ROLE = int(Qt.ItemDataRole.UserRole) + 1
+
+
+class SidebarItemDelegate(QStyledItemDelegate):
+    """Paint crisp Lucide navigation items with controlled spacing and states."""
+
+    ITEM_HEIGHT = 52
+    ITEM_MARGIN_X = 10
+    ITEM_MARGIN_Y = 4
+    CONTENT_LEFT = 16
+    ICON_SIZE = 20
+    ICON_TEXT_GAP = 12
+
+    def __init__(self, parent: QListWidget) -> None:
+        super().__init__(parent)
+        self._icon_cache: dict[tuple[str, str, float], QPixmap] = {}
+
+    def sizeHint(self, option, index) -> QSize:
+        return QSize(option.rect.width(), self.ITEM_HEIGHT)
+
+    def paint(self, painter: QPainter, option, index) -> None:
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+
+        selected = bool(option.state & QStyle.StateFlag.State_Selected)
+        hovered = bool(option.state & QStyle.StateFlag.State_MouseOver)
+        enabled = bool(option.state & QStyle.StateFlag.State_Enabled)
+
+        item_rect = option.rect.adjusted(
+            self.ITEM_MARGIN_X,
+            self.ITEM_MARGIN_Y,
+            -self.ITEM_MARGIN_X,
+            -self.ITEM_MARGIN_Y,
+        )
+
+        if selected:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor("#D6A93A"))
+            painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
+        elif hovered:
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor("#211D12"))
+            painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
+
+        if not enabled:
+            icon_color = "#666A70"
+            text_color = "#777B80"
+        elif selected:
+            icon_color = "#111111"
+            text_color = "#111111"
+        elif hovered:
+            icon_color = "#D6A93A"
+            text_color = "#F2F2F2"
+        else:
+            icon_color = "#AEB3BA"
+            text_color = "#D6D8DB"
+
+        icon_x = item_rect.left() + self.CONTENT_LEFT
+        icon_y = item_rect.top() + (item_rect.height() - self.ICON_SIZE) // 2
+        icon_rect = QRect(icon_x, icon_y, self.ICON_SIZE, self.ICON_SIZE)
+
+        icon_path_value = index.data(NAV_ICON_PATH_ROLE)
+        if icon_path_value:
+            self._paint_svg_icon(
+                painter,
+                Path(str(icon_path_value)),
+                icon_rect,
+                icon_color,
+                option.widget,
+            )
+
+        text_left = icon_rect.right() + 1 + self.ICON_TEXT_GAP
+        text_rect = QRect(
+            text_left,
+            item_rect.top(),
+            max(0, item_rect.right() - text_left - 12),
+            item_rect.height(),
+        )
+
+        font = QFont(option.font)
+        font.setPointSizeF(max(10.0, font.pointSizeF()))
+        font.setWeight(QFont.Weight.DemiBold if selected else QFont.Weight.Normal)
+        painter.setFont(font)
+        painter.setPen(QColor(text_color))
+        painter.drawText(
+            text_rect,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            str(index.data(Qt.ItemDataRole.DisplayRole) or ""),
+        )
+        painter.restore()
+
+    def _paint_svg_icon(
+        self,
+        painter: QPainter,
+        path: Path,
+        target_rect: QRect,
+        color: str,
+        widget: QWidget | None,
+    ) -> None:
+        if not path.exists():
+            return
+
+        device_ratio = 1.0
+        if widget is not None:
+            device_ratio = max(1.0, float(widget.devicePixelRatioF()))
+        cache_ratio = round(device_ratio, 2)
+        cache_key = (str(path), color, cache_ratio)
+
+        pixmap = self._icon_cache.get(cache_key)
+        if pixmap is None:
+            physical_size = max(1, round(self.ICON_SIZE * device_ratio))
+            pixmap = QPixmap(physical_size, physical_size)
+            pixmap.setDevicePixelRatio(device_ratio)
+            pixmap.fill(Qt.GlobalColor.transparent)
+
+            renderer = QSvgRenderer(str(path))
+            if not renderer.isValid():
+                return
+
+            icon_painter = QPainter(pixmap)
+            icon_painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            icon_painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
+            renderer.render(
+                icon_painter,
+                QRectF(1.0, 1.0, self.ICON_SIZE - 2.0, self.ICON_SIZE - 2.0),
+            )
+            icon_painter.setCompositionMode(
+                QPainter.CompositionMode.CompositionMode_SourceIn
+            )
+            icon_painter.fillRect(
+                QRectF(0.0, 0.0, self.ICON_SIZE, self.ICON_SIZE),
+                QColor(color),
+            )
+            icon_painter.end()
+            self._icon_cache[cache_key] = pixmap
+
+        painter.drawPixmap(target_rect.topLeft(), pixmap)
+
+
+class SidebarNavigation(QFrame):
+    """Two-zone sidebar with primary navigation above and About anchored below."""
+
+    currentRowChanged = Signal(int)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("Sidebar")
+        self.setFixedWidth(192)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 8, 0, 8)
+        layout.setSpacing(0)
+
+        self._top_nav = self._make_list(
+            [
+                (NAV_COLLECT_ICON_PATH, "Collect"),
+                (NAV_HISTORY_ICON_PATH, "History"),
+                (NAV_SETTINGS_ICON_PATH, "Settings"),
+            ]
+        )
+        self._bottom_nav = self._make_list(
+            [(NAV_ABOUT_ICON_PATH, "About")]
+        )
+
+        self._top_nav.currentRowChanged.connect(self._on_top_row_changed)
+        self._bottom_nav.currentRowChanged.connect(self._on_bottom_row_changed)
+
+        layout.addWidget(self._top_nav)
+        layout.addStretch(1)
+        layout.addWidget(self._bottom_nav)
+
+    def _make_list(
+        self,
+        items: list[tuple[Path, str]],
+    ) -> QListWidget:
+        nav = QListWidget(self)
+        nav.setObjectName("SidebarList")
+        nav.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        nav.setSpacing(0)
+        nav.setMouseTracking(True)
+        nav.setUniformItemSizes(True)
+        nav.setFrameShape(QFrame.Shape.NoFrame)
+        nav.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        nav.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        nav.setItemDelegate(SidebarItemDelegate(nav))
+        nav.setFixedHeight(len(items) * SidebarItemDelegate.ITEM_HEIGHT)
+
+        for icon_path, title in items:
+            item = QListWidgetItem(title)
+            item.setData(NAV_ICON_PATH_ROLE, str(icon_path))
+            item.setSizeHint(QSize(0, SidebarItemDelegate.ITEM_HEIGHT))
+            nav.addItem(item)
+
+        return nav
+
+    def setCurrentRow(self, row: int) -> None:
+        if row < 0 or row > 3:
+            return
+
+        if row < 3:
+            self._set_list_row(self._top_nav, row)
+            self._clear_list_selection(self._bottom_nav)
+        else:
+            self._clear_list_selection(self._top_nav)
+            self._set_list_row(self._bottom_nav, 0)
+
+        self.currentRowChanged.emit(row)
+
+    def _on_top_row_changed(self, row: int) -> None:
+        if row < 0:
+            return
+
+        self._clear_list_selection(self._bottom_nav)
+        self.currentRowChanged.emit(row)
+
+    def _on_bottom_row_changed(self, row: int) -> None:
+        if row < 0:
+            return
+
+        self._clear_list_selection(self._top_nav)
+        self.currentRowChanged.emit(3)
+
+    @staticmethod
+    def _set_list_row(nav: QListWidget, row: int) -> None:
+        nav.blockSignals(True)
+        nav.setCurrentRow(row)
+        nav.blockSignals(False)
+
+    @staticmethod
+    def _clear_list_selection(nav: QListWidget) -> None:
+        nav.blockSignals(True)
+        nav.setCurrentRow(-1)
+        nav.clearSelection()
+        nav.blockSignals(False)
+
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -635,29 +874,8 @@ class XccMainWindow(QMainWindow):
             else:
                 self._show_from_tray()
 
-    def _build_nav(self) -> QListWidget:
-        nav = QListWidget()
-        nav.setObjectName("Sidebar")
-        nav.setFixedWidth(190)
-        nav.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        nav.setSpacing(0)
-        nav.setIconSize(QSize(18, 18))
-
-        navigation_items = [
-            (NAV_COLLECT_ICON_PATH, "Collect"),
-            (NAV_HISTORY_ICON_PATH, "History"),
-            (NAV_SETTINGS_ICON_PATH, "Settings"),
-            (NAV_ABOUT_ICON_PATH, "About"),
-        ]
-
-        for icon_path, title in navigation_items:
-            item = QListWidgetItem(title)
-            if icon_path.exists():
-                item.setIcon(QIcon(str(icon_path)))
-            item.setSizeHint(QSize(0, 48))
-            nav.addItem(item)
-
-        return nav
+    def _build_nav(self) -> SidebarNavigation:
+        return SidebarNavigation(self)
 
     def _build_collect_page(self) -> QWidget:
         page = QWidget()
@@ -1969,32 +2187,20 @@ class XccMainWindow(QMainWindow):
             #Sidebar {
                 background: #121212;
                 border-right: 1px solid #2F2A1C;
-                padding: 10px 8px;
-                outline: none;
             }
 
-            #Sidebar::item {
-                padding: 11px 14px;
-                margin: 4px 0;
-                border-radius: 9px;
-                color: #D4D4D4;
+            #SidebarList {
                 background: transparent;
+                border: none;
+                outline: none;
+                padding: 0px;
             }
 
-            #Sidebar::item:hover {
-                background: #1E1A10;
-                color: #F2F2F2;
-            }
-
-            #Sidebar::item:selected {
-                background: #D6A93A;
-                color: #111111;
-                font-weight: 700;
-            }
-
-            #Sidebar::item:selected:hover {
-                background: #E8BE55;
-                color: #111111;
+            #SidebarList::item {
+                background: transparent;
+                border: none;
+                padding: 0px;
+                margin: 0px;
             }
 
             #SectionTitle {
