@@ -77,6 +77,9 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert PALETTE.success in stylesheet
     assert PALETTE.error in stylesheet
     assert "qlineargradient" in stylesheet
+    assert "#BF9028" in stylesheet
+    assert "#DDB342" in stylesheet
+    assert "#D8AD42" not in stylesheet
     assert "@accent" not in stylesheet
     assert "@primary" not in stylesheet
 

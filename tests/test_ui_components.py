@@ -7,10 +7,12 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtWidgets import QApplication, QLabel
+from PySide6.QtCore import QSize
+from PySide6.QtGui import QColor
+from PySide6.QtWidgets import QApplication, QLabel, QPushButton
 
 from xcc.resources import resource_path
-from xcc.ui_theme import METRICS
+from xcc.ui_theme import METRICS, PALETTE
 
 from xcc.ui_components import (
     IconTitle,
@@ -27,11 +29,29 @@ from xcc.ui_components import (
     make_primary_button,
     make_runtime_status_capsule,
     make_secondary_button,
+    make_tinted_svg_icon,
+    render_tinted_svg,
     make_section_title,
     set_metric_value,
+    set_tinted_button_icon,
     set_widget_property,
     set_widget_state,
 )
+
+
+
+
+def _opaque_rgb_values(pixmap) -> set[str]:
+    image = pixmap.toImage()
+    values: set[str] = set()
+
+    for y in range(image.height()):
+        for x in range(image.width()):
+            color = image.pixelColor(x, y)
+            if color.alpha() > 0:
+                values.add(color.name(QColor.NameFormat.HexRgb).upper())
+
+    return values
 
 
 @pytest.fixture(scope="module")
@@ -108,6 +128,47 @@ def test_icon_title_uses_packaged_svg_asset(qapp: QApplication) -> None:
     assert title.text_label.text() == "Last Run"
     assert title.icon_label.pixmap() is not None
     assert not title.icon_label.pixmap().isNull()
+    assert PALETTE.accent.upper() in _opaque_rgb_values(
+        title.icon_label.pixmap()
+    )
+
+def test_svg_tinting_overrides_original_lucide_stroke(
+    qapp: QApplication,
+) -> None:
+    pixmap = render_tinted_svg(
+        resource_path("assets", "ui-health.svg"),
+        24,
+        PALETTE.accent,
+    )
+
+    assert not pixmap.isNull()
+    colors = _opaque_rgb_values(pixmap)
+    assert colors
+    assert PALETTE.accent.upper() in colors
+    assert "#000000" not in colors
+
+
+def test_tinted_button_icons_use_surface_specific_colors(
+    qapp: QApplication,
+) -> None:
+    paste_icon = make_tinted_svg_icon(
+        resource_path("assets", "ui-paste-paths.svg"),
+        18,
+        PALETTE.accent,
+    )
+    paste_pixmap = paste_icon.pixmap(QSize(18, 18))
+    assert PALETTE.accent.upper() in _opaque_rgb_values(paste_pixmap)
+
+    button = QPushButton("Collect & Copy")
+    set_tinted_button_icon(
+        button,
+        resource_path("assets", "ui-collect-copy.svg"),
+        size=20,
+        color=PALETTE.dark_text,
+    )
+    button_pixmap = button.icon().pixmap(QSize(20, 20))
+    assert PALETTE.dark_text.upper() in _opaque_rgb_values(button_pixmap)
+
 
 def test_status_capsule_and_dynamic_state(qapp: QApplication) -> None:
     capsule = StatusCapsule("Ready")

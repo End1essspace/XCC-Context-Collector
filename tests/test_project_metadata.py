@@ -218,6 +218,8 @@ def test_v130_last_run_metrics_redesign_is_registered() -> None:
     assert "def format_metric_integer" in metrics_policy
     assert "def outcome_metric_state" in metrics_policy
     assert "class IconTitle" in components
+    assert "def render_tinted_svg" in components
+    assert "def make_tinted_svg_icon" in components
     assert "METRICS.metric_row_height" in components
     assert "root_layout.addWidget(self._build_header())" not in gui
     assert "def _build_header" not in gui
@@ -246,4 +248,6 @@ def test_v130_last_run_metrics_redesign_is_registered() -> None:
         roadmap.index("## M15.7")
     ]
     assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in m156
+    assert "### M15.6.1 — Icon Rendering and Visual Polish" in m156
+    assert "official Lucide SVG files are tinted at runtime" in m156
 

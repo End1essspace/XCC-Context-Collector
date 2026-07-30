@@ -229,13 +229,13 @@ QPushButton:pressed {
 #PrimaryButton {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #D8AD42,
-        stop: 1 #C5962B
+        stop: 0 #D2A533,
+        stop: 1 #BF9028
     );
     color: #111111;
     font-size: 15px;
     font-weight: 800;
-    border: 1px solid #C79A31;
+    border: 1px solid #B98924;
     border-radius: 11px;
     padding: 9px 18px;
 }
@@ -243,16 +243,16 @@ QPushButton:pressed {
 #PrimaryButton:hover {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #E5BA50,
-        stop: 1 #D2A533
+        stop: 0 #DDB342,
+        stop: 1 #C99A2E
     );
-    border: 1px solid #D6A93A;
+    border: 1px solid #D2A533;
     color: #111111;
 }
 
 #PrimaryButton:pressed {
-    background: #B98A28;
-    border: 1px solid #B98A28;
+    background: #B88624;
+    border: 1px solid #B88624;
 }
 
 QRadioButton,

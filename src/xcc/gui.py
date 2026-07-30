@@ -40,6 +40,7 @@ from PySide6.QtGui import (
     QIntValidator,
     QKeySequence,
     QPainter,
+    QPen,
     QPixmap,
     QShortcut,
 )
@@ -72,10 +73,12 @@ from .ui_components import (
     make_page_header,
     make_primary_button,
     make_runtime_status_capsule,
+    make_tinted_svg_icon,
     make_secondary_button,
     make_section_title,
     make_status_capsule,
     set_metric_value,
+    set_tinted_button_icon,
     set_widget_property,
     set_widget_state,
 )
@@ -173,6 +176,17 @@ class SidebarItemDelegate(QStyledItemDelegate):
             painter.setBrush(QColor(PALETTE.selected_surface))
             painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
 
+            border_color = QColor(PALETTE.accent_border)
+            border_color.setAlpha(180)
+            painter.setPen(QPen(border_color, 1.0))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(
+                QRectF(item_rect).adjusted(0.5, 0.5, -0.5, -0.5),
+                10.0,
+                10.0,
+            )
+
+            painter.setPen(Qt.PenStyle.NoPen)
             indicator_rect = QRectF(
                 float(item_rect.left() + 1),
                 float(item_rect.top() + 9),
@@ -292,7 +306,7 @@ class SidebarNavigation(QFrame):
         self.setFixedWidth(METRICS.sidebar_width)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 8, 0, 8)
+        layout.setContentsMargins(0, 10, 0, 12)
         layout.setSpacing(0)
 
         self._top_nav = self._make_list(
@@ -1455,7 +1469,13 @@ class XccMainWindow(QMainWindow):
         self.paste_paths_button.setAccessibleName(
             "Paste file paths from clipboard"
         )
-        self.paste_paths_button.setIcon(QIcon(str(UI_PASTE_PATHS_ICON_PATH)))
+        self.paste_paths_button.setIcon(
+            make_tinted_svg_icon(
+                UI_PASTE_PATHS_ICON_PATH,
+                18,
+                PALETTE.accent,
+            )
+        )
         self.paste_paths_button.setIconSize(QSize(18, 18))
 
         self.source_helper_label = make_helper_text(
@@ -1552,6 +1572,7 @@ class XccMainWindow(QMainWindow):
 
         stats_header = QWidget()
         stats_header.setObjectName("TransparentWidget")
+        stats_header.setFixedHeight(32)
         stats_header_layout = QHBoxLayout(stats_header)
         stats_header_layout.setContentsMargins(0, 0, 0, 0)
         stats_header_layout.setSpacing(12)
@@ -1564,15 +1585,22 @@ class XccMainWindow(QMainWindow):
                 text_object_name="CardTitle",
                 icon_object_name="CardTitleIcon",
                 icon_size=18,
-            )
+            ),
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
         )
         stats_header_layout.addStretch(1)
 
         self.last_run_state_label = QLabel("No collection yet")
         self.last_run_state_label.setObjectName("LastRunState")
         self.last_run_state_label.setFixedHeight(30)
+        self.last_run_state_label.setMinimumWidth(150)
         self.last_run_state_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        stats_header_layout.addWidget(self.last_run_state_label)
+        stats_header_layout.addWidget(
+            self.last_run_state_label,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
 
         stats_layout.addWidget(stats_header)
 
@@ -2425,10 +2453,16 @@ class XccMainWindow(QMainWindow):
 
         self.collect_button.setEnabled(True)
         self.collect_button.setText("Cancel" if active else "Collect && Copy")
-        self.collect_button.setIcon(
-            QIcon() if active else QIcon(str(UI_COLLECT_COPY_ICON_PATH))
-        )
-        self.collect_button.setIconSize(QSize(20, 20))
+        if active:
+            self.collect_button.setIcon(QIcon())
+            self.collect_button.setIconSize(QSize(20, 20))
+        else:
+            set_tinted_button_icon(
+                self.collect_button,
+                UI_COLLECT_COPY_ICON_PATH,
+                size=20,
+                color=PALETTE.dark_text,
+            )
 
         if not active:
             self._refresh_source_controls()

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QIcon
+from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
+from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -13,7 +14,83 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .ui_theme import METRICS
+from .ui_theme import METRICS, PALETTE
+
+
+def render_tinted_svg(
+    icon_path: str | Path,
+    size: int,
+    color: str,
+    *,
+    device_pixel_ratio: float = 1.0,
+) -> QPixmap:
+    """Render an SVG into a transparent pixmap and force one semantic color.
+
+    Lucide SVG files commonly use ``currentColor`` or an explicit dark stroke.
+    Qt does not inherit QSS text color into standalone SVG assets, so rendering
+    them directly through QIcon can leave the icon black on a dark surface.
+    SourceIn tinting makes source and packaged builds deterministic regardless
+    of how the original SVG encodes its stroke color.
+    """
+    if size <= 0:
+        raise ValueError("size must be greater than 0")
+
+    ratio = max(1.0, float(device_pixel_ratio))
+    physical_size = max(1, round(size * ratio))
+    pixmap = QPixmap(physical_size, physical_size)
+    pixmap.setDevicePixelRatio(ratio)
+    pixmap.fill(Qt.GlobalColor.transparent)
+
+    path = Path(icon_path)
+    if not path.is_file():
+        return QPixmap()
+
+    renderer = QSvgRenderer(str(path))
+    if not renderer.isValid():
+        return QPixmap()
+
+    painter = QPainter(pixmap)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    renderer.render(painter, QRectF(0.0, 0.0, float(size), float(size)))
+    painter.setCompositionMode(
+        QPainter.CompositionMode.CompositionMode_SourceIn
+    )
+    painter.fillRect(
+        QRectF(0.0, 0.0, float(size), float(size)),
+        QColor(color),
+    )
+    painter.end()
+    return pixmap
+
+
+def make_tinted_svg_icon(
+    icon_path: str | Path,
+    size: int,
+    color: str,
+) -> QIcon:
+    """Return a high-DPI QIcon whose visible SVG pixels use ``color``."""
+    icon = QIcon()
+    for ratio in (1.0, 2.0):
+        pixmap = render_tinted_svg(
+            icon_path,
+            size,
+            color,
+            device_pixel_ratio=ratio,
+        )
+        if not pixmap.isNull():
+            icon.addPixmap(pixmap)
+    return icon
+
+
+def set_tinted_button_icon(
+    button: QPushButton,
+    icon_path: str | Path,
+    *,
+    size: int,
+    color: str,
+) -> None:
+    button.setIcon(make_tinted_svg_icon(icon_path, size, color))
+    button.setIconSize(QSize(size, size))
 
 
 class PageHeader(QWidget):
@@ -73,6 +150,7 @@ class IconTitle(QWidget):
         text_object_name: str,
         icon_object_name: str,
         icon_size: int = 18,
+        icon_color: str = PALETTE.accent,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -87,9 +165,14 @@ class IconTitle(QWidget):
         self.icon_label.setFixedSize(icon_size, icon_size)
         self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        icon = QIcon(str(icon_path))
-        if not icon.isNull():
-            self.icon_label.setPixmap(icon.pixmap(QSize(icon_size, icon_size)))
+        pixmap = render_tinted_svg(
+            icon_path,
+            icon_size,
+            icon_color,
+            device_pixel_ratio=max(1.0, float(self.devicePixelRatioF())),
+        )
+        if not pixmap.isNull():
+            self.icon_label.setPixmap(pixmap)
 
         self.text_label = QLabel(text, self)
         self.text_label.setObjectName(text_object_name)
@@ -225,6 +308,7 @@ def make_icon_title(
     text_object_name: str = "CardTitle",
     icon_object_name: str = "CardTitleIcon",
     icon_size: int = 18,
+    icon_color: str = PALETTE.accent,
     parent: QWidget | None = None,
 ) -> IconTitle:
     return IconTitle(
@@ -234,6 +318,7 @@ def make_icon_title(
         text_object_name=text_object_name,
         icon_object_name=icon_object_name,
         icon_size=icon_size,
+        icon_color=icon_color,
         parent=parent,
     )
 
@@ -326,6 +411,7 @@ def make_primary_button(
     minimum_width: int | None = None,
     icon_path: str | Path | None = None,
     icon_size: int = 18,
+    icon_color: str = PALETTE.dark_text,
     parent: QWidget | None = None,
 ) -> QPushButton:
     button = QPushButton(text, parent)
@@ -334,8 +420,12 @@ def make_primary_button(
     if minimum_width is not None:
         button.setMinimumWidth(minimum_width)
     if icon_path is not None:
-        button.setIcon(QIcon(str(icon_path)))
-        button.setIconSize(QSize(icon_size, icon_size))
+        set_tinted_button_icon(
+            button,
+            icon_path,
+            size=icon_size,
+            color=icon_color,
+        )
     return button
 
 
