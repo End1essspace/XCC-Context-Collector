@@ -7,7 +7,9 @@ import pytest
 
 from scripts.check_release_readiness import validate_release_documents
 from scripts.validate_release_evidence import (
+    BASE_REQUIRED_GATES,
     REQUIRED_GATES,
+    V130_REQUIRED_GATES,
     ReleaseEvidenceError,
     validate_release_evidence,
 )
@@ -23,8 +25,9 @@ def _write_evidence(
     archive_sha256: str,
     version: str = "1.3.0",
     failed_gate: str | None = None,
+    gate_names: tuple[str, ...] = REQUIRED_GATES,
 ) -> None:
-    gates = {name: True for name in REQUIRED_GATES}
+    gates = {name: True for name in gate_names}
     if failed_gate is not None:
         gates[failed_gate] = False
 
@@ -134,6 +137,60 @@ def test_release_evidence_rejects_different_archive_hashes(tmp_path: Path) -> No
         )
 
 
+def test_v130_release_evidence_requires_selected_files_workflow_gates(
+    tmp_path: Path,
+) -> None:
+    windows_10 = tmp_path / "windows-10.json"
+    _write_evidence(
+        windows_10,
+        os_release="Windows 10",
+        archive_sha256="f" * 64,
+        gate_names=BASE_REQUIRED_GATES,
+    )
+
+    with pytest.raises(
+        ReleaseEvidenceError,
+        match="selected_files_paste_paths_visibility",
+    ):
+        validate_release_evidence(
+            [windows_10],
+            expected_version="1.3.0",
+        )
+
+
+def test_v120_release_evidence_keeps_historical_base_gate_compatibility(
+    tmp_path: Path,
+) -> None:
+    archive_hash = "9" * 64
+    windows_10 = tmp_path / "windows-10.json"
+    windows_11 = tmp_path / "windows-11.json"
+    for path, release in (
+        (windows_10, "Windows 10"),
+        (windows_11, "Windows 11"),
+    ):
+        _write_evidence(
+            path,
+            os_release=release,
+            archive_sha256=archive_hash,
+            version="1.2.0",
+            gate_names=BASE_REQUIRED_GATES,
+        )
+
+    summary = validate_release_evidence(
+        [windows_10, windows_11],
+        expected_version="1.2.0",
+        expected_archive_sha256=archive_hash,
+    )
+
+    assert summary.version == "1.2.0"
+
+
+def test_v130_gate_set_contains_explicit_selected_files_release_checks() -> None:
+    assert set(V130_REQUIRED_GATES).issubset(REQUIRED_GATES)
+    assert "selected_files_review_transactionality" in V130_REQUIRED_GATES
+    assert "selected_files_relative_output" in V130_REQUIRED_GATES
+
+
 def test_v130_release_documents_are_complete() -> None:
     assert __version__ == "1.3.0"
     validate_release_documents(PROJECT_ROOT, version=__version__)
@@ -169,6 +226,8 @@ def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
     for marker in (
         "compileall",
         "check_version_consistency.py",
+        "test_selected_files_workflow.py",
+        "selected_files_regression",
         "pytest -q",
         "validate_clean_install.ps1",
         "build_release.ps1",

@@ -65,11 +65,11 @@ artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256
 artifacts\XCC-v1.3.0-automated-gate.json
 ```
 
-The JSON report must declare `version: 1.3.0` and `passed: true`.
+The JSON report must declare `xcc_version: 1.3.0`, `passed: true`, and `gates.selected_files_regression: true`.
 
 ## 6. Manual Windows evidence
 
-Use the existing evidence recorder for the final archive. Windows 10 and Windows 11 records must reference the same SHA-256.
+Use the evidence recorder for the final archive. Windows 10 and Windows 11 records must reference the same SHA-256. For v1.3.0 the recorder includes explicit Paste Paths, root-boundary, issue-reporting, stale-root, mixed-location, review-transactionality, and relative-output gates in addition to the established v1.2.0 baseline.
 
 ```powershell
 python scripts\validate_release_evidence.py --expected-version 1.3.0 --expected-archive-sha256 <FINAL_SHA256> --evidence artifacts\manual-validation\<windows-10-record>.json --evidence artifacts\manual-validation\<windows-11-record>.json
@@ -80,8 +80,10 @@ Do not publish evidence JSON as a public release asset.
 ## 7. Final readiness
 
 ```powershell
-python scripts\check_release_readiness.py --archive artifacts\XCC-Context-Collector-v1.3.0-win64.zip --checksum artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256 --evidence artifacts\manual-validation\<windows-10-record>.json --evidence artifacts\manual-validation\<windows-11-record>.json
+python scripts\check_release_readiness.py --archive artifacts\XCC-Context-Collector-v1.3.0-win64.zip --checksum artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256 --automated-report artifacts\XCC-v1.3.0-automated-gate.json --evidence artifacts\manual-validation\<windows-10-record>.json --evidence artifacts\manual-validation\<windows-11-record>.json
 ```
+
+Final readiness validates the canonical version, release documents, archive structure, checksum, automated-gate report, explicit v1.3.0 manual gates, clean `main`, and synchronization with `origin/main`.
 
 Expected result:
 

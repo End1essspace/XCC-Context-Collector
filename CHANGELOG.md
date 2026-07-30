@@ -22,6 +22,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Manual file selection and pasted-path import now share one ordered, de-duplicated selection model.
 - Git repository markers take precedence when inferring a common project root, including monorepository layouts.
 - Documentation, architecture, release validation, package names, and canonical version metadata are aligned for v1.3.0.
+- Final release readiness now binds the automated-gate report and Windows 10/11 evidence to the exact archive filename and SHA-256.
+- Manual evidence now records explicit Paste Paths, root-boundary, issue-reporting, mixed-location, review, and relative-output gates for v1.3.0.
 
 ### Fixed
 

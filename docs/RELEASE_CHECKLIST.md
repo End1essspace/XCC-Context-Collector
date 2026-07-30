@@ -42,7 +42,7 @@ powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 
 - [ ] packaged startup and required-asset smoke passes
 - [ ] portable ZIP and SHA-256 are generated
 - [ ] archive validation passes
-- [ ] automated report declares `1.3.0` and `passed: true`
+- [ ] automated report declares `xcc_version: 1.3.0`, `passed: true`, and `selected_files_regression: true`
 
 Expected outputs:
 
@@ -84,6 +84,7 @@ artifacts\XCC-v1.3.0-automated-gate.json
 - [ ] Windows 11 record exists
 - [ ] both declare XCC 1.3.0
 - [ ] both reference the same archive SHA-256
+- [ ] both contain every explicit v1.3.0 Selected Files manual gate
 - [ ] combined evidence validator passes
 
 ```powershell
@@ -93,13 +94,14 @@ python scripts\validate_release_evidence.py --expected-version 1.3.0 --expected-
 ## 7. Final readiness
 
 ```powershell
-python scripts\check_release_readiness.py --archive artifacts\XCC-Context-Collector-v1.3.0-win64.zip --checksum artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256 --evidence artifacts\manual-validation\<windows-10-record>.json --evidence artifacts\manual-validation\<windows-11-record>.json
+python scripts\check_release_readiness.py --archive artifacts\XCC-Context-Collector-v1.3.0-win64.zip --checksum artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256 --automated-report artifacts\XCC-v1.3.0-automated-gate.json --evidence artifacts\manual-validation\<windows-10-record>.json --evidence artifacts\manual-validation\<windows-11-record>.json
 ```
 
 - [ ] command prints `Release readiness passed for v1.3.0.`
 - [ ] working tree remains clean
 - [ ] archive name is exact
 - [ ] checksum file is present
+- [ ] automated report matches the final archive filename and SHA-256
 
 ## 8. Tag and draft release
 

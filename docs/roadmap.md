@@ -793,7 +793,7 @@ Reduce the repeated AI coding workflow from manual file-by-file selection to one
 
 ### M14 — Documentation and Version Integration
 
-**Status: IMPLEMENTED — COMMIT VALIDATION PENDING**
+**Status: DONE**
 
 - [x] bump canonical version to 1.3.0
 - [x] update bilingual README
@@ -804,14 +804,17 @@ Reduce the repeated AI coding workflow from manual file-by-file selection to one
 - [x] update portable, security, issue-template, and release-checklist version references
 - [x] update release-candidate default version
 - [x] update repository version/document regression tests
-- [ ] run the complete local test suite after applying the M14 archive
-- [ ] manually inspect the updated About/version labels
-- [ ] commit and push M14
+- [x] run the complete local test suite after applying the M14 archive
+- [x] manually inspect the updated About/version labels
+- [x] commit and push M14
 
 ### M15 — v1.3.0 Validation and Release
 
-**Status: PLANNED — NEXT**
+**Status: IN PROGRESS — RELEASE GATE HARDENING**
 
+- [x] require an explicit Selected Files regression sub-gate in the automated report
+- [x] require explicit v1.3.0 Paste Paths and review gates in Windows evidence
+- [x] bind final readiness to the automated report filename, version, pass state, and archive SHA-256
 - [ ] run complete compileall and pytest gates
 - [ ] validate all four source collection modes
 - [ ] validate Paste Paths and Selected Files Review in the packaged executable
@@ -861,4 +864,4 @@ An update-availability check is preferred to a full automatic self-updater at th
 
 ## Immediate Next Step
 
-Apply and validate M14, commit and push it, then execute M15 against the final v1.3.0 commit and packaged archive. No additional feature work should enter v1.3.0 unless it fixes a release-blocking defect.
+Apply and validate the M15 release-gate hardening patch, commit and push it, then run the canonical automated gate against that exact commit. No additional feature work should enter v1.3.0 unless it fixes a release-blocking defect.

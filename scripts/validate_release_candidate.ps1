@@ -31,6 +31,9 @@ if ($LASTEXITCODE -ne 0) { throw "Compileall failed." }
 & $PythonExecutable scripts\check_version_consistency.py
 if ($LASTEXITCODE -ne 0) { throw "Version consistency failed." }
 
+& $PythonExecutable -m pytest -q tests\test_path_list_parser.py tests\test_selected_files_importer.py tests\test_selected_files_review.py tests\test_selected_files_workflow.py
+if ($LASTEXITCODE -ne 0) { throw "Selected Files regression tests failed." }
+
 & $PythonExecutable -m pytest -q
 if ($LASTEXITCODE -ne 0) { throw "Tests failed." }
 
@@ -83,6 +86,7 @@ $Report = [ordered]@{
     gates = [ordered]@{
         compileall = $true
         version_consistency = $true
+        selected_files_regression = $true
         pytest = $true
         clean_install = (-not $SkipCleanInstall)
         pyinstaller_build = $true

@@ -9,7 +9,8 @@ from typing import Any, Iterable
 
 SCHEMA_VERSION = 1
 REQUIRED_OS_RELEASES = {"Windows 10", "Windows 11"}
-REQUIRED_GATES = (
+
+BASE_REQUIRED_GATES = (
     "packaged_startup",
     "application_icons",
     "selected_files_mode",
@@ -29,7 +30,25 @@ REQUIRED_GATES = (
     "invalid_config_recovery",
     "single_instance_restore",
 )
+
+V130_REQUIRED_GATES = (
+    "selected_files_paste_paths_visibility",
+    "selected_files_ctrl_v_guard",
+    "selected_files_parser_formats",
+    "selected_files_root_boundary",
+    "selected_files_issue_reporting",
+    "selected_files_stale_root_recovery",
+    "selected_files_mixed_locations",
+    "selected_files_review_transactionality",
+    "selected_files_relative_output",
+)
+
+# Current release tooling tests and the manual recorder use the complete v1.3
+# gate set. Version-aware validation keeps historical v1.2 evidence readable.
+REQUIRED_GATES = BASE_REQUIRED_GATES + V130_REQUIRED_GATES
+
 _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+_VERSION_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$")
 
 
 class ReleaseEvidenceError(RuntimeError):
@@ -42,6 +61,23 @@ class EvidenceSummary:
     archive_sha256: str
     os_releases: frozenset[str]
     files: tuple[Path, ...]
+
+
+def required_gates_for_version(version: str) -> tuple[str, ...]:
+    match = _VERSION_RE.fullmatch(version)
+    if match is None:
+        raise ReleaseEvidenceError(
+            f"Expected version must use semantic version format, found {version!r}."
+        )
+
+    version_tuple = tuple(
+        int(match.group(name))
+        for name in ("major", "minor", "patch")
+    )
+    if version_tuple >= (1, 3, 0):
+        return REQUIRED_GATES
+
+    return BASE_REQUIRED_GATES
 
 
 def _require_mapping(value: Any, *, field: str, path: Path) -> dict[str, Any]:
@@ -57,10 +93,14 @@ def _load_evidence(path: Path, *, expected_version: str) -> tuple[str, str]:
     try:
         data = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError) as exc:
-        raise ReleaseEvidenceError(f"Could not read evidence file {path}: {exc}") from exc
+        raise ReleaseEvidenceError(
+            f"Could not read evidence file {path}: {exc}"
+        ) from exc
 
     if not isinstance(data, dict):
-        raise ReleaseEvidenceError(f"{path}: top-level JSON value must be an object.")
+        raise ReleaseEvidenceError(
+            f"{path}: top-level JSON value must be an object."
+        )
 
     if data.get("schema_version") != SCHEMA_VERSION:
         raise ReleaseEvidenceError(
@@ -77,7 +117,9 @@ def _load_evidence(path: Path, *, expected_version: str) -> tuple[str, str]:
     if not isinstance(archive_sha256, str) or not _SHA256_RE.fullmatch(
         archive_sha256
     ):
-        raise ReleaseEvidenceError(f"{path}: archive_sha256 must be 64 hex characters.")
+        raise ReleaseEvidenceError(
+            f"{path}: archive_sha256 must be 64 hex characters."
+        )
 
     operator = data.get("operator")
     if not isinstance(operator, str) or not operator.strip():
@@ -85,7 +127,9 @@ def _load_evidence(path: Path, *, expected_version: str) -> tuple[str, str]:
 
     recorded_at = data.get("recorded_at_utc")
     if not isinstance(recorded_at, str) or not recorded_at.strip():
-        raise ReleaseEvidenceError(f"{path}: recorded_at_utc is required.")
+        raise ReleaseEvidenceError(
+            f"{path}: recorded_at_utc is required."
+        )
 
     os_info = _require_mapping(data.get("os"), field="os", path=path)
     os_release = os_info.get("release")
@@ -96,19 +140,28 @@ def _load_evidence(path: Path, *, expected_version: str) -> tuple[str, str]:
 
     product_name = os_info.get("product_name")
     if not isinstance(product_name, str) or not product_name.strip():
-        raise ReleaseEvidenceError(f"{path}: os.product_name is required.")
+        raise ReleaseEvidenceError(
+            f"{path}: os.product_name is required."
+        )
 
     gates = _require_mapping(data.get("gates"), field="gates", path=path)
-    missing = [name for name in REQUIRED_GATES if name not in gates]
+    required_gates = required_gates_for_version(expected_version)
+
+    missing = [name for name in required_gates if name not in gates]
     if missing:
         raise ReleaseEvidenceError(
             f"{path}: missing manual gate(s): {', '.join(missing)}"
         )
 
-    failed = [name for name in REQUIRED_GATES if gates.get(name) is not True]
+    failed = [name for name in required_gates if gates.get(name) is not True]
     if failed:
         raise ReleaseEvidenceError(
             f"{path}: failed or unconfirmed gate(s): {', '.join(failed)}"
+        )
+
+    if data.get("all_passed") is not True:
+        raise ReleaseEvidenceError(
+            f"{path}: all_passed must be true."
         )
 
     return os_release, archive_sha256.casefold()
@@ -123,6 +176,8 @@ def validate_release_evidence(
     paths = tuple(Path(path).resolve() for path in evidence_paths)
     if not paths:
         raise ReleaseEvidenceError("At least one evidence file is required.")
+
+    required_gates_for_version(expected_version)
 
     releases: set[str] = set()
     hashes: set[str] = set()
@@ -150,7 +205,9 @@ def validate_release_evidence(
     if expected_archive_sha256 is not None:
         expected = expected_archive_sha256.casefold()
         if not _SHA256_RE.fullmatch(expected):
-            raise ReleaseEvidenceError("Expected archive SHA-256 is invalid.")
+            raise ReleaseEvidenceError(
+                "Expected archive SHA-256 is invalid."
+            )
         if archive_sha256 != expected:
             raise ReleaseEvidenceError(
                 "Manual evidence does not match the final release archive SHA-256."
