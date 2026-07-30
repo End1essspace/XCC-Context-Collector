@@ -36,6 +36,9 @@ class CollectLayoutSpec:
     page_margin: int
     sidebar_width: int
     mode_columns: int
+    mode_group_max_width: int
+    mode_horizontal_gap: int
+    mode_vertical_gap: int
     source_actions_below: bool
     metric_columns: int
     metric_horizontal_padding: int
@@ -66,6 +69,9 @@ _LAYOUT_SPECS = {
         page_margin=28,
         sidebar_width=228,
         mode_columns=4,
+        mode_group_max_width=650,
+        mode_horizontal_gap=22,
+        mode_vertical_gap=8,
         source_actions_below=False,
         metric_columns=4,
         metric_horizontal_padding=14,
@@ -80,6 +86,9 @@ _LAYOUT_SPECS = {
         page_margin=22,
         sidebar_width=212,
         mode_columns=4,
+        mode_group_max_width=620,
+        mode_horizontal_gap=20,
+        mode_vertical_gap=8,
         source_actions_below=True,
         metric_columns=2,
         metric_horizontal_padding=13,
@@ -94,6 +103,9 @@ _LAYOUT_SPECS = {
         page_margin=16,
         sidebar_width=196,
         mode_columns=2,
+        mode_group_max_width=520,
+        mode_horizontal_gap=18,
+        mode_vertical_gap=10,
         source_actions_below=True,
         metric_columns=2,
         metric_horizontal_padding=12,

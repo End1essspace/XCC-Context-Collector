@@ -147,25 +147,36 @@ QWidget {
 }
 
 #SidebarIdentity {
-    background: #151619;
-    border: 1px solid #302D26;
-    border-radius: 12px;
+    background: transparent;
+    border: none;
 }
 
-#SidebarBrandIcon {
+#SidebarBrandMark {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #1B1C20,
+        stop: 1 #151619
+    );
+    border: 1px solid #343027;
+    border-radius: 11px;
+}
+
+#SidebarBrandIcon,
+#SidebarBrandText {
     background: transparent;
 }
 
 #SidebarBrandTitle {
     color: #F2F3F4;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
     background: transparent;
 }
 
 #SidebarBrandSubtitle {
-    color: #7F848C;
+    color: #8A8F97;
     font-size: 10px;
+    font-weight: 500;
     background: transparent;
 }
 
@@ -335,6 +346,16 @@ QPushButton:pressed {
         stop: 1 #B68322
     );
     border: 1px solid #B88624;
+}
+
+
+#ModeSelectorGroup {
+    background: transparent;
+}
+
+#ModeSelectorGroup QRadioButton {
+    padding-left: 0;
+    padding-right: 2px;
 }
 
 QRadioButton,

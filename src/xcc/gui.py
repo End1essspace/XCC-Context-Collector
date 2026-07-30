@@ -1217,10 +1217,9 @@ class XccMainWindow(QMainWindow):
             QSizePolicy.Policy.Expanding,
         )
 
-        self.mode_buttons_layout.setHorizontalSpacing(
-            14 if compact else 18 if medium else 20
-        )
-        self.mode_buttons_layout.setVerticalSpacing(8)
+        self.mode_buttons.setMaximumWidth(spec.mode_group_max_width)
+        self.mode_buttons_layout.setHorizontalSpacing(spec.mode_horizontal_gap)
+        self.mode_buttons_layout.setVerticalSpacing(spec.mode_vertical_gap)
         self.source_controls_layout.setHorizontalSpacing(
             10 if compact else 12 if medium else 14
         )
@@ -1298,19 +1297,22 @@ class XccMainWindow(QMainWindow):
 
     def _arrange_mode_buttons(self, spec: CollectLayoutSpec) -> None:
         self._take_layout_items(self.mode_buttons_layout)
-        self._reset_grid_stretches(self.mode_buttons_layout, columns=4, rows=2)
+        self._reset_grid_stretches(self.mode_buttons_layout, columns=5, rows=2)
         columns = max(1, spec.mode_columns)
 
         for index, button in enumerate(self.mode_buttons_list):
             row = index // columns
             column = index % columns
-            self.mode_buttons_layout.addWidget(button, row, column)
-
-        for column in range(4):
-            self.mode_buttons_layout.setColumnStretch(
+            self.mode_buttons_layout.addWidget(
+                button,
+                row,
                 column,
-                1 if column < columns else 0,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             )
+
+        # Mode is one compact choice group. Never distribute its options across
+        # the full Setup width; any spare space stays after the final option.
+        self.mode_buttons_layout.setColumnStretch(columns, 1)
 
     def _arrange_source_controls(self, spec: CollectLayoutSpec) -> None:
         self._take_layout_items(self.source_controls_layout)
@@ -1474,11 +1476,20 @@ class XccMainWindow(QMainWindow):
             self.mode_tree,
         ):
             button.setAccessibleName(f"Collection mode: {button.text()}")
+            button.setSizePolicy(
+                QSizePolicy.Policy.Preferred,
+                QSizePolicy.Policy.Fixed,
+            )
 
         self.mode_folder.setChecked(True)
 
         self.mode_buttons = QWidget()
-        self.mode_buttons.setObjectName("TransparentWidget")
+        self.mode_buttons.setObjectName("ModeSelectorGroup")
+        self.mode_buttons.setSizePolicy(
+            QSizePolicy.Policy.Maximum,
+            QSizePolicy.Policy.Fixed,
+        )
+        self.mode_buttons.setMaximumWidth(650)
         self.mode_buttons_layout = QGridLayout(self.mode_buttons)
         self.mode_buttons_layout.setContentsMargins(0, 0, 0, 0)
         self.mode_buttons_layout.setHorizontalSpacing(20)
@@ -1573,7 +1584,14 @@ class XccMainWindow(QMainWindow):
         self.options_helper_label.setAccessibleName("Compact mode behavior")
 
         setup_grid.addWidget(mode_label, 0, 0)
-        setup_grid.addWidget(self.mode_buttons, 0, 1, 1, 3)
+        setup_grid.addWidget(
+            self.mode_buttons,
+            0,
+            1,
+            1,
+            3,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+        )
 
         self.source_box = QFrame()
         self.source_box.setObjectName("SourceInputBox")

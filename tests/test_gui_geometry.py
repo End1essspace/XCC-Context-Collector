@@ -8,7 +8,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QPoint, Qt
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QSizePolicy
 
 from xcc.gui import XccMainWindow
 from xcc.ui_responsive import CollectLayoutMode
@@ -56,6 +56,32 @@ def test_maximized_geometry_has_no_scrollbar_and_keeps_cta_visible(
     window._is_quitting = True
     window.close()
 
+
+
+def test_large_mode_selector_remains_compact_and_left_aligned(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(1688, 900)
+    window.show()
+    _settle(qapp, window)
+
+    assert window._collect_layout_mode is CollectLayoutMode.LARGE
+    assert window.mode_buttons.objectName() == "ModeSelectorGroup"
+    assert (
+        window.mode_buttons.sizePolicy().horizontalPolicy()
+        == QSizePolicy.Policy.Maximum
+    )
+    assert window.mode_buttons.maximumWidth() == 650
+    assert window.mode_buttons.width() <= 650
+    assert window.mode_buttons_layout.columnStretch(4) == 1
+    assert all(
+        window.mode_buttons_layout.columnStretch(column) == 0
+        for column in range(4)
+    )
+
+    window._is_quitting = True
+    window.close()
 
 def test_minimum_window_uses_vertical_scroll_without_horizontal_scroll(
     qapp: QApplication,

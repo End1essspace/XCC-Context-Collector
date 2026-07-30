@@ -77,6 +77,9 @@ def test_large_tall_layout_fits_a_normal_maximized_viewport() -> None:
 
     assert spec.mode is CollectLayoutMode.LARGE
     assert spec.metric_columns == 4
+    assert spec.mode_group_max_width == 650
+    assert spec.mode_horizontal_gap == 22
+    assert spec.mode_vertical_gap == 8
     assert spec.source_actions_below is False
     assert spec.sidebar_width == 228
     assert spec.primary_action_height == 54
@@ -98,8 +101,11 @@ def test_medium_layout_wraps_source_and_uses_two_by_two_metrics() -> None:
 
     assert spec.mode is CollectLayoutMode.MEDIUM
     assert spec.metric_columns == 2
-    assert spec.source_actions_below is True
     assert spec.mode_columns == 4
+    assert spec.mode_group_max_width == 620
+    assert spec.mode_horizontal_gap == 20
+    assert spec.mode_vertical_gap == 8
+    assert spec.source_actions_below is True
     assert spec.sidebar_width == 212
     assert geometry.mode is CollectHeightMode.STANDARD
     assert geometry.setup_card_height == 286
@@ -115,6 +121,9 @@ def test_compact_layout_keeps_every_control_reachable_by_vertical_scroll() -> No
     assert spec.mode is CollectLayoutMode.COMPACT
     assert spec.metric_columns == 2
     assert spec.mode_columns == 2
+    assert spec.mode_group_max_width == 520
+    assert spec.mode_horizontal_gap == 18
+    assert spec.mode_vertical_gap == 10
     assert spec.source_actions_below is True
     assert spec.page_margin == 16
     assert spec.sidebar_width == 196

@@ -181,8 +181,12 @@ About
 
 Requirements:
 
-- a compact sidebar identity block provides one visual anchor without creating
-  a second full-width application header;
+- a compact flat brand lockup provides one visual anchor without creating a
+  second full-width application header or a competing card;
+- the brand lockup uses one 42 px mark on the left and the `XCC` /
+  `Context Collector` text stack on the right;
+- logo, title, and subtitle share one vertical center and align with the
+  navigation content column;
 - Collect, History, and Settings remain in the upper workspace zone;
 - About remains anchored in the lower zone;
 - every navigation action is a real button rather than an item-view row with
@@ -276,7 +280,11 @@ Requirements:
 
 - radio controls use consistent spacing and focus behavior;
 - the selected state is clear without a bright filled strip;
-- controls may wrap only at medium or compact widths;
+- the four controls form one compact left-aligned choice group;
+- unused Setup width remains after the final option instead of being distributed
+  between the controls;
+- large and medium layouts keep one compact row;
+- compact layout uses a stable 2×2 group;
 - changing mode preserves the existing source-reset semantics.
 
 ### 6.5 Source row: mode-specific semantics

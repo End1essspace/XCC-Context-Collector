@@ -824,7 +824,7 @@ feat: redesign last run metrics
 
 ## M15.7 — Responsive Layout and Premium Visual Polish
 
-**Status: IMPLEMENTED — M15.7.2 GEOMETRY ARCHITECTURE RESET, LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: IMPLEMENTED — M15.7.3 COMPOSITION POLISH, LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
 
 ### Goal
 
@@ -936,6 +936,45 @@ fixed-height correction.
 - [x] test keyboard movement from Settings to About;
 - [x] add maximized and 920×620 GUI geometry tests;
 - [x] keep all collection-domain modules unchanged.
+
+### M15.7.3 — Mode Group and Sidebar Brand Composition
+
+**Status: IMPLEMENTED — LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+
+Windows review confirmed that the geometry reset solved clipping and scrollbar
+defects, but two composition problems remained: the four collection modes were
+distributed across the complete Setup width, and the sidebar identity looked
+like a detached card rather than one integrated brand lockup.
+
+#### Mode composition
+
+- [x] keep one compact left-aligned radio group;
+- [x] remove equal column stretch between mode options;
+- [x] cap the group width per responsive mode;
+- [x] keep large and medium layouts on one row;
+- [x] keep compact layout as a stable 2×2 group;
+- [x] preserve the same four radio buttons, group ids, focus behavior, and
+  source-reset semantics;
+- [x] leave unused Setup width after the final option.
+
+#### Sidebar identity composition
+
+- [x] remove the detached identity-card treatment;
+- [x] use one flat 68 px brand lockup;
+- [x] place the app artwork inside a restrained 42 px mark;
+- [x] align `XCC` and `Context Collector` as one tight text stack;
+- [x] align the lockup with navigation content;
+- [x] keep the workspace label, real navigation buttons, and bottom About
+  placement unchanged;
+- [x] preserve accessible identity and navigation names.
+
+#### Coverage
+
+- [x] add pure responsive-policy assertions for mode-group width and gaps;
+- [x] add Qt coverage for compact left alignment and maximum width;
+- [x] add Qt coverage for the final brand-lockup geometry;
+- [x] register the composition contract in metadata and theme tests;
+- [x] keep collection-domain modules and assets unchanged.
 
 ### Required Windows evidence
 

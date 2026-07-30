@@ -123,10 +123,11 @@ class SidebarNavigation(QFrame):
         self._buttons: list[SidebarNavButton] = []
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 14, 12, 16)
+        layout.setContentsMargins(14, 14, 14, 16)
         layout.setSpacing(0)
 
-        layout.addWidget(self._build_identity(app_icon_path))
+        self.identity_widget = self._build_identity(app_icon_path)
+        layout.addWidget(self.identity_widget)
         layout.addSpacing(12)
         layout.addWidget(self._separator())
         layout.addSpacing(14)
@@ -169,7 +170,7 @@ class SidebarNavigation(QFrame):
         return self._buttons[row]
 
     def set_sidebar_width(self, width: int) -> None:
-        self.setFixedWidth(max(188, width))
+        self.setFixedWidth(max(190, width))
 
     def setCurrentRow(self, row: int) -> None:
         if row < 0 or row >= len(self._buttons):
@@ -212,17 +213,28 @@ class SidebarNavigation(QFrame):
         self._buttons[target].setFocus(Qt.FocusReason.TabFocusReason)
 
     def _build_identity(self, app_icon_path: str | Path) -> QWidget:
+        """Build one compact brand lockup aligned with navigation content."""
+
         identity = QFrame(self)
         identity.setObjectName("SidebarIdentity")
-        identity.setFixedHeight(62)
+        identity.setFixedHeight(68)
+        identity.setAccessibleName("XCC Context Collector")
 
         layout = QHBoxLayout(identity)
-        layout.setContentsMargins(10, 8, 10, 8)
-        layout.setSpacing(11)
+        layout.setContentsMargins(2, 4, 4, 4)
+        layout.setSpacing(12)
 
-        icon_label = QLabel(identity)
+        self.identity_mark = QFrame(identity)
+        self.identity_mark.setObjectName("SidebarBrandMark")
+        self.identity_mark.setFixedSize(42, 42)
+
+        mark_layout = QVBoxLayout(self.identity_mark)
+        mark_layout.setContentsMargins(5, 5, 5, 5)
+        mark_layout.setSpacing(0)
+
+        icon_label = QLabel(self.identity_mark)
         icon_label.setObjectName("SidebarBrandIcon")
-        icon_label.setFixedSize(30, 30)
+        icon_label.setFixedSize(32, 32)
         icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         icon_path = Path(app_icon_path)
@@ -231,29 +243,36 @@ class SidebarNavigation(QFrame):
             if not pixmap.isNull():
                 icon_label.setPixmap(
                     pixmap.scaled(
-                        30,
-                        30,
+                        32,
+                        32,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )
                 )
 
+        mark_layout.addWidget(icon_label)
+
         text_box = QWidget(identity)
-        text_box.setObjectName("TransparentWidget")
+        text_box.setObjectName("SidebarBrandText")
         text_layout = QVBoxLayout(text_box)
         text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(1)
+        text_layout.setSpacing(2)
+        text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
-        title = QLabel("XCC", text_box)
-        title.setObjectName("SidebarBrandTitle")
-        subtitle = QLabel("Context Collector", text_box)
-        subtitle.setObjectName("SidebarBrandSubtitle")
+        self.brand_title = QLabel("XCC", text_box)
+        self.brand_title.setObjectName("SidebarBrandTitle")
+        self.brand_subtitle = QLabel("Context Collector", text_box)
+        self.brand_subtitle.setObjectName("SidebarBrandSubtitle")
 
-        text_layout.addWidget(title)
-        text_layout.addWidget(subtitle)
+        text_layout.addWidget(self.brand_title)
+        text_layout.addWidget(self.brand_subtitle)
 
-        layout.addWidget(icon_label)
-        layout.addWidget(text_box, 1)
+        layout.addWidget(
+            self.identity_mark,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        layout.addWidget(text_box, 1, Qt.AlignmentFlag.AlignVCenter)
         return identity
 
     def _separator(self) -> QFrame:

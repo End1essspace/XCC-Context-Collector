@@ -83,3 +83,21 @@ def test_sidebar_arrow_navigation_includes_about(
 
     assert sidebar.currentRow == 3
     assert sidebar.button(3).text() == "About"
+
+
+def test_sidebar_identity_is_one_compact_aligned_brand_lockup(
+    qapp: QApplication,
+) -> None:
+    sidebar = _sidebar()
+
+    identity = sidebar.identity_widget
+    mark = sidebar.identity_mark
+
+    assert identity.objectName() == "SidebarIdentity"
+    assert identity.height() == 68
+    assert identity.accessibleName() == "XCC Context Collector"
+    assert mark.objectName() == "SidebarBrandMark"
+    assert mark.size().width() == 42
+    assert mark.size().height() == 42
+    assert sidebar.brand_title.text() == "XCC"
+    assert sidebar.brand_subtitle.text() == "Context Collector"
