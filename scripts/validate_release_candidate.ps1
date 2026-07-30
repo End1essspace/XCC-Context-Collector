@@ -1,6 +1,6 @@
 param(
     [string]$PythonExecutable = "python",
-    [string]$ExpectedVersion = "1.2.0",
+    [string]$ExpectedVersion = "1.3.0",
     [string]$OutputDirectory = "artifacts",
     [switch]$SkipCleanInstall
 )

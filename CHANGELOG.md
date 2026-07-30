@@ -6,6 +6,36 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-07-30
+
+### Added
+
+- **Paste Paths** action for Selected Files mode and guarded `Ctrl+V` import when focus is not inside an editable text field.
+- Path-list parsing for plain lines, Markdown bullets, numbered lists, quotes, backticks, and fenced code blocks.
+- Explicit project-root resolution for relative paths with validation before selection state is changed.
+- Selected Files Review dialog with relative paths, root visibility, multi-select removal, `Delete`, `Clear All`, `Cancel`, and transactional `Apply Changes`.
+- End-to-end regression coverage for AI path list import, review, removal, and final collection output.
+
+### Changed
+
+- Selected Files source state now summarizes the project root and selected-file count, or clearly reports mixed locations.
+- Manual file selection and pasted-path import now share one ordered, de-duplicated selection model.
+- Git repository markers take precedence when inferring a common project root, including monorepository layouts.
+- Documentation, architecture, release validation, package names, and canonical version metadata are aligned for v1.3.0.
+
+### Fixed
+
+- Repeated imports no longer add the same Windows path twice when slash style or letter case differs.
+- Stale or deleted remembered roots no longer prevent a new relative-path import.
+- Files from separate repositories no longer receive a misleading common project root.
+- Absolute external files remain importable without being incorrectly resolved under the selected project root.
+- Review changes are not applied when the dialog is cancelled, and `Apply Changes` stays disabled until the selection actually changes.
+
+### Security
+
+- Relative traversal outside the chosen project root is rejected after canonical path resolution.
+- Pasted text is treated as data only: XCC does not execute commands, expand shell expressions, or search the whole disk for suffix matches.
+
 ## [1.2.0] - 2026-07-30
 
 ### Added
@@ -86,7 +116,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Initial Windows desktop release with Selected Files, Full Folder, and Git Changed Files workflows.
 
-[Unreleased]: https://github.com/End1essspace/xcc-context-collector/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/End1essspace/xcc-context-collector/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/End1essspace/xcc-context-collector/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/End1essspace/xcc-context-collector/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.2
 [1.1.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.0

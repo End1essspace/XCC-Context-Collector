@@ -24,7 +24,7 @@ def test_pyproject_defines_canonical_project_metadata() -> None:
     assert metadata["tool"]["setuptools"]["dynamic"]["version"] == {
         "attr": "xcc.__version__"
     }
-    assert __version__ == "1.2.0"
+    assert __version__ == "1.3.0"
 
 
 def test_dependency_groups_keep_runtime_minimal() -> None:

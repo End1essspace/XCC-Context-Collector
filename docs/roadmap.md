@@ -728,210 +728,137 @@ The M9 local compile, regression, build, packaged-smoke, portable-archive, and c
 
 ### M10 — v1.2.0 Validation and Release Gate
 
-**Status: RELEASE CANDIDATE PREPARED — FINAL WINDOWS VALIDATION PENDING**
+**Status: DONE — RELEASED**
 
-**Priority: RELEASE BLOCKER**
+- [x] complete automated release-candidate gate
+- [x] canonical version and package validation
+- [x] source fidelity, Git, budget, ignore, safety, worker, and history regression coverage
+- [x] clean-install and packaged startup validation
+- [x] portable ZIP and SHA-256 validation
+- [x] Windows release evidence and publication workflow
+- [x] annotated v1.2.0 release baseline
 
-#### Release-candidate implementation
-
-- [x] automated release-candidate orchestration exists
-- [x] canonical version consistency gate exists
-- [x] source fidelity regression coverage exists
-- [x] staged/unstaged/rename/copy/delete/untracked Git coverage exists
-- [x] duplicate filename and cross-root identity coverage exists
-- [x] character-budget boundary coverage exists
-- [x] `.xccignore`, `.gitignore`, and safety-warning coverage exists
-- [x] progress and cancellation coverage exists
-- [x] clean-install validation exists
-- [x] packaged startup and required-asset smoke validation exists
-- [x] portable ZIP and SHA-256 validation exists
-- [x] Windows 10/11 evidence schema and validator exist
-- [x] release-readiness validator exists
-- [x] README, changelog, release notes, architecture, security, contributing, diagnostics, portable-use, and release docs are aligned for v1.2.0
-- [x] deterministic workspace cleanup exists and supports Windows PowerShell 5.1
-
-#### Final evidence still required
-
-- [ ] rerun the complete automated gate on the final documentation/UI commit
-- [ ] confirm all four packaged collection modes on the final archive
-- [ ] complete large-project GUI responsiveness and cooperative cancellation validation
-- [ ] complete packaged visual, tray, native hotkey, autostart, config-recovery, and single-instance validation
-- [ ] record complete clean-host Windows 10 evidence
-- [ ] record complete clean-host Windows 11 evidence
-- [ ] confirm both records reference the same final archive SHA-256
-- [ ] run combined evidence validation
-- [ ] run final repository and archive readiness validation
-- [ ] create annotated `v1.2.0` tag
-- [ ] publish the GitHub Release with ZIP and checksum
-- [ ] verify the downloaded release assets after publication
-
-#### Release-Candidate Tooling
-
-```text
-scripts/validate_release_candidate.ps1
-scripts/record_manual_validation.ps1
-scripts/validate_release_evidence.py
-scripts/check_release_readiness.py
-```
-
-The automated gate builds the canonical v1.2.0 package and emits a machine-readable report. Manual packaged validation is recorded separately on clean Windows 10 and Windows 11 hosts. Both records must reference the same final archive SHA-256. The final tag remains blocked until the combined evidence and repository readiness checks pass.
-
-See `docs/M10_VALIDATION.md` for the exact procedure.
+v1.2.0 is the completed Context Integrity & Reliability baseline used by all later releases.
 
 ---
 
-## Excluded from v1.2.0
+## v1.3.0 Selected Files Workflow
 
-The following features should not block the reliability release:
+**Status: IMPLEMENTED — M15 RELEASE VALIDATION PENDING**
 
-- installer;
-- automatic updater;
-- signed binaries;
-- editable hotkey;
-- Collect & Copy hotkey;
-- persistent history export;
-- portable mode toggle;
-- full preview editor;
-- complex include/exclude profiles.
+### Release goal
 
-These features are useful, but combining them with formatter, Git, budget, and worker-pipeline changes would expand the release scope too far.
+Reduce the repeated AI coding workflow from manual file-by-file selection to one copied path list, one validated import, one review step, and one normal Collect & Copy run.
+
+### M11 — Paste Paths Core
+
+**Status: DONE**
+
+- [x] add ordered path-list parser
+- [x] support plain lines, Markdown bullets, numbering, quotes, backticks, and fenced blocks
+- [x] support relative and absolute Windows paths
+- [x] add explicit project-root resolution
+- [x] validate existence, file type, directory state, and root traversal
+- [x] preserve order and deduplicate canonically
+- [x] merge pasted paths with manual Selected Files state
+- [x] add Paste Paths button and guarded Ctrl+V workflow
+- [x] add parser and importer tests
+
+### M12 — Selected Files Review
+
+**Status: DONE**
+
+- [x] make Source summary open review
+- [x] display relative paths and effective project root
+- [x] support mixed locations
+- [x] support multi-select removal and Clear All
+- [x] keep Cancel transactional
+- [x] apply reviewed changes explicitly
+- [x] preserve remaining order
+- [x] add review-model tests
+
+### M13 — Workflow Regression and UX Polish
+
+**Status: DONE**
+
+- [x] recover from stale or deleted roots
+- [x] keep absolute external files importable
+- [x] distinguish separate repositories from one common project
+- [x] prefer repository roots in monorepository layouts
+- [x] expose external and issue counts
+- [x] keep duplicate-only imports non-modal
+- [x] disable inactive clear/apply controls
+- [x] add Delete shortcut and accessibility metadata
+- [x] add end-to-end import-review-collection regression coverage
+
+### M14 — Documentation and Version Integration
+
+**Status: IMPLEMENTED — COMMIT VALIDATION PENDING**
+
+- [x] bump canonical version to 1.3.0
+- [x] update bilingual README
+- [x] update changelog and comparison links
+- [x] document parser/importer/review architecture and security boundary
+- [x] create v1.3.0 release notes
+- [x] create M15 validation procedure
+- [x] update portable, security, issue-template, and release-checklist version references
+- [x] update release-candidate default version
+- [x] update repository version/document regression tests
+- [ ] run the complete local test suite after applying the M14 archive
+- [ ] manually inspect the updated About/version labels
+- [ ] commit and push M14
+
+### M15 — v1.3.0 Validation and Release
+
+**Status: PLANNED — NEXT**
+
+- [ ] run complete compileall and pytest gates
+- [ ] validate all four source collection modes
+- [ ] validate Paste Paths and Selected Files Review in the packaged executable
+- [ ] build the clean PyInstaller package
+- [ ] validate portable ZIP and SHA-256
+- [ ] complete Windows 10/11 evidence for the same archive hash
+- [ ] run final readiness validation
+- [ ] create annotated v1.3.0 tag
+- [ ] create and review GitHub draft release
+- [ ] publish and verify downloaded assets
+- [ ] mark v1.3.0 released in the roadmap
+
+See `docs/M15_VALIDATION.md`.
 
 ---
 
-## v1.3.0 Windows Workflow & Distribution
+## v1.4.0 Windows Workflow & Distribution
 
 **Status: PLANNED**
 
-- [ ] add editable restore hotkey
-- [ ] validate hotkey conflicts before saving
-- [ ] add reset-to-default hotkey action
-- [ ] optionally add Collect & Copy hotkey
-- [ ] improve About page with repository and release links
-- [ ] add installer
-- [ ] support clean uninstall
-- [ ] preserve or remove user settings explicitly during uninstall
-- [ ] add portable mode
-- [ ] add update availability check
-- [ ] open the release page from the application
-- [ ] add persistent runtime history
-- [ ] export runtime history
-- [ ] add installer and portable build validation
+- [ ] editable restore hotkey with conflict validation
+- [ ] optional Collect & Copy hotkey
+- [ ] repository and release links in About
+- [ ] installer and clean uninstall
+- [ ] explicit settings preservation/removal behavior
+- [ ] portable mode
+- [ ] update-availability check
+- [ ] persistent runtime history and export
+- [ ] installer and portable validation gates
 
-An update-availability check is preferable to full automatic self-updating at this stage.
-
-The application may detect a newer version and open its GitHub Release page. A full updater has additional security, rollback, and atomic-replacement requirements.
+An update-availability check is preferred to a full automatic self-updater at this stage.
 
 ---
 
-## v1.4.0 Advanced Context Rules
+## v1.5.0 Advanced Context Rules
 
-**Status: BACKLOG**
+**Status: PLANNED**
 
-- [ ] advanced include/exclude rule editor
-- [ ] reusable collection profiles
-- [ ] per-project settings
-- [ ] file size rules by extension
-- [ ] context priority rules
-- [ ] include only selected directories
-- [ ] exclude generated code patterns
-- [ ] configurable project tree depth
-- [ ] optional file preview
-- [ ] opt-in secret redaction
-- [ ] custom output templates
-- [ ] token estimation profiles for different AI providers
-
----
-
-## v1.2.0 Implementation Sequence
-
-The implementation sequence is complete. It was intentionally staged to stabilize data integrity before threading and release automation.
-
-### Stage 1 — Output integrity — DONE
-
-- M1: exact source-content fidelity
-- M3: stable file identity and relative paths
-- M4: structure-aware character budgeting
-
-### Stage 2 — Git correctness — DONE
-
-- typed null-delimited Git status parsing
-- staged and unstaged diff separation
-- rename, copy, delete, and untracked semantics
-- complete Git regression coverage
-
-### Stage 3 — Context safety — DONE
-
-- `.xccignore` and mode-aware `.gitignore` behavior
-- warning-only sensitive filename and content detection
-- sanitized pre-copy warning metadata
-- optional persistent Safety confirmation prompt
-
-### Stage 4 — Responsive desktop pipeline — IMPLEMENTED
-
-- background collection worker
-- progress phases and one-job enforcement
-- cooperative cancellation
-- metadata-only result health and runtime history
-
-The implementation is complete; the final packaged large-project manual gate remains part of M6/M10 evidence.
-
-### Stage 5 — Repository and release engineering — IMPLEMENTED
-
-- canonical metadata and versioning
-- dependency groups and clean-install validation
-- Windows CI and package smoke
-- portable archive and checksum validation
-- workspace hygiene tooling
-- governance and release documentation
-- Windows 10/11 evidence and final readiness contracts
-
-Only final clean-host evidence, tagging, publication, and post-publication verification remain.
-
----
-
-## v1.2.0 Release Guarantees
-
-The release is complete only when all five guarantees are satisfied.
-
-### 1. Fidelity
-
-XCC does not modify collected file contents.
-
-### 2. Git Completeness
-
-Staged, unstaged, untracked, renamed, copied, and deleted changes are represented without silent loss.
-
-### 3. Budget Transparency
-
-The user can see which files were included, omitted, summarized, or partially included.
-
-### 4. Safety Visibility
-
-XCC detects and reports likely sensitive context; the pre-copy modal warning is enabled by default and can be disabled without disabling detection.
-
-### 5. UI Responsiveness
-
-Large projects do not block the interface, and collection can be cancelled safely.
+- [ ] per-project presets
+- [ ] richer include/exclude profiles
+- [ ] preview editor
+- [ ] optional partial-file strategies
+- [ ] advanced tree and diff controls
+- [ ] configurable safety categories
 
 ---
 
 ## Immediate Next Step
 
-Complete M10 on the exact final release commit:
-
-1. run `scripts\validate_release_candidate.ps1`;
-2. validate the packaged ZIP on clean Windows 10 and Windows 11 hosts;
-3. record both evidence files for the same archive SHA-256;
-4. run `scripts\validate_release_evidence.py`;
-5. push the final release commit and confirm Windows CI;
-6. run `scripts\check_release_readiness.py`;
-7. create the annotated `v1.2.0` tag;
-8. create and review the draft GitHub Release;
-9. publish and verify the downloaded ZIP and checksum;
-10. mark M6 and M10 complete in the post-release status update.
-
-The next product-development milestone after publication is:
-
-> **v1.3.0 — Windows Workflow & Distribution**
-
-No additional v1.2.0 feature work should be added unless it fixes a release-blocking defect discovered by the final gate.
+Apply and validate M14, commit and push it, then execute M15 against the final v1.3.0 commit and packaged archive. No additional feature work should enter v1.3.0 unless it fixes a release-blocking defect.

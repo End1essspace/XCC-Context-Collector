@@ -21,7 +21,7 @@ def _write_evidence(
     *,
     os_release: str,
     archive_sha256: str,
-    version: str = "1.2.0",
+    version: str = "1.3.0",
     failed_gate: str | None = None,
 ) -> None:
     gates = {name: True for name in REQUIRED_GATES}
@@ -73,11 +73,11 @@ def test_release_evidence_requires_matching_windows_10_and_11_records(
 
     summary = validate_release_evidence(
         [windows_10, windows_11],
-        expected_version="1.2.0",
+        expected_version="1.3.0",
         expected_archive_sha256=archive_hash,
     )
 
-    assert summary.version == "1.2.0"
+    assert summary.version == "1.3.0"
     assert summary.os_releases == {"Windows 10", "Windows 11"}
     assert summary.archive_sha256 == archive_hash
 
@@ -93,7 +93,7 @@ def test_release_evidence_rejects_missing_windows_10_record(tmp_path: Path) -> N
     with pytest.raises(ReleaseEvidenceError, match="Windows 10"):
         validate_release_evidence(
             [windows_11],
-            expected_version="1.2.0",
+            expected_version="1.3.0",
         )
 
 
@@ -109,7 +109,7 @@ def test_release_evidence_rejects_failed_manual_gate(tmp_path: Path) -> None:
     with pytest.raises(ReleaseEvidenceError, match="cooperative_cancellation"):
         validate_release_evidence(
             [windows_10],
-            expected_version="1.2.0",
+            expected_version="1.3.0",
         )
 
 
@@ -130,23 +130,23 @@ def test_release_evidence_rejects_different_archive_hashes(tmp_path: Path) -> No
     with pytest.raises(ReleaseEvidenceError, match="different release archive"):
         validate_release_evidence(
             [windows_10, windows_11],
-            expected_version="1.2.0",
+            expected_version="1.3.0",
         )
 
 
-def test_v120_release_documents_are_complete() -> None:
-    assert __version__ == "1.2.0"
+def test_v130_release_documents_are_complete() -> None:
+    assert __version__ == "1.3.0"
     validate_release_documents(PROJECT_ROOT, version=__version__)
 
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
     roadmap = (PROJECT_ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
-    validation = (PROJECT_ROOT / "docs" / "M10_VALIDATION.md").read_text(
+    validation = (PROJECT_ROOT / "docs" / "M15_VALIDATION.md").read_text(
         encoding="utf-8"
     )
 
-    assert "Current version: **v1.2.0**" in readme
-    assert "Текущая версия: **v1.2.0**" in readme
-    assert "Status: RELEASE CANDIDATE PREPARED" in roadmap
+    assert "Current version: **v1.3.0**" in readme
+    assert "Текущая версия: **v1.3.0**" in readme
+    assert "Status: IMPLEMENTED — M15 RELEASE VALIDATION PENDING" in roadmap
     assert "validate_release_candidate.ps1" in validation
     assert "Windows 10" in validation
     assert "Windows 11" in validation

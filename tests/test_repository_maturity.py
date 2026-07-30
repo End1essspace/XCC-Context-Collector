@@ -18,7 +18,9 @@ def test_repository_governance_files_exist() -> None:
         "docs/PORTABLE_ZIP.md",
         "docs/RELEASE_CHECKLIST.md",
         "docs/M10_VALIDATION.md",
+        "docs/M15_VALIDATION.md",
         "docs/releases/v1.2.0.md",
+        "docs/releases/v1.3.0.md",
         "scripts/validate_release_candidate.ps1",
         "scripts/record_manual_validation.ps1",
         "scripts/validate_release_evidence.py",
@@ -123,3 +125,16 @@ def test_workspace_hygiene_covers_generated_outputs() -> None:
     ):
         assert asset_name in build
 
+def test_v130_selected_files_release_documentation_is_aligned() -> None:
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    architecture = (PROJECT_ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
+    notes = (PROJECT_ROOT / "docs" / "releases" / "v1.3.0.md").read_text(encoding="utf-8")
+
+    assert "Selected Files AI workflow" in readme
+    assert "AI-workflow для Selected Files" in readme
+    assert "path_list_parser.py" in architecture
+    assert "selected_files_importer.py" in architecture
+    assert "M15 — v1.3.0 Validation and Release" in roadmap
+    assert "Version: 1.3.0" in notes
+    assert "## Validation" in notes

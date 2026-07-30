@@ -4,11 +4,11 @@ XCC is distributed as a Windows x64 portable ZIP. It does not require an install
 
 ## Release files
 
-For v1.2.0, download both files from the official GitHub Release:
+For v1.3.0, download both files from the official GitHub Release:
 
 ```text
-XCC-Context-Collector-v1.2.0-win64.zip
-XCC-Context-Collector-v1.2.0-win64.zip.sha256
+XCC-Context-Collector-v1.3.0-win64.zip
+XCC-Context-Collector-v1.3.0-win64.zip.sha256
 ```
 
 Do not download executables or repackaged archives from third-party mirrors.
@@ -18,7 +18,7 @@ Do not download executables or repackaged archives from third-party mirrors.
 Place the ZIP and checksum file in the same folder, then run:
 
 ```powershell
-$Zip = "XCC-Context-Collector-v1.2.0-win64.zip"
+$Zip = "XCC-Context-Collector-v1.3.0-win64.zip"
 $Expected = ((Get-Content "$Zip.sha256" -Raw).Trim() -split "\s+")[0]
 $Actual = (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($Actual -ne $Expected.ToLowerInvariant()) { throw "Checksum mismatch" }
@@ -44,11 +44,11 @@ XCC Context Collector/
 └── _internal/
 ```
 
-`VERSION.txt` must contain `1.2.0` for the v1.2.0 package.
+`VERSION.txt` must contain `1.3.0` for the v1.3.0 package.
 
 ## Windows reputation warning
 
-v1.2.0 binaries are not code-signed. Windows may therefore display a reputation or SmartScreen warning even when the archive is unchanged.
+v1.3.0 binaries are not code-signed. Windows may therefore display a reputation or SmartScreen warning even when the archive is unchanged.
 
 Before proceeding:
 
@@ -68,7 +68,7 @@ Settings are not stored beside the executable. They remain under:
 %USERPROFILE%\.xcc\config.json
 ```
 
-Runtime history is in-memory and is cleared when XCC exits. A fully self-contained settings mode is outside the v1.2.0 scope.
+Runtime history is in-memory and is cleared when XCC exits. A fully self-contained settings mode is outside the v1.3.0 scope.
 
 ## Update XCC
 

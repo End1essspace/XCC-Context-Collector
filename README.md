@@ -10,7 +10,7 @@ XCC Context Collector is a Windows desktop utility that turns project files, fol
 
 It is built for developers working with ChatGPT, Codex, Claude, and similar tools when sending many project files manually is slow, repetitive, or blocked by attachment and context-size limits.
 
-Current version: **v1.2.0**
+Current version: **v1.3.0**
 
 [Download from GitHub Releases](https://github.com/End1essspace/xcc-context-collector/releases)
 
@@ -20,7 +20,7 @@ Current version: **v1.2.0**
 |---|---|
 | ![XCC Collect page](docs/screenshots/xcc-collect.png) | ![XCC History page](docs/screenshots/xcc-history.png) |
 
-Official builds are published through GitHub Releases after the automated and clean-host Windows validation gates described in [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
+Official builds are published through GitHub Releases after the automated and clean-host Windows validation gates described in [`docs/M15_VALIDATION.md`](docs/M15_VALIDATION.md).
 
 ## What XCC does
 
@@ -28,7 +28,7 @@ XCC provides four collection modes:
 
 | Mode | Purpose |
 |---|---|
-| **Selected Files** | Collect explicitly selected files, including files from different folders or drives. |
+| **Selected Files** | Select files manually or paste a path list from an AI response, then review the final selection before collection. |
 | **Full Folder** | Scan a project folder, apply built-in exclusions and project ignore rules, and include a project tree. |
 | **Git Changed Files** | Collect supported changed files plus separately labelled staged and unstaged Git diffs. |
 | **Project Tree** | Produce structure-only context without file contents. |
@@ -42,7 +42,33 @@ The generated output can include:
 - complete per-file sections;
 - errors and an explicit budget summary when output is truncated.
 
-## v1.2.0 highlights
+## Selected Files AI workflow
+
+Selected Files mode supports a direct round trip between an AI assistant and XCC:
+
+```text
+AI returns the files it needs
+        ↓
+Copy the path list
+        ↓
+Paste Paths or Ctrl+V in Selected Files
+        ↓
+Resolve relative paths against a visible project root
+        ↓
+Review, remove, or clear files
+        ↓
+Collect & Copy
+```
+
+The path importer accepts plain line lists, Markdown bullets, numbered lists, quoted paths, backticks, and fenced code blocks. It supports relative and absolute paths, validates supported file types, rejects traversal outside the chosen project root, preserves order, and removes duplicates using Windows path semantics.
+
+Click the Source summary to open **Selected Files Review**. The review dialog shows relative paths, the effective project root or `Mixed locations`, and supports multi-select removal, `Delete`, `Clear All`, `Cancel`, and transactional `Apply Changes`.
+
+## v1.3.0 highlights
+
+### Paste Paths and Selected Files review
+
+Paste path lists directly from AI responses, resolve relative paths against an explicit project root, merge them with manual selection, and review the final ordered file set before collection. Duplicate, missing, unsupported, external, and outside-root paths receive explicit handling.
 
 ### Source-content fidelity
 
@@ -196,7 +222,7 @@ When the full result does not fit, XCC emits an `# XCC Budget Summary` describin
 - Git diff, project tree, error, and safety-warning section status;
 - a bounded list of omitted paths.
 
-Partial source-file inclusion is disabled by default in v1.2.0, so `Partial files` remains `0` for normal collection output.
+Partial source-file inclusion is disabled by default in v1.3.0, so `Partial files` remains `0` for normal collection output.
 
 ## Local data and privacy
 
@@ -212,8 +238,8 @@ XCC has no cloud account requirement and does not upload collected context. The 
 
 The official Windows x64 release consists of one portable application archive and one checksum file:
 
-- `XCC-Context-Collector-v1.2.0-win64.zip` — the portable application archive;
-- `XCC-Context-Collector-v1.2.0-win64.zip.sha256` — a SHA-256 checksum file used to verify the archive.
+- `XCC-Context-Collector-v1.3.0-win64.zip` — the portable application archive;
+- `XCC-Context-Collector-v1.3.0-win64.zip.sha256` — a SHA-256 checksum file used to verify the archive.
 
 Download the ZIP to use XCC. The `.sha256` file is optional, but recommended for integrity verification.
 
@@ -229,7 +255,7 @@ See [`docs/PORTABLE_ZIP.md`](docs/PORTABLE_ZIP.md) for checksum verification, up
 
 ## Run from source
 
-XCC v1.2.0 supports **CPython 3.13.x** on Windows 10/11 x64.
+XCC v1.3.0 supports **CPython 3.13.x** on Windows 10/11 x64.
 
 ```powershell
 py -3.13 -m venv .venv
@@ -257,7 +283,7 @@ powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
 
 The release-candidate gate performs compilation, version checks, the full test suite, clean-install validation, PyInstaller packaging, packaged startup smoke, portable ZIP creation, checksum generation, and archive validation.
 
-Manual Windows 10/11 validation and evidence recording are documented in [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
+Manual Windows 10/11 validation and evidence recording are documented in [`docs/M15_VALIDATION.md`](docs/M15_VALIDATION.md).
 
 ## Legacy development tools
 
@@ -276,10 +302,10 @@ New product features must target `gui.py -> xcc.gui -> xcc.pipeline` and the nat
 - [Architecture](docs/ARCHITECTURE.md)
 - [Bug-report diagnostics](docs/BUG_REPORTING.md)
 - [Portable ZIP usage](docs/PORTABLE_ZIP.md)
-- [v1.2.0 validation procedure](docs/M10_VALIDATION.md)
+- [v1.3.0 validation procedure](docs/M15_VALIDATION.md)
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [Roadmap](docs/roadmap.md)
-- [v1.2.0 release notes](docs/releases/v1.2.0.md)
+- [v1.3.0 release notes](docs/releases/v1.3.0.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
@@ -309,7 +335,7 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 
 XCC рассчитан на разработчиков, работающих с ChatGPT, Codex, Claude и аналогичными инструментами, когда ручная отправка множества файлов занимает время или упирается в ограничения на вложения и размер контекста.
 
-Текущая версия: **v1.2.0**
+Текущая версия: **v1.3.0**
 
 [Скачать на GitHub Releases](https://github.com/End1essspace/xcc-context-collector/releases)
 
@@ -319,13 +345,13 @@ XCC рассчитан на разработчиков, работающих с 
 |---|---|
 | ![Страница Collect](docs/screenshots/xcc-collect.png) | ![Страница History](docs/screenshots/xcc-history.png) |
 
-Официальные сборки публикуются через GitHub Releases после автоматической проверки и ручной валидации на чистых Windows-хостах по процедуре из [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
+Официальные сборки публикуются через GitHub Releases после автоматической проверки и ручной валидации на чистых Windows-хостах по процедуре из [`docs/M15_VALIDATION.md`](docs/M15_VALIDATION.md).
 
 ## Режимы сбора
 
 | Режим | Назначение |
 |---|---|
-| **Selected Files** | Сбор явно выбранных файлов, в том числе из разных папок и дисков. |
+| **Selected Files** | Ручной выбор файлов или вставка списка путей из ответа AI с последующей проверкой итогового набора. |
 | **Full Folder** | Сканирование папки проекта с учётом встроенных исключений и project ignore rules. |
 | **Git Changed Files** | Сбор поддерживаемых изменённых файлов и раздельных staged/unstaged Git diff. |
 | **Project Tree** | Контекст только по структуре проекта, без содержимого файлов. |
@@ -339,7 +365,33 @@ XCC рассчитан на разработчиков, работающих с 
 - полные секции файлов;
 - ошибки и явный budget summary при ограничении output.
 
-## Главное в v1.2.0
+## AI-workflow для Selected Files
+
+Режим Selected Files поддерживает прямой цикл между AI-ассистентом и XCC:
+
+```text
+AI сообщает нужные файлы
+        ↓
+Копирование списка путей
+        ↓
+Paste Paths или Ctrl+V в Selected Files
+        ↓
+Разрешение относительных путей через явно выбранный корень проекта
+        ↓
+Проверка, удаление или очистка файлов
+        ↓
+Collect & Copy
+```
+
+Импорт поддерживает обычные построчные списки, Markdown-маркеры, нумерацию, кавычки, backticks и fenced code blocks. Поддерживаются относительные и абсолютные пути, проверка типов файлов, защита от выхода за project root, сохранение порядка и Windows-aware дедупликация.
+
+Нажатие на сводку Source открывает **Selected Files Review**. Диалог показывает относительные пути, текущий project root или `Mixed locations` и поддерживает множественное удаление, клавишу `Delete`, `Clear All`, `Cancel` и транзакционное `Apply Changes`.
+
+## Главное в v1.3.0
+
+### Paste Paths и проверка Selected Files
+
+Списки путей из ответов AI можно вставлять напрямую, разрешать относительно явно выбранного корня проекта, объединять с ручным выбором и проверять перед сбором. Дубликаты, отсутствующие, неподдерживаемые, внешние и выходящие за root пути обрабатываются явно.
 
 ### Точное сохранение исходного содержимого
 
@@ -491,7 +543,7 @@ private/**           # рекурсивный path pattern
 - состоянии Git diff, project tree, errors и safety warnings;
 - ограниченном списке пропущенных путей.
 
-В v1.2.0 частичное включение исходных файлов по умолчанию отключено, поэтому в обычном output `Partial files` остаётся равным `0`.
+В v1.3.0 частичное включение исходных файлов по умолчанию отключено, поэтому в обычном output `Partial files` остаётся равным `0`.
 
 ## Локальные данные и приватность
 
@@ -507,8 +559,8 @@ XCC не требует облачного аккаунта и не загруж
 
 Официальный Windows x64 release состоит из одного portable-архива с приложением и отдельного файла контрольной суммы:
 
-- `XCC-Context-Collector-v1.2.0-win64.zip` — portable-архив с приложением;
-- `XCC-Context-Collector-v1.2.0-win64.zip.sha256` — файл SHA-256 для проверки целостности архива.
+- `XCC-Context-Collector-v1.3.0-win64.zip` — portable-архив с приложением;
+- `XCC-Context-Collector-v1.3.0-win64.zip.sha256` — файл SHA-256 для проверки целостности архива.
 
 Для использования XCC достаточно скачать ZIP. Файл `.sha256` необязателен, но рекомендуется для проверки целостности.
 
@@ -524,7 +576,7 @@ XCC Context Collector.exe
 
 ## Запуск из исходников
 
-XCC v1.2.0 поддерживает **CPython 3.13.x** на Windows 10/11 x64.
+XCC v1.3.0 поддерживает **CPython 3.13.x** на Windows 10/11 x64.
 
 ```powershell
 py -3.13 -m venv .venv
@@ -552,7 +604,7 @@ powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
 
 Release-candidate gate выполняет compileall, version consistency, полный test suite, clean-install validation, PyInstaller build, packaged startup smoke, создание portable ZIP, SHA-256 и archive validation.
 
-Ручная Windows 10/11 validation и evidence recording описаны в [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
+Ручная Windows 10/11 validation и evidence recording описаны в [`docs/M15_VALIDATION.md`](docs/M15_VALIDATION.md).
 
 ## Legacy development tools
 
@@ -571,10 +623,10 @@ python hotkey.py
 - [Архитектура](docs/ARCHITECTURE.md)
 - [Диагностика bug reports](docs/BUG_REPORTING.md)
 - [Использование portable ZIP](docs/PORTABLE_ZIP.md)
-- [Процедура validation v1.2.0](docs/M10_VALIDATION.md)
+- [Процедура validation v1.3.0](docs/M15_VALIDATION.md)
 - [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [Roadmap](docs/roadmap.md)
-- [Release notes v1.2.0](docs/releases/v1.2.0.md)
+- [Release notes v1.3.0](docs/releases/v1.3.0.md)
 - [Contributing](CONTRIBUTING.md)
 - [Security policy](SECURITY.md)
 
