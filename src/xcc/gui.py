@@ -68,6 +68,7 @@ from .ui_components import (
     make_card_layout,
     make_card_title,
     make_helper_text,
+    make_icon_title,
     make_page_header,
     make_primary_button,
     make_runtime_status_capsule,
@@ -86,6 +87,13 @@ from .ui_collect import (
     selected_files_source_summary,
 )
 from .ui_shell import RuntimeState, default_footer_message
+from .ui_metrics import (
+    coverage_metric_state,
+    format_metric_integer,
+    issues_metric_state,
+    outcome_metric_state,
+    truncation_metric_state,
+)
 from .ui_theme import (
     METRICS,
     PALETTE,
@@ -112,6 +120,14 @@ NAV_COLLECT_ICON_PATH = resource_path("assets", "nav-collect.svg")
 NAV_HISTORY_ICON_PATH = resource_path("assets", "nav-history.svg")
 NAV_SETTINGS_ICON_PATH = resource_path("assets", "nav-settings.svg")
 NAV_ABOUT_ICON_PATH = resource_path("assets", "nav-about.svg")
+UI_SETUP_ICON_PATH = resource_path("assets", "ui-setup.svg")
+UI_LAST_RUN_ICON_PATH = resource_path("assets", "ui-last-run.svg")
+UI_VOLUME_ICON_PATH = resource_path("assets", "ui-volume.svg")
+UI_OUTPUT_ICON_PATH = resource_path("assets", "ui-output.svg")
+UI_COVERAGE_ICON_PATH = resource_path("assets", "ui-coverage.svg")
+UI_HEALTH_ICON_PATH = resource_path("assets", "ui-health.svg")
+UI_PASTE_PATHS_ICON_PATH = resource_path("assets", "ui-paste-paths.svg")
+UI_COLLECT_COPY_ICON_PATH = resource_path("assets", "ui-collect-copy.svg")
 INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
 INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
 
@@ -121,8 +137,8 @@ NAV_ICON_PATH_ROLE = int(Qt.ItemDataRole.UserRole) + 1
 class SidebarItemDelegate(QStyledItemDelegate):
     """Paint crisp Lucide navigation items with controlled spacing and states."""
 
-    ITEM_HEIGHT = 52
-    ITEM_MARGIN_X = 10
+    ITEM_HEIGHT = 54
+    ITEM_MARGIN_X = 12
     ITEM_MARGIN_Y = 4
     CONTENT_LEFT = 16
     ICON_SIZE = 20
@@ -832,8 +848,6 @@ class XccMainWindow(QMainWindow):
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
 
-        root_layout.addWidget(self._build_header())
-
         body = QWidget()
         body_layout = QHBoxLayout(body)
         body_layout.setContentsMargins(0, 0, 0, 0)
@@ -862,7 +876,7 @@ class XccMainWindow(QMainWindow):
         status_bar.setFixedHeight(METRICS.footer_height)
 
         status_layout = QHBoxLayout(status_bar)
-        status_layout.setContentsMargins(18, 0, 18, 0)
+        status_layout.setContentsMargins(20, 0, 20, 0)
         status_layout.setSpacing(12)
 
         self.footer_status_dot = QLabel()
@@ -1127,51 +1141,6 @@ class XccMainWindow(QMainWindow):
 
         return page
 
-    def _build_header(self) -> QWidget:
-        header = QFrame()
-        header.setObjectName("Header")
-        header.setFixedHeight(METRICS.header_height)
-
-        layout = QHBoxLayout(header)
-        layout.setContentsMargins(20, 0, 20, 0)
-        layout.setSpacing(12)
-
-        icon_label = QLabel()
-        icon_label.setObjectName("HeaderAppIcon")
-        icon_label.setFixedSize(28, 28)
-
-        app_image_path = APP_IMAGE_PATH if APP_IMAGE_PATH.exists() else APP_ICON_PATH
-        if app_image_path.exists():
-            pixmap = QPixmap(str(app_image_path))
-            icon_label.setPixmap(
-                pixmap.scaled(
-                    28,
-                    28,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
-
-        title = QLabel("XCC Context Collector")
-        title.setObjectName("HeaderTitle")
-
-        self.header_status = make_runtime_status_capsule("Ready")
-        self.header_status.set_state(RuntimeState.READY.semantic_state)
-        self.header_status.setAccessibleName("Runtime status")
-
-        self.hotkey_capsule = make_status_capsule(
-            f"Hotkey: {DEFAULT_HOTKEY}",
-            object_name="HotkeyCapsule",
-        )
-        self.hotkey_capsule.setAccessibleName("Restore hotkey")
-
-        layout.addWidget(icon_label)
-        layout.addWidget(title, 1)
-        layout.addWidget(self.header_status)
-        layout.addWidget(self.hotkey_capsule)
-
-        return header
-
     def _setup_tray(self) -> None:
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
@@ -1374,12 +1343,25 @@ class XccMainWindow(QMainWindow):
 
     def _build_collect_page(self) -> QWidget:
         page = QWidget()
+        page.setObjectName("CollectPage")
         layout = self._page_layout(page)
+
+        self.header_status = make_runtime_status_capsule("Ready")
+        self.header_status.set_state(RuntimeState.READY.semantic_state)
+        self.header_status.setAccessibleName("Runtime status")
+
+        self.hotkey_capsule = make_status_capsule(
+            f"Hotkey: {DEFAULT_HOTKEY}",
+            object_name="HotkeyCapsule",
+        )
+        self.hotkey_capsule.setAccessibleName("Restore hotkey")
 
         self.collect_page_header: PageHeader = make_page_header(
             COLLECT_PAGE_TITLE,
             COLLECT_PAGE_SUBTITLE,
         )
+        self.collect_page_header.add_action(self.header_status)
+        self.collect_page_header.add_action(self.hotkey_capsule)
         layout.addWidget(self.collect_page_header)
 
         setup_card = self._card()
@@ -1388,7 +1370,16 @@ class XccMainWindow(QMainWindow):
         setup_layout = self._card_layout(setup_card)
         setup_layout.setContentsMargins(22, 18, 22, 18)
         setup_layout.setSpacing(15)
-        setup_layout.addWidget(self._card_title("Setup"))
+        setup_layout.addWidget(
+            make_icon_title(
+                "Setup",
+                UI_SETUP_ICON_PATH,
+                object_name="CardTitleRow",
+                text_object_name="CardTitle",
+                icon_object_name="CardTitleIcon",
+                icon_size=18,
+            )
+        )
 
         setup_grid = QGridLayout()
         setup_grid.setContentsMargins(0, 2, 0, 0)
@@ -1464,6 +1455,8 @@ class XccMainWindow(QMainWindow):
         self.paste_paths_button.setAccessibleName(
             "Paste file paths from clipboard"
         )
+        self.paste_paths_button.setIcon(QIcon(str(UI_PASTE_PATHS_ICON_PATH)))
+        self.paste_paths_button.setIconSize(QSize(18, 18))
 
         self.source_helper_label = make_helper_text(
             "",
@@ -1551,9 +1544,11 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(setup_card)
 
         stats_card = self._card()
-        stats_card.setMinimumHeight(210)
+        stats_card.setMinimumHeight(300)
 
         stats_layout = self._card_layout(stats_card)
+        stats_layout.setContentsMargins(24, 18, 24, 20)
+        stats_layout.setSpacing(16)
 
         stats_header = QWidget()
         stats_header.setObjectName("TransparentWidget")
@@ -1561,15 +1556,22 @@ class XccMainWindow(QMainWindow):
         stats_header_layout.setContentsMargins(0, 0, 0, 0)
         stats_header_layout.setSpacing(12)
 
-        stats_header_layout.addWidget(self._card_title("Last Run"))
+        stats_header_layout.addWidget(
+            make_icon_title(
+                "Last Run",
+                UI_LAST_RUN_ICON_PATH,
+                object_name="CardTitleRow",
+                text_object_name="CardTitle",
+                icon_object_name="CardTitleIcon",
+                icon_size=18,
+            )
+        )
         stats_header_layout.addStretch(1)
 
         self.last_run_state_label = QLabel("No collection yet")
         self.last_run_state_label.setObjectName("LastRunState")
-        self.last_run_state_label.setFixedHeight(28)
-        self.last_run_state_label.setAlignment(
-            Qt.AlignmentFlag.AlignCenter
-        )
+        self.last_run_state_label.setFixedHeight(30)
+        self.last_run_state_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         stats_header_layout.addWidget(self.last_run_state_label)
 
         stats_layout.addWidget(stats_header)
@@ -1591,53 +1593,37 @@ class XccMainWindow(QMainWindow):
         self.issues_metric = self._metric_capsule("Warnings / Errors", "-")
 
         columns_row = QHBoxLayout()
-        columns_row.setSpacing(14)
+        columns_row.setSpacing(18)
         columns_row.setContentsMargins(0, 0, 0, 0)
 
-        volume_column = QVBoxLayout()
-        volume_column.setContentsMargins(0, 0, 0, 0)
-        volume_column.setSpacing(8)
-        volume_title = QLabel("Volume")
-        volume_title.setObjectName("MetricGroupTitle")
-        volume_column.addWidget(volume_title)
-        volume_column.addWidget(self.files_metric)
-        volume_column.addWidget(self.lines_metric)
-        volume_column.addWidget(self.source_chars_metric)
+        self.volume_metric_group = self._build_metric_group(
+            "Volume",
+            UI_VOLUME_ICON_PATH,
+            [self.files_metric, self.lines_metric, self.source_chars_metric],
+        )
+        self.output_metric_group = self._build_metric_group(
+            "Output",
+            UI_OUTPUT_ICON_PATH,
+            [self.output_chars_metric, self.tokens_metric, self.truncated_metric],
+        )
+        self.coverage_metric_group = self._build_metric_group(
+            "Coverage",
+            UI_COVERAGE_ICON_PATH,
+            [self.included_metric, self.omitted_metric, self.coverage_metric],
+        )
+        self.health_metric_group = self._build_metric_group(
+            "Health",
+            UI_HEALTH_ICON_PATH,
+            [self.outcome_metric, self.duration_metric, self.issues_metric],
+        )
 
-        output_column = QVBoxLayout()
-        output_column.setContentsMargins(0, 0, 0, 0)
-        output_column.setSpacing(8)
-        output_title = QLabel("Output")
-        output_title.setObjectName("MetricGroupTitle")
-        output_column.addWidget(output_title)
-        output_column.addWidget(self.output_chars_metric)
-        output_column.addWidget(self.tokens_metric)
-        output_column.addWidget(self.truncated_metric)
-
-        coverage_column = QVBoxLayout()
-        coverage_column.setContentsMargins(0, 0, 0, 0)
-        coverage_column.setSpacing(8)
-        coverage_title = QLabel("Coverage")
-        coverage_title.setObjectName("MetricGroupTitle")
-        coverage_column.addWidget(coverage_title)
-        coverage_column.addWidget(self.included_metric)
-        coverage_column.addWidget(self.omitted_metric)
-        coverage_column.addWidget(self.coverage_metric)
-
-        health_column = QVBoxLayout()
-        health_column.setContentsMargins(0, 0, 0, 0)
-        health_column.setSpacing(8)
-        health_title = QLabel("Health")
-        health_title.setObjectName("MetricGroupTitle")
-        health_column.addWidget(health_title)
-        health_column.addWidget(self.outcome_metric)
-        health_column.addWidget(self.duration_metric)
-        health_column.addWidget(self.issues_metric)
-
-        columns_row.addLayout(volume_column, 1)
-        columns_row.addLayout(output_column, 1)
-        columns_row.addLayout(coverage_column, 1)
-        columns_row.addLayout(health_column, 1)
+        columns_row.addWidget(self.volume_metric_group, 1)
+        columns_row.addWidget(self._metric_divider())
+        columns_row.addWidget(self.output_metric_group, 1)
+        columns_row.addWidget(self._metric_divider())
+        columns_row.addWidget(self.coverage_metric_group, 1)
+        columns_row.addWidget(self._metric_divider())
+        columns_row.addWidget(self.health_metric_group, 1)
 
         stats_layout.addLayout(columns_row)
 
@@ -1648,6 +1634,8 @@ class XccMainWindow(QMainWindow):
         self.collect_button = make_primary_button(
             "Collect && Copy",
             height=METRICS.primary_action_height,
+            icon_path=UI_COLLECT_COPY_ICON_PATH,
+            icon_size=20,
         )
         self.collect_button.setMinimumHeight(METRICS.primary_action_height)
         self.collect_button.setSizePolicy(
@@ -2437,6 +2425,10 @@ class XccMainWindow(QMainWindow):
 
         self.collect_button.setEnabled(True)
         self.collect_button.setText("Cancel" if active else "Collect && Copy")
+        self.collect_button.setIcon(
+            QIcon() if active else QIcon(str(UI_COLLECT_COPY_ICON_PATH))
+        )
+        self.collect_button.setIconSize(QSize(20, 20))
 
         if not active:
             self._refresh_source_controls()
@@ -2499,28 +2491,94 @@ class XccMainWindow(QMainWindow):
             self.last_run_state_label.setText(
                 f"{record.health_label} · {record.timestamp}"
             )
+            set_widget_state(
+                self.last_run_state_label,
+                outcome_metric_state(record.outcome),
+            )
 
     def _update_metrics(self, record: CollectionRunRecord) -> None:
-        self._set_metric_value(self.files_metric, str(record.files))
-        self._set_metric_value(self.lines_metric, str(record.lines))
-        self._set_metric_value(self.source_chars_metric, str(record.source_chars))
-        self._set_metric_value(self.output_chars_metric, str(record.output_chars))
-        self._set_metric_value(self.tokens_metric, str(record.output_tokens))
+        self._set_metric_value(
+            self.files_metric,
+            format_metric_integer(record.files),
+        )
+        self._set_metric_value(
+            self.lines_metric,
+            format_metric_integer(record.lines),
+        )
+        self._set_metric_value(
+            self.source_chars_metric,
+            format_metric_integer(record.source_chars),
+        )
+        self._set_metric_value(
+            self.output_chars_metric,
+            format_metric_integer(record.output_chars),
+        )
+        self._set_metric_value(
+            self.tokens_metric,
+            format_metric_integer(record.output_tokens),
+        )
+        for metric in (
+            self.files_metric,
+            self.lines_metric,
+            self.source_chars_metric,
+            self.output_chars_metric,
+            self.tokens_metric,
+            self.included_metric,
+        ):
+            metric.set_state(None)
+
         self._set_metric_value(
             self.truncated_metric,
             "Yes" if record.truncated else "No",
         )
-        self._set_metric_value(self.included_metric, str(record.included_files))
-        self._set_metric_value(self.omitted_metric, str(record.omitted_files))
+        self.truncated_metric.set_state(
+            truncation_metric_state(record.truncated)
+        )
+
+        self._set_metric_value(
+            self.included_metric,
+            format_metric_integer(record.included_files),
+        )
+        self._set_metric_value(
+            self.omitted_metric,
+            format_metric_integer(record.omitted_files),
+        )
         self._set_metric_value(
             self.coverage_metric,
-            f"{record.summarized_files} / {record.partial_files}",
+            (
+                f"{format_metric_integer(record.summarized_files)} / "
+                f"{format_metric_integer(record.partial_files)}"
+            ),
         )
-        self._set_metric_value(self.outcome_metric, record.outcome.metric_label)
+        coverage_state = coverage_metric_state(
+            omitted=record.omitted_files,
+            summarized=record.summarized_files,
+            partial=record.partial_files,
+        )
+        self.omitted_metric.set_state(coverage_state)
+        self.coverage_metric.set_state(coverage_state)
+
+        self._set_metric_value(
+            self.outcome_metric,
+            record.outcome.metric_label,
+        )
+        self.outcome_metric.set_state(
+            outcome_metric_state(record.outcome)
+        )
         self._set_metric_value(self.duration_metric, record.duration_label)
+        self.duration_metric.set_state("neutral")
         self._set_metric_value(
             self.issues_metric,
-            f"{record.warning_count} / {record.error_count}",
+            (
+                f"{format_metric_integer(record.warning_count)} / "
+                f"{format_metric_integer(record.error_count)}"
+            ),
+        )
+        self.issues_metric.set_state(
+            issues_metric_state(
+                warnings=record.warning_count,
+                errors=record.error_count,
+            )
         )
 
     def _set_metric_value(self, metric: QFrame, value: str) -> None:
@@ -2883,6 +2941,10 @@ class XccMainWindow(QMainWindow):
         outcome_label = QLabel(record.health_label)
         outcome_label.setObjectName("HistoryOutcomeCapsule")
         outcome_label.setFixedHeight(26)
+        set_widget_state(
+            outcome_label,
+            outcome_metric_state(record.outcome),
+        )
 
         mode_label = QLabel(record.mode_name)
         mode_label.setObjectName("HistoryModeCapsule")
@@ -2954,6 +3016,45 @@ class XccMainWindow(QMainWindow):
         badge.setFixedHeight(28)
         badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         return badge
+
+    def _build_metric_group(
+        self,
+        title: str,
+        icon_path: Path,
+        metrics: list[MetricCapsule],
+    ) -> QWidget:
+        group = QWidget()
+        group.setObjectName("TransparentWidget")
+        group.setMinimumWidth(0)
+
+        layout = QVBoxLayout(group)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
+        layout.addWidget(
+            make_icon_title(
+                title,
+                icon_path,
+                object_name="MetricGroupHeader",
+                text_object_name="MetricGroupTitle",
+                icon_object_name="MetricGroupIcon",
+                icon_size=18,
+            )
+        )
+
+        for metric in metrics:
+            layout.addWidget(metric)
+
+        return group
+
+    def _metric_divider(self) -> QFrame:
+        divider = QFrame()
+        divider.setObjectName("MetricDivider")
+        divider.setFrameShape(QFrame.Shape.VLine)
+        divider.setSizePolicy(
+            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Expanding,
+        )
+        return divider
 
     def _metric_capsule(self, label: str, value: str) -> MetricCapsule:
         return MetricCapsule(label, value)

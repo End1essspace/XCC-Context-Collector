@@ -122,6 +122,14 @@ def test_workspace_hygiene_covers_generated_outputs() -> None:
         "nav-history.svg",
         "nav-settings.svg",
         "nav-about.svg",
+        "ui-setup.svg",
+        "ui-last-run.svg",
+        "ui-volume.svg",
+        "ui-output.svg",
+        "ui-coverage.svg",
+        "ui-health.svg",
+        "ui-paste-paths.svg",
+        "ui-collect-copy.svg",
     ):
         assert asset_name in build
 

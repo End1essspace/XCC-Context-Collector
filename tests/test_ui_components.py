@@ -9,7 +9,11 @@ pytest.importorskip("PySide6")
 
 from PySide6.QtWidgets import QApplication, QLabel
 
+from xcc.resources import resource_path
+from xcc.ui_theme import METRICS
+
 from xcc.ui_components import (
+    IconTitle,
     MetricCapsule,
     PageHeader,
     RuntimeStatusCapsule,
@@ -18,6 +22,7 @@ from xcc.ui_components import (
     make_card_layout,
     make_card_title,
     make_helper_text,
+    make_icon_title,
     make_page_header,
     make_primary_button,
     make_runtime_status_capsule,
@@ -67,13 +72,19 @@ def test_page_header_exposes_title_and_subtitle(qapp: QApplication) -> None:
     assert header.subtitle_label.objectName() == "PageSubtitle"
     assert "AI-ready context snapshot" in header.subtitle_label.text()
 
+    action = QLabel("Ready")
+    header.add_action(action)
+    assert header.actions_layout.count() == 1
+
 
 def test_metric_capsule_preserves_value_label_api(qapp: QApplication) -> None:
     metric = MetricCapsule("Files", "-")
 
     assert metric.objectName() == "MetricCapsule"
+    assert metric.height() == METRICS.metric_row_height
     assert metric.label_widget.text() == "Files"
     assert isinstance(metric.value_label, QLabel)
+    assert metric.value_label.property("state") == "neutral"
 
     metric.set_value("1,024")
     assert metric.value_label.text() == "1,024"
@@ -81,6 +92,22 @@ def test_metric_capsule_preserves_value_label_api(qapp: QApplication) -> None:
     set_metric_value(metric, "2,048")
     assert metric.value_label.text() == "2,048"
 
+
+
+def test_icon_title_uses_packaged_svg_asset(qapp: QApplication) -> None:
+    title = make_icon_title(
+        "Last Run",
+        resource_path("assets", "ui-last-run.svg"),
+        object_name="MetricGroupHeader",
+        text_object_name="MetricGroupTitle",
+        icon_object_name="MetricGroupIcon",
+    )
+
+    assert isinstance(title, IconTitle)
+    assert title.objectName() == "MetricGroupHeader"
+    assert title.text_label.text() == "Last Run"
+    assert title.icon_label.pixmap() is not None
+    assert not title.icon_label.pixmap().isNull()
 
 def test_status_capsule_and_dynamic_state(qapp: QApplication) -> None:
     capsule = StatusCapsule("Ready")
@@ -121,14 +148,17 @@ def test_runtime_status_capsule_preserves_text_and_state_api(
 def test_button_and_helper_factories(qapp: QApplication) -> None:
     primary = make_primary_button(
         "Collect & Copy",
-        height=48,
+        height=52,
         minimum_width=180,
+        icon_path=resource_path("assets", "ui-collect-copy.svg"),
+        icon_size=20,
     )
     secondary = make_secondary_button("Cancel", minimum_width=100)
     helper = make_helper_text("Source file contents remain unchanged.")
 
     assert primary.objectName() == "PrimaryButton"
-    assert primary.height() == 48
+    assert primary.height() == 52
+    assert not primary.icon().isNull()
     assert primary.minimumWidth() == 180
     assert secondary.objectName() == "SecondaryButton"
     assert secondary.minimumWidth() == 100

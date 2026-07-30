@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
+from pathlib import Path
+
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -13,10 +16,8 @@ from PySide6.QtWidgets import (
 from .ui_theme import METRICS
 
 
-
-
 class PageHeader(QWidget):
-    """Page title and subtitle with a stable API for responsive visibility."""
+    """Page title, subtitle, and low-emphasis page actions."""
 
     def __init__(
         self,
@@ -30,21 +31,79 @@ class PageHeader(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(5)
+        layout.setSpacing(6)
+
+        title_row = QHBoxLayout()
+        title_row.setContentsMargins(0, 0, 0, 0)
+        title_row.setSpacing(12)
 
         self.title_label = QLabel(title, self)
         self.title_label.setObjectName("SectionTitle")
+
+        self.actions_widget = QWidget(self)
+        self.actions_widget.setObjectName("PageHeaderActions")
+        self.actions_layout = QHBoxLayout(self.actions_widget)
+        self.actions_layout.setContentsMargins(0, 0, 0, 0)
+        self.actions_layout.setSpacing(10)
+
+        title_row.addWidget(self.title_label)
+        title_row.addStretch(1)
+        title_row.addWidget(self.actions_widget)
 
         self.subtitle_label = QLabel(subtitle, self)
         self.subtitle_label.setObjectName("PageSubtitle")
         self.subtitle_label.setWordWrap(False)
 
-        layout.addWidget(self.title_label)
+        layout.addLayout(title_row)
         layout.addWidget(self.subtitle_label)
+
+    def add_action(self, widget: QWidget) -> None:
+        self.actions_layout.addWidget(widget)
+
+
+class IconTitle(QWidget):
+    """Small icon + title row used by cards and metric groups."""
+
+    def __init__(
+        self,
+        text: str,
+        icon_path: str | Path,
+        *,
+        object_name: str,
+        text_object_name: str,
+        icon_object_name: str,
+        icon_size: int = 18,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName(object_name)
+
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
+
+        self.icon_label = QLabel(self)
+        self.icon_label.setObjectName(icon_object_name)
+        self.icon_label.setFixedSize(icon_size, icon_size)
+        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        icon = QIcon(str(icon_path))
+        if not icon.isNull():
+            self.icon_label.setPixmap(icon.pixmap(QSize(icon_size, icon_size)))
+
+        self.text_label = QLabel(text, self)
+        self.text_label.setObjectName(text_object_name)
+        self.text_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+
+        layout.addWidget(self.icon_label)
+        layout.addWidget(self.text_label)
+        layout.addStretch(1)
 
 
 class MetricCapsule(QFrame):
-    """Reusable metric display that preserves the existing ``value_label`` API."""
+    """Lightweight metric row with aligned label and value."""
 
     def __init__(
         self,
@@ -56,20 +115,29 @@ class MetricCapsule(QFrame):
         super().__init__(parent)
         self.setObjectName("MetricCapsule")
         self.setMinimumWidth(0)
-        self.setFixedHeight(52)
+        self.setFixedHeight(METRICS.metric_row_height)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 6, 14, 6)
-        layout.setSpacing(2)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(14, 0, 14, 0)
+        layout.setSpacing(12)
 
         self.label_widget = QLabel(label, self)
         self.label_widget.setObjectName("MetricLabel")
+        self.label_widget.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
 
         self.value_label = QLabel(value, self)
         self.value_label.setObjectName("MetricValue")
+        self.value_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
 
-        layout.addWidget(self.label_widget)
-        layout.addWidget(self.value_label)
+        layout.addWidget(self.label_widget, 1)
+        layout.addWidget(self.value_label, 0)
+
+        if value == "-":
+            self.set_state("neutral")
 
     def set_value(self, value: str) -> None:
         self.value_label.setText(value)
@@ -79,7 +147,7 @@ class MetricCapsule(QFrame):
 
 
 class RuntimeStatusCapsule(QFrame):
-    """Header runtime state with a restrained semantic indicator and fixed text API."""
+    """Runtime state with a restrained semantic indicator and fixed text API."""
 
     def __init__(
         self,
@@ -121,7 +189,7 @@ class RuntimeStatusCapsule(QFrame):
 
 
 class StatusCapsule(QLabel):
-    """Shared capsule for runtime state, hotkey, and low-emphasis metadata."""
+    """Shared capsule for hotkey and low-emphasis metadata."""
 
     def __init__(
         self,
@@ -149,6 +217,27 @@ def make_page_header(
     return PageHeader(title, subtitle, parent=parent)
 
 
+def make_icon_title(
+    text: str,
+    icon_path: str | Path,
+    *,
+    object_name: str = "CardTitleRow",
+    text_object_name: str = "CardTitle",
+    icon_object_name: str = "CardTitleIcon",
+    icon_size: int = 18,
+    parent: QWidget | None = None,
+) -> IconTitle:
+    return IconTitle(
+        text,
+        icon_path,
+        object_name=object_name,
+        text_object_name=text_object_name,
+        icon_object_name=icon_object_name,
+        icon_size=icon_size,
+        parent=parent,
+    )
+
+
 def make_section_title(
     text: str,
     *,
@@ -168,7 +257,7 @@ def make_card_title(
 ) -> QLabel:
     label = QLabel(text, parent)
     label.setObjectName(object_name)
-    label.setFixedHeight(18)
+    label.setFixedHeight(20)
     label.setAlignment(
         Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
     )
@@ -235,6 +324,8 @@ def make_primary_button(
     object_name: str = "PrimaryButton",
     height: int = METRICS.control_height,
     minimum_width: int | None = None,
+    icon_path: str | Path | None = None,
+    icon_size: int = 18,
     parent: QWidget | None = None,
 ) -> QPushButton:
     button = QPushButton(text, parent)
@@ -242,6 +333,9 @@ def make_primary_button(
     button.setFixedHeight(height)
     if minimum_width is not None:
         button.setMinimumWidth(minimum_width)
+    if icon_path is not None:
+        button.setIcon(QIcon(str(icon_path)))
+        button.setIconSize(QSize(icon_size, icon_size))
     return button
 
 

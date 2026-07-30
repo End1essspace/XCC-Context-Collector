@@ -196,5 +196,54 @@ def test_v130_collect_setup_redesign_is_registered() -> None:
         roadmap.index("## M15.5"):
         roadmap.index("## M15.6")
     ]
-    assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in m155
+    assert "**Status: DONE**" in m155
+
+def test_v130_last_run_metrics_redesign_is_registered() -> None:
+    metrics_policy_path = PROJECT_ROOT / "src" / "xcc" / "ui_metrics.py"
+    components_path = PROJECT_ROOT / "src" / "xcc" / "ui_components.py"
+    gui_path = PROJECT_ROOT / "src" / "xcc" / "gui.py"
+    theme_path = PROJECT_ROOT / "src" / "xcc" / "ui_theme.py"
+    roadmap_path = PROJECT_ROOT / "docs" / "roadmap.md"
+    reference_path = PROJECT_ROOT / "docs" / "UI_REFERENCE_v1.3.0.md"
+
+    assert metrics_policy_path.is_file()
+
+    metrics_policy = metrics_policy_path.read_text(encoding="utf-8")
+    components = components_path.read_text(encoding="utf-8")
+    gui = gui_path.read_text(encoding="utf-8")
+    theme = theme_path.read_text(encoding="utf-8")
+    roadmap = roadmap_path.read_text(encoding="utf-8")
+    reference = reference_path.read_text(encoding="utf-8")
+
+    assert "def format_metric_integer" in metrics_policy
+    assert "def outcome_metric_state" in metrics_policy
+    assert "class IconTitle" in components
+    assert "METRICS.metric_row_height" in components
+    assert "root_layout.addWidget(self._build_header())" not in gui
+    assert "def _build_header" not in gui
+    assert "self.collect_page_header.add_action(self.header_status)" in gui
+    assert "format_metric_integer(record.output_chars)" in gui
+    assert "outcome_metric_state(record.outcome)" in gui
+    assert "#MetricDivider" in theme
+    assert "metric_row_height: int = 58" in theme
+    assert "58 px" in reference
+
+    required_assets = (
+        "ui-setup.svg",
+        "ui-last-run.svg",
+        "ui-volume.svg",
+        "ui-output.svg",
+        "ui-coverage.svg",
+        "ui-health.svg",
+        "ui-paste-paths.svg",
+        "ui-collect-copy.svg",
+    )
+    for asset_name in required_assets:
+        assert (PROJECT_ROOT / "assets" / asset_name).is_file()
+
+    m156 = roadmap[
+        roadmap.index("## M15.6"):
+        roadmap.index("## M15.7")
+    ]
+    assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in m156
 

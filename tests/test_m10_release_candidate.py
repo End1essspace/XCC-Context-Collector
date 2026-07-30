@@ -245,6 +245,9 @@ def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
     assert "_internal\\assets" in smoke
     assert "xcc_app.ico" in smoke
     assert "xcc_tray.png" in smoke
+    assert "ui-setup.svg" in smoke
+    assert "ui-last-run.svg" in smoke
+    assert "ui-collect-copy.svg" in smoke
 
 
 def test_gui_exposes_persistent_optional_safety_confirmation() -> None:

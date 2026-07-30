@@ -70,6 +70,14 @@ try {
         --add-data "assets\nav-history.svg;assets" `
         --add-data "assets\nav-settings.svg;assets" `
         --add-data "assets\nav-about.svg;assets" `
+        --add-data "assets\ui-setup.svg;assets" `
+        --add-data "assets\ui-last-run.svg;assets" `
+        --add-data "assets\ui-volume.svg;assets" `
+        --add-data "assets\ui-output.svg;assets" `
+        --add-data "assets\ui-coverage.svg;assets" `
+        --add-data "assets\ui-health.svg;assets" `
+        --add-data "assets\ui-paste-paths.svg;assets" `
+        --add-data "assets\ui-collect-copy.svg;assets" `
         --version-file $VersionInfoPath `
         --exclude-module PyQt5 `
         --exclude-module PyQt6 `

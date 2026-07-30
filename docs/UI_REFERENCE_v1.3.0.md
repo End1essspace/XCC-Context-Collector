@@ -64,7 +64,7 @@ The exact values may receive minor final calibration from real screenshots, but 
 | Role | Target value | Usage |
 |---|---:|---|
 | Window background | `#0E0F11` | Main application background |
-| Header / footer | `#141517` | Persistent shell surfaces |
+| Page actions / footer | `#141517` | Runtime capsules and persistent footer surface |
 | Sidebar | `#111214` | Navigation surface |
 | Card | `#17181A` | Primary content cards |
 | Raised row | `#1B1C1F` | Metric rows, settings rows, list rows |
@@ -133,22 +133,27 @@ Focus must be visible without relying only on color. Disabled controls must rema
 
 ## 5. Application Shell
 
-### 5.1 Header
+### 5.1 Native title bar and page runtime actions
 
-The header contains:
+XCC keeps the native Windows title bar for the application icon, product name,
+and window controls. The content area must not repeat a second app-identity
+header beneath it.
+
+The Collect page header contains:
 
 ```text
-[App icon] XCC Context Collector                      [Runtime state] [Hotkey]
+Collect Context                              [Runtime state] [Hotkey]
+Page subtitle
 ```
 
 Requirements:
 
-- app icon remains 28 px and aligned with the title;
-- title remains visually primary but not oversized;
-- runtime state uses a restrained capsule;
+- the native title bar remains the only persistent app-identity row;
+- runtime state uses a restrained capsule aligned with the page title;
 - hotkey uses a separate lower-emphasis capsule;
-- compact layouts may reduce capsule padding but must not remove the runtime state;
-- the header must not display a verbose activity sentence.
+- compact layouts may reduce capsule padding but must not remove runtime state;
+- the page header must not display a verbose activity sentence;
+- removing the duplicate in-app identity header must increase usable vertical space.
 
 Runtime-state vocabulary:
 
@@ -376,8 +381,10 @@ The data model remains divided into four groups:
 Requirements:
 
 - use lighter metric rows rather than twelve visually heavy independent cards;
-- values align consistently within each group;
-- group separation is visible through spacing or subtle dividers;
+- large-layout metric rows use a 56–60 px height; the v1.3.0 target is 58 px;
+- labels and values share one horizontal row and align consistently within each group;
+- group separation is visible through spacing and subtle dividers;
+- restrained group icons identify Volume, Output, Coverage, and Health;
 - labels remain readable at the compact breakpoint;
 - the card must support an empty state without misleading zeros.
 

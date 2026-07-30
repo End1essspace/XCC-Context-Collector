@@ -23,13 +23,25 @@ $RequiredAssets = @(
     "xcc_app.ico",
     "xcc_app.png",
     "xcc_tray.ico",
-    "xcc_tray.png"
+    "xcc_tray.png",
+    "nav-collect.svg",
+    "nav-history.svg",
+    "nav-settings.svg",
+    "nav-about.svg",
+    "ui-setup.svg",
+    "ui-last-run.svg",
+    "ui-volume.svg",
+    "ui-output.svg",
+    "ui-coverage.svg",
+    "ui-health.svg",
+    "ui-paste-paths.svg",
+    "ui-collect-copy.svg"
 )
 $MissingAssets = @(
     $RequiredAssets | Where-Object { -not (Test-Path (Join-Path $AssetRoot $_)) }
 )
 if ($MissingAssets.Count -gt 0) {
-    throw "Packaged icon assets are missing: $($MissingAssets -join ', ')"
+    throw "Packaged UI assets are missing: $($MissingAssets -join ', ')"
 }
 
 $Process = $null
@@ -48,7 +60,7 @@ try {
         throw "Packaged executable exited during startup smoke test with code $($Process.ExitCode)."
     }
 
-    Write-Host "Packaged icon assets found: $AssetRoot" -ForegroundColor Green
+    Write-Host "Packaged UI assets found: $AssetRoot" -ForegroundColor Green
     Write-Host "Packaged executable startup smoke test passed." -ForegroundColor Green
 }
 finally {

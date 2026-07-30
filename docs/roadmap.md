@@ -604,7 +604,7 @@ feat: redesign application shell
 
 ## M15.5 — Collect Setup Redesign
 
-**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 ### Page Header
 
@@ -709,8 +709,8 @@ The same product guarantee is now used in the Collect page tooltip/helper and th
 - [x] Source summaries retain singular/plural and `Mixed locations` semantics;
 - [x] Compact mode explicitly preserves source contents;
 - [x] no collection-domain module was changed;
-- [ ] full Qt suite and visual behavior pass local Windows validation;
-- [ ] changes are committed and pushed.
+- [x] full Qt suite and visual behavior pass local Windows validation;
+- [x] changes are committed and pushed.
 
 ### Intended commit
 
@@ -720,9 +720,26 @@ feat: redesign collect setup workflow
 
 ---
 
-## M15.6 — Last Run Metrics Redesign
+## M15.6 — Last Run Metrics Redesign and Visual Calibration
 
-**Status: PLANNED**
+**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
+
+### Goal
+
+Bring the real Collect page materially closer to the approved reference while
+preserving the semantic improvements already made in M15.4 and M15.5.
+
+### Approved shell calibration
+
+- [x] keep the native Windows title bar;
+- [x] remove the duplicate in-app app icon and product-title header;
+- [x] move runtime and hotkey capsules into the Collect page header;
+- [x] increase page-title and group-title hierarchy;
+- [x] widen and strengthen the sidebar without restoring a bright gold block;
+- [x] increase footer height and edge spacing;
+- [x] use quieter card borders and subtle surface depth;
+- [x] refine the primary action with a restrained gradient and copy icon;
+- [x] add a Paste Paths icon without changing its workflow semantics.
 
 ### Target Structure
 
@@ -730,23 +747,27 @@ feat: redesign collect setup workflow
 Last Run                                  Completed · 17:36:36
 
 Volume            Output            Coverage           Health
-Files             Characters        Included           Outcome
-Lines             Tokens            Omitted            Duration
-Source chars      Truncated         Summary / Partial  Warnings / Errors
+Files       51     Characters 356,647 Included     51   Outcome       Success
+Lines   10,691     Tokens      89,161 Omitted       0   Duration       0.15 s
+Source 349,675     Truncated       No Summary  0 / 0   Warnings / Errors 0 / 0
 ```
 
 ### Work
 
-- [ ] group metrics into four semantic columns;
-- [ ] add restrained group icons;
-- [ ] replace heavy independent capsules with lighter metric rows;
-- [ ] add subtle column separators;
-- [ ] align labels and values;
-- [ ] add consistent thousands separators;
-- [ ] use semantic result colors;
-- [ ] preserve a clear pre-run empty state;
-- [ ] keep `CollectionRunRecord` as the data source;
-- [ ] align Last Run and History outcome semantics.
+- [x] group metrics into four semantic columns;
+- [x] add restrained group icons;
+- [x] replace stacked label/value capsules with horizontal metric rows;
+- [x] set the large-layout metric-row height to 58 px;
+- [x] increase the Last Run card height to fit the metrics comfortably;
+- [x] add subtle column separators;
+- [x] align labels left and values right;
+- [x] add consistent thousands separators;
+- [x] use semantic result colors;
+- [x] preserve a clear pre-run empty state;
+- [x] keep `CollectionRunRecord` as the data source;
+- [x] align Last Run and History outcome semantics;
+- [x] add pure formatting/state policy tests;
+- [x] add packaged SVG assets for card, group, and action icons.
 
 ### Semantic Colors
 
@@ -755,6 +776,29 @@ Source chars      Truncated         Summary / Partial  Warnings / Errors
 - Cancelled — neutral gray;
 - Failed — restrained red;
 - Gold remains an interface accent, not a universal result color.
+
+### Implementation Result
+
+- `src/xcc/ui_metrics.py` owns integer formatting and metric semantic-state policy;
+- `MetricCapsule` is now a 58 px horizontal row with aligned label and value;
+- `PageHeader` supports right-aligned runtime actions;
+- `IconTitle` provides reusable card and metric-group icon headers;
+- the duplicate content-area app header is removed;
+- Setup, Last Run, Paste Paths, and Collect & Copy use packaged SVG assets;
+- Last Run and History share the same outcome-state mapping;
+- the malformed `3,566,47` style is prevented by tested formatting helpers.
+
+### Acceptance Criteria
+
+- [x] only the native Windows title bar displays persistent app identity;
+- [x] runtime and hotkey capsules are aligned with the Collect page title;
+- [x] all twelve metric rows are 58 px high in the large layout;
+- [x] Last Run values use stable thousands separators;
+- [x] empty metrics remain neutral and do not show misleading zeros;
+- [x] outcome, truncation, coverage, and issue states are semantic;
+- [x] no collection-domain module was changed;
+- [ ] full Qt suite and visual behavior pass local Windows validation;
+- [ ] changes are committed and pushed.
 
 ### Intended commit
 
@@ -1126,10 +1170,12 @@ Every PowerShell command in project instructions must be written on one physical
 
 # Immediate Next Step
 
-Apply and validate **M15.5 — Collect Setup Redesign**, including the full test suite and manual checks for every mode-specific action, Source summary, helper text, review affordance, clear action, Compact mode guarantee, and active-collection disabled states.
+Apply and validate **M15.6 — Last Run Metrics Redesign and Visual Calibration**,
+including the complete test suite and a real Windows screenshot at the normal
+maximized size.
 
-After M15.5 is committed and pushed, continue with:
+After M15.6 is committed and pushed, continue with:
 
-> **M15.6 — Last Run Metrics Redesign**
+> **M15.7 — Responsive Layout**
 
 The v1.3.0 tag and public release remain blocked until M15.11 is complete.

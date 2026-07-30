@@ -39,4 +39,7 @@ def test_gui_uses_separate_window_embedded_and_tray_assets() -> None:
     assert 'APP_IMAGE_PATH = resource_path("assets", "xcc_app.png")' in gui_source
     assert 'TRAY_ICON_PATH = resource_path("assets", "xcc_tray.ico")' in gui_source
     assert 'TRAY_IMAGE_PATH = resource_path("assets", "xcc_tray.png")' in gui_source
+    assert 'UI_SETUP_ICON_PATH = resource_path("assets", "ui-setup.svg")' in gui_source
+    assert 'UI_LAST_RUN_ICON_PATH = resource_path("assets", "ui-last-run.svg")' in gui_source
+    assert 'UI_COLLECT_COPY_ICON_PATH = resource_path("assets", "ui-collect-copy.svg")' in gui_source
     assert "app.setWindowIcon" in gui_source

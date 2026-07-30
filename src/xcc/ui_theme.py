@@ -36,10 +36,10 @@ class UiMetrics:
     """Shared geometry and typography values used across the supported GUI."""
 
     control_height: int = 40
-    primary_action_height: int = 48
-    header_height: int = 56
-    footer_height: int = 32
-    sidebar_width: int = 192
+    primary_action_height: int = 52
+    footer_height: int = 36
+    sidebar_width: int = 216
+    metric_row_height: int = 58
     card_radius: int = 14
     control_radius: int = 10
     capsule_radius: int = 10
@@ -47,8 +47,8 @@ class UiMetrics:
     page_top_margin: int = 24
     standard_gap: int = 18
     compact_gap: int = 12
-    page_title_size: int = 22
-    card_title_size: int = 13
+    page_title_size: int = 27
+    card_title_size: int = 14
     body_size: int = 13
     helper_size: int = 12
     metric_value_size: int = 15
@@ -74,15 +74,16 @@ QWidget {
     font-size: 13px;
 }
 
-#Header {
-    background: #151515;
-    border-bottom: 1px solid #2F2A1C;
+#CollectPage {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 1,
+        stop: 0 #0F1012,
+        stop: 0.55 #101113,
+        stop: 1 #0D0E10
+    );
 }
 
-#HeaderTitle {
-    font-size: 16px;
-    font-weight: 700;
-    color: #F2F2F2;
+#PageHeaderActions {
     background: transparent;
 }
 
@@ -146,26 +147,37 @@ QWidget {
 }
 
 #SectionTitle {
-    font-size: 22px;
+    font-size: 27px;
     font-weight: 700;
     color: #F2F2F2;
     background: transparent;
 }
 
 #Card {
-    background: #161616;
-    border: 1px solid #443820;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #191A1D,
+        stop: 1 #161719
+    );
+    border: 1px solid #302A1D;
     border-radius: 14px;
 }
 
 #CardTitle {
     color: #D6A93A;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 800;
     background: transparent;
     padding: 0px;
     margin: 0px;
 }
+#CardTitleRow,
+#MetricGroupHeader,
+#CardTitleIcon,
+#MetricGroupIcon {
+    background: transparent;
+}
+
 #FieldLabel {
     color: #D6D6D6;
     font-size: 13px;
@@ -215,16 +227,25 @@ QPushButton:pressed {
 }
 
 #PrimaryButton {
-    background: #C79A31;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #D8AD42,
+        stop: 1 #C5962B
+    );
     color: #111111;
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 800;
     border: 1px solid #C79A31;
     border-radius: 11px;
+    padding: 9px 18px;
 }
 
 #PrimaryButton:hover {
-    background: #D6A93A;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #E5BA50,
+        stop: 1 #D2A533
+    );
     border: 1px solid #D6A93A;
     color: #111111;
 }
@@ -277,32 +298,39 @@ QCheckBox::indicator:checked {
 }
 
 #MetricCapsule {
-    background: #181818;
-    border: 1px solid #40341D;
+    background: #18191C;
+    border: 1px solid #302A1D;
     border-radius: 10px;
 }
 
 #MetricCapsule:hover {
-    background: #1E1B12;
-    border: 1px solid #D6A93A;
+    background: #1C1D20;
+    border: 1px solid #443820;
 }
 
 #MetricLabel {
     color: #AFAFAF;
-    font-size: 11px;
+    font-size: 12px;
     background: transparent;
 }
 
 #MetricValue {
-    color: #D6A93A;
+    color: #F2F2F2;
     font-size: 15px;
     font-weight: 800;
     background: transparent;
 }
 
+#MetricDivider {
+    background: #302A1D;
+    border: none;
+    min-width: 1px;
+    max-width: 1px;
+}
+
 #LastRunState {
     color: #9A9A9A;
-    font-size: 11px;
+    font-size: 12px;
     background: #111111;
     border: 1px solid #3A311C;
     border-radius: 8px;
@@ -334,10 +362,9 @@ QCheckBox::indicator:checked {
 }
 #MetricGroupTitle {
     color: #E0E0E0;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: 700;
     background: transparent;
-    margin-bottom: 2px;
 }
 #TransparentWidget {
     background: transparent;
@@ -435,15 +462,12 @@ QScrollBar::sub-page:vertical {
 }
 #PageSubtitle {
     color: #8F8F8F;
-    font-size: 12px;
+    font-size: 13px;
     background: transparent;
     padding: 0px;
     margin: 0px;
 }
 
-#HeaderAppIcon {
-    background: transparent;
-}
 #SettingsSectionTitle {
     color: #D6A93A;
     font-size: 12px;
@@ -785,8 +809,9 @@ QScrollBar::sub-page:vertical {
 }
 
 #SelectedFilesReviewList::item:selected {
-    background: #D6A93A;
-    color: #111111;
+    background: #242016;
+    color: #F2F2F2;
+    border: 1px solid #57471F;
 }
 """
 

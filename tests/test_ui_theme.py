@@ -29,10 +29,10 @@ def test_ui_palette_matches_frozen_v130_contract() -> None:
 
 def test_ui_metrics_keep_supported_geometry_contract() -> None:
     assert METRICS.control_height == 40
-    assert METRICS.primary_action_height == 48
-    assert METRICS.header_height == 56
-    assert METRICS.footer_height == 32
-    assert METRICS.sidebar_width == 192
+    assert METRICS.primary_action_height == 52
+    assert METRICS.footer_height == 36
+    assert METRICS.sidebar_width == 216
+    assert METRICS.metric_row_height == 58
     assert METRICS.card_radius == 14
     assert METRICS.control_radius == 10
 
@@ -42,13 +42,17 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
 
     for selector in (
         "QMainWindow",
-        "#Header",
         "#Sidebar",
+        "#CollectPage",
         "#PageHeader",
+        "#PageHeaderActions",
         "#Card",
         "#PrimaryButton",
         "#SecondaryButton",
         "#MetricCapsule",
+        "#MetricDivider",
+        "#MetricGroupHeader",
+        "#MetricGroupIcon",
         "#StatusCapsule",
         "#RuntimeStatusCapsule",
         "#RuntimeStatusDot",
@@ -72,6 +76,7 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert PALETTE.accent in stylesheet
     assert PALETTE.success in stylesheet
     assert PALETTE.error in stylesheet
+    assert "qlineargradient" in stylesheet
     assert "@accent" not in stylesheet
     assert "@primary" not in stylesheet
 
