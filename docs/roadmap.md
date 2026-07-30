@@ -824,7 +824,7 @@ feat: redesign last run metrics
 
 ## M15.7 — Responsive Layout and Premium Visual Polish
 
-**Status: IMPLEMENTED — M15.7.4 PRODUCT DENSITY AND BRANDING POLISH, LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: IMPLEMENTED — M15.7.5 SIDEBAR BRAND SCALE POLISH, LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
 
 ### Goal
 
@@ -1019,6 +1019,28 @@ look smaller than the surrounding interface.
 - [x] keep assets, collection-domain modules, and Selected Files behavior
   unchanged.
 
+### M15.7.5 — Sidebar Brand Scale Polish
+
+**Status: IMPLEMENTED — LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+
+The M15.7.4 screenshot confirmed that removing the logo frame was correct, but
+the 54 px rendered artwork dominated the sidebar and made the identity heavier
+than the navigation. This micro-step keeps the same flat branding concept while
+restoring a restrained product hierarchy.
+
+#### Final sidebar brand scale
+
+- [x] keep the transparent logo treatment without a square container;
+- [x] reduce the identity zone from 82 px to 72 px;
+- [x] reduce the logo area from 56 px to 44 px;
+- [x] render the application artwork at 42 px with smooth scaling;
+- [x] reduce the `XCC` title from 20 px to 18 px;
+- [x] tighten logo-to-text spacing from 14 px to 11 px;
+- [x] preserve subtitle readability, alignment, accessible identity, and all
+  navigation behavior;
+- [x] keep Setup, Last Run, responsive layout, assets, and collection behavior
+  unchanged.
+
 ### Required Windows evidence
 
 #### 1688×900 or maximized large window
@@ -1049,7 +1071,7 @@ look smaller than the surrounding interface.
 ### Intended commit
 
 ```text
-fix: balance collect density and sidebar branding
+fix: calibrate sidebar brand scale
 ```
 
 ---

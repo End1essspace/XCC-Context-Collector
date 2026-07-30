@@ -158,7 +158,7 @@ QWidget {
 
 #SidebarBrandTitle {
     color: #F2F3F4;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 800;
     background: transparent;
 }

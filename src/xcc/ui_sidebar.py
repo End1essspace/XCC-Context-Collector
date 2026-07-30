@@ -217,16 +217,16 @@ class SidebarNavigation(QFrame):
 
         identity = QFrame(self)
         identity.setObjectName("SidebarIdentity")
-        identity.setFixedHeight(82)
+        identity.setFixedHeight(72)
         identity.setAccessibleName("XCC Context Collector")
 
         layout = QHBoxLayout(identity)
-        layout.setContentsMargins(0, 4, 4, 4)
-        layout.setSpacing(14)
+        layout.setContentsMargins(0, 3, 4, 3)
+        layout.setSpacing(11)
 
         self.identity_icon = QLabel(identity)
         self.identity_icon.setObjectName("SidebarBrandIcon")
-        self.identity_icon.setFixedSize(56, 56)
+        self.identity_icon.setFixedSize(44, 44)
         self.identity_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.identity_icon.setSizePolicy(
             QSizePolicy.Policy.Fixed,
@@ -239,8 +239,8 @@ class SidebarNavigation(QFrame):
             if not pixmap.isNull():
                 self.identity_icon.setPixmap(
                     pixmap.scaled(
-                        54,
-                        54,
+                        42,
+                        42,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )

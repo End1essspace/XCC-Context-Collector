@@ -185,9 +185,9 @@ Requirements:
   second full-width application header or a competing card;
 - the brand lockup uses the transparent application artwork directly, without
   a square logo-card or decorative frame;
-- the identity zone is 82 px high, with a 56 px logo area and a 20 px `XCC`
-  title so the artwork reads as part of the product shell rather than a small
-  utility badge;
+- the identity zone is 72 px high, with a 44 px logo area, a 42 px rendered
+  artwork target, and an 18 px `XCC` title so the brand remains visible without
+  overpowering navigation or the Collect page;
 - logo, title, and subtitle share one vertical center and align with the
   navigation content column;
 - Collect, History, and Settings remain in the upper workspace zone;

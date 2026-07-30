@@ -94,11 +94,11 @@ def test_sidebar_identity_uses_product_scale_artwork_without_logo_card(
     icon = sidebar.identity_icon
 
     assert identity.objectName() == "SidebarIdentity"
-    assert identity.height() == 82
+    assert identity.height() == 72
     assert identity.accessibleName() == "XCC Context Collector"
     assert icon.objectName() == "SidebarBrandIcon"
-    assert icon.size().width() == 56
-    assert icon.size().height() == 56
+    assert icon.size().width() == 44
+    assert icon.size().height() == 44
     assert not hasattr(sidebar, "identity_mark")
     assert sidebar.brand_title.text() == "XCC"
     assert sidebar.brand_subtitle.text() == "Context Collector"
