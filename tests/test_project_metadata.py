@@ -165,4 +165,36 @@ def test_v130_application_shell_redesign_is_registered() -> None:
         roadmap.index("## M15.4"):
         roadmap.index("## M15.5")
     ]
-    assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in m154
+    assert "**Status: DONE**" in m154
+
+def test_v130_collect_setup_redesign_is_registered() -> None:
+    collect_policy_path = PROJECT_ROOT / "src" / "xcc" / "ui_collect.py"
+    components_path = PROJECT_ROOT / "src" / "xcc" / "ui_components.py"
+    gui_path = PROJECT_ROOT / "src" / "xcc" / "gui.py"
+    roadmap_path = PROJECT_ROOT / "docs" / "roadmap.md"
+
+    assert collect_policy_path.is_file()
+
+    collect_policy = collect_policy_path.read_text(encoding="utf-8")
+    components = components_path.read_text(encoding="utf-8")
+    gui = gui_path.read_text(encoding="utf-8")
+    roadmap = roadmap_path.read_text(encoding="utf-8")
+
+    assert "class CollectModePresentation" in collect_policy
+    assert "def collect_mode_presentation" in collect_policy
+    assert "def selected_files_source_summary" in collect_policy
+    assert "COMPACT_MODE_HELPER" in collect_policy
+    assert "class PageHeader" in components
+    assert "make_page_header" in gui
+    assert "collect_mode_presentation" in gui
+    assert '"Select Source"' not in gui
+    assert "SourceHelperText" in gui
+    assert "OptionsHelperText" in gui
+    assert "## M15.5 — Collect Setup Redesign" in roadmap
+
+    m155 = roadmap[
+        roadmap.index("## M15.5"):
+        roadmap.index("## M15.6")
+    ]
+    assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in m155
+

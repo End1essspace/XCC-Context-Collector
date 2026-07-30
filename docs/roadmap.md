@@ -547,7 +547,7 @@ refactor: extract reusable UI foundation
 
 ## M15.4 — Application Shell Redesign
 
-**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 ### Header
 
@@ -591,8 +591,8 @@ refactor: extract reusable UI foundation
 - [x] header and footer have distinct responsibilities;
 - [x] sidebar no longer overpowers the working area;
 - [x] no custom frameless title bar was introduced;
-- [ ] tray, hotkey, single-instance, and window behavior pass local Windows validation;
-- [ ] minimum-size and maximized screenshots are reviewed.
+- [x] tray, hotkey, single-instance, and window behavior pass local Windows validation;
+- [x] minimum-size and maximized shell behavior is reviewed.
 
 ### Intended commit
 
@@ -604,7 +604,7 @@ feat: redesign application shell
 
 ## M15.5 — Collect Setup Redesign
 
-**Status: PLANNED**
+**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
 
 ### Page Header
 
@@ -613,12 +613,17 @@ Collect Context
 Configure what to collect and generate an AI-ready context snapshot.
 ```
 
+- [x] add the final page title and subtitle;
+- [x] expose the subtitle as a reusable component for later responsive hiding;
+- [x] keep the page header visually subordinate to the application shell.
+
 ### Mode Row
 
-- [ ] preserve all four modes;
-- [ ] improve radio control size and spacing;
-- [ ] add clear hover/focus behavior;
-- [ ] support compact wrapping when necessary.
+- [x] preserve all four modes;
+- [x] improve radio control spacing, hover, focus, and accessible names;
+- [x] preserve standard radio-group keyboard behavior;
+- [x] preserve source-reset semantics when the mode changes;
+- [x] keep adaptive wrapping assigned to M15.7 rather than duplicating widgets here.
 
 ### Source Row Semantics
 
@@ -661,15 +666,19 @@ Select Folder
 
 ### Work
 
-- [ ] implement mode-specific action labels;
-- [ ] retain clickable Source review;
-- [ ] retain clear action;
-- [ ] integrate `Paste Paths` into the Source row;
-- [ ] add mode-specific helper text;
-- [ ] clarify Compact mode;
-- [ ] keep Max chars aligned and validated;
-- [ ] disable controls during collection;
-- [ ] preserve mode-switch reset behavior.
+- [x] remove the generic `Select Source` action;
+- [x] add mode-specific `Select Files`, `Select Folder`, and `Select Repository` actions;
+- [x] keep `Paste Paths` visible only in Selected Files;
+- [x] place `Paste Paths` before the mode-specific selection action;
+- [x] retain clickable and keyboard-activatable Selected Files review;
+- [x] retain the clear action;
+- [x] visually mark populated Selected Files Source as reviewable;
+- [x] preserve full folder/repository paths in tooltips;
+- [x] add mode-specific Source helper text;
+- [x] clarify Compact mode without claiming source modification;
+- [x] keep Max chars aligned, validated, and accessible;
+- [x] disable collection controls while a job is active;
+- [x] preserve manual selection, Paste Paths, and mode-switch behavior.
 
 ### Compact Mode Contract
 
@@ -677,6 +686,31 @@ Select Folder
 Reduce XCC-generated structural whitespace.
 Source file contents remain unchanged.
 ```
+
+The same product guarantee is now used in the Collect page tooltip/helper and the Settings description.
+
+### Implementation Result
+
+- `src/xcc/ui_collect.py` owns the frozen Collect copy and mode-specific presentation policy;
+- `PageHeader` in `src/xcc/ui_components.py` provides a reusable title/subtitle boundary;
+- `src/xcc/gui.py` now renders explicit mode actions and the corrected Source summaries;
+- Source helper text changes with the selected mode;
+- Selected Files Source exposes a calm reviewable state without becoming a bright action block;
+- Source action and helper controls have meaningful accessible names;
+- `src/xcc/ui_theme.py` contains dedicated Setup selectors rather than relying only on generic button rules;
+- pure policy tests and Qt component tests cover the new boundary.
+
+### Acceptance Criteria
+
+- [x] no user-facing `Select Source` label remains;
+- [x] Selected Files shows `Paste Paths` and `Select Files`;
+- [x] Full Folder and Project Tree show `Select Folder`;
+- [x] Git Changed Files shows `Select Repository`;
+- [x] Source summaries retain singular/plural and `Mixed locations` semantics;
+- [x] Compact mode explicitly preserves source contents;
+- [x] no collection-domain module was changed;
+- [ ] full Qt suite and visual behavior pass local Windows validation;
+- [ ] changes are committed and pushed.
 
 ### Intended commit
 
@@ -1092,10 +1126,10 @@ Every PowerShell command in project instructions must be written on one physical
 
 # Immediate Next Step
 
-Apply and validate **M15.4 — Application Shell Redesign**, including the full test suite and manual checks for header state, sidebar navigation, footer guidance, tray, hotkey, and the 920×620 minimum window.
+Apply and validate **M15.5 — Collect Setup Redesign**, including the full test suite and manual checks for every mode-specific action, Source summary, helper text, review affordance, clear action, Compact mode guarantee, and active-collection disabled states.
 
-After M15.4 is committed and pushed, continue with:
+After M15.5 is committed and pushed, continue with:
 
-> **M15.5 — Collect Setup Redesign**
+> **M15.6 — Last Run Metrics Redesign**
 
 The v1.3.0 tag and public release remain blocked until M15.11 is complete.

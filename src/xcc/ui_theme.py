@@ -141,6 +141,10 @@ QWidget {
     margin: 0px;
 }
 
+#PageHeader {
+    background: transparent;
+}
+
 #SectionTitle {
     font-size: 22px;
     font-weight: 700;
@@ -239,7 +243,9 @@ QCheckBox {
 }
 
 QRadioButton:hover,
-QCheckBox:hover {
+QRadioButton:focus,
+QCheckBox:hover,
+QCheckBox:focus {
     color: #D6A93A;
 }
 
@@ -589,6 +595,51 @@ QScrollBar::sub-page:vertical {
 
 #SourceInputBox:hover {
     border: 1px solid #C79A2E;
+}
+
+#SourceInputBox[reviewable="true"] {
+    border: 1px solid #5A4820;
+    background: #141414;
+}
+
+#SourceInputBox[reviewable="true"]:hover {
+    border: 1px solid #D6A93A;
+    background: #1E1B12;
+}
+
+#SourceHelperText,
+#OptionsHelperText {
+    color: #8F8F8F;
+    font-size: 11px;
+    background: transparent;
+}
+
+#PastePathsButton {
+    background: #171717;
+    border: 1px solid #3A311C;
+    color: #D6A93A;
+    font-weight: 700;
+}
+
+#PastePathsButton:hover,
+#PastePathsButton:focus {
+    background: #1E1B12;
+    border: 1px solid #D6A93A;
+    color: #F2F2F2;
+}
+
+#SelectSourceButton {
+    background: #101010;
+    border: 1px solid #5A4820;
+    color: #F2F2F2;
+    font-weight: 700;
+}
+
+#SelectSourceButton:hover,
+#SelectSourceButton:focus {
+    background: #1E1B12;
+    border: 1px solid #D6A93A;
+    color: #D6A93A;
 }
 
 #SourceInputEmbedded {

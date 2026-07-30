@@ -13,6 +13,36 @@ from PySide6.QtWidgets import (
 from .ui_theme import METRICS
 
 
+
+
+class PageHeader(QWidget):
+    """Page title and subtitle with a stable API for responsive visibility."""
+
+    def __init__(
+        self,
+        title: str,
+        subtitle: str,
+        *,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName("PageHeader")
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(5)
+
+        self.title_label = QLabel(title, self)
+        self.title_label.setObjectName("SectionTitle")
+
+        self.subtitle_label = QLabel(subtitle, self)
+        self.subtitle_label.setObjectName("PageSubtitle")
+        self.subtitle_label.setWordWrap(False)
+
+        layout.addWidget(self.title_label)
+        layout.addWidget(self.subtitle_label)
+
+
 class MetricCapsule(QFrame):
     """Reusable metric display that preserves the existing ``value_label`` API."""
 
@@ -108,6 +138,15 @@ class StatusCapsule(QLabel):
 
     def set_state(self, state: str | None) -> None:
         _set_dynamic_state(self, state)
+
+
+def make_page_header(
+    title: str,
+    subtitle: str,
+    *,
+    parent: QWidget | None = None,
+) -> PageHeader:
+    return PageHeader(title, subtitle, parent=parent)
 
 
 def make_section_title(
@@ -245,6 +284,18 @@ def set_metric_value(metric: MetricCapsule | QFrame, value: str) -> None:
 
 def set_widget_state(widget: QWidget, state: str | None) -> None:
     _set_dynamic_state(widget, state)
+
+
+def set_widget_property(
+    widget: QWidget,
+    name: str,
+    value: object,
+) -> None:
+    widget.setProperty(name, value)
+    style = widget.style()
+    style.unpolish(widget)
+    style.polish(widget)
+    widget.update()
 
 
 def _set_dynamic_state(widget: QWidget, state: str | None) -> None:

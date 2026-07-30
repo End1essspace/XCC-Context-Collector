@@ -63,17 +63,27 @@ from .safety import (
 from .resources import resource_path
 from .ui_components import (
     MetricCapsule,
+    PageHeader,
     make_card,
     make_card_layout,
     make_card_title,
     make_helper_text,
+    make_page_header,
     make_primary_button,
     make_runtime_status_capsule,
     make_secondary_button,
     make_section_title,
     make_status_capsule,
     set_metric_value,
+    set_widget_property,
     set_widget_state,
+)
+from .ui_collect import (
+    COLLECT_PAGE_SUBTITLE,
+    COLLECT_PAGE_TITLE,
+    COMPACT_MODE_HELPER,
+    collect_mode_presentation,
+    selected_files_source_summary,
 )
 from .ui_shell import RuntimeState, default_footer_message
 from .ui_theme import (
@@ -1366,10 +1376,14 @@ class XccMainWindow(QMainWindow):
         page = QWidget()
         layout = self._page_layout(page)
 
-        layout.addWidget(self._section_title("Collect Context"))
+        self.collect_page_header: PageHeader = make_page_header(
+            COLLECT_PAGE_TITLE,
+            COLLECT_PAGE_SUBTITLE,
+        )
+        layout.addWidget(self.collect_page_header)
 
         setup_card = self._card()
-        setup_card.setMinimumHeight(214)
+        setup_card.setMinimumHeight(252)
 
         setup_layout = self._card_layout(setup_card)
         setup_layout.setContentsMargins(22, 18, 22, 18)
@@ -1390,6 +1404,14 @@ class XccMainWindow(QMainWindow):
         self.mode_folder = QRadioButton("Full Folder")
         self.mode_git = QRadioButton("Git Changed Files")
         self.mode_tree = QRadioButton("Project Tree")
+
+        for button in (
+            self.mode_files,
+            self.mode_folder,
+            self.mode_git,
+            self.mode_tree,
+        ):
+            button.setAccessibleName(f"Collection mode: {button.text()}")
 
         self.mode_folder.setChecked(True)
 
@@ -1426,9 +1448,11 @@ class XccMainWindow(QMainWindow):
         self.clear_source_button.setToolTip("Clear selected source")
         self.clear_source_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
-        self.select_source_button = QPushButton("Select Source")
+        self.select_source_button = QPushButton("Select Files")
+        self.select_source_button.setObjectName("SelectSourceButton")
         self.select_source_button.setMinimumWidth(148)
         self.select_source_button.setFixedHeight(40)
+        self.select_source_button.setAccessibleName("Select files")
 
         self.paste_paths_button = QPushButton("Paste Paths")
         self.paste_paths_button.setObjectName("PastePathsButton")
@@ -1437,12 +1461,24 @@ class XccMainWindow(QMainWindow):
         self.paste_paths_button.setToolTip(
             "Paste a file list from the clipboard into Selected Files"
         )
+        self.paste_paths_button.setAccessibleName(
+            "Paste file paths from clipboard"
+        )
+
+        self.source_helper_label = make_helper_text(
+            "",
+            object_name="SourceHelperText",
+            word_wrap=False,
+        )
+        self.source_helper_label.setAccessibleName("Source guidance")
 
         options_label = QLabel("Options")
         options_label.setObjectName("FieldLabel")
         options_label.setFixedWidth(90)
 
         self.compact_checkbox = QCheckBox("Compact mode")
+        self.compact_checkbox.setAccessibleName("Compact mode")
+        self.compact_checkbox.setToolTip(COMPACT_MODE_HELPER)
         self.compact_checkbox.setChecked(True)
         self.compact_checkbox.setFixedHeight(40)
 
@@ -1454,15 +1490,24 @@ class XccMainWindow(QMainWindow):
         self.max_chars_input.setValidator(QIntValidator(1, 10_000_000, self))
         self.max_chars_input.setMaximumWidth(160)
         self.max_chars_input.setFixedHeight(40)
+        self.max_chars_input.setAccessibleName("Maximum output characters")
+
+        self.options_helper_label = make_helper_text(
+            COMPACT_MODE_HELPER,
+            object_name="OptionsHelperText",
+            word_wrap=False,
+        )
+        self.options_helper_label.setAccessibleName("Compact mode behavior")
 
         setup_grid.addWidget(mode_label, 0, 0)
         setup_grid.addWidget(mode_buttons, 0, 1, 1, 3)
 
-        source_box = QFrame()
-        source_box.setObjectName("SourceInputBox")
-        source_box.setFixedHeight(40)
+        self.source_box = QFrame()
+        self.source_box.setObjectName("SourceInputBox")
+        self.source_box.setFixedHeight(40)
+        set_widget_property(self.source_box, "reviewable", False)
 
-        source_box_layout = QHBoxLayout(source_box)
+        source_box_layout = QHBoxLayout(self.source_box)
         source_box_layout.setContentsMargins(10, 0, 8, 0)
         source_box_layout.setSpacing(6)
 
@@ -1474,11 +1519,12 @@ class XccMainWindow(QMainWindow):
         )
 
         setup_grid.addWidget(source_label, 1, 0)
-        setup_grid.addWidget(source_box, 1, 1)
-        setup_grid.addWidget(self.select_source_button, 1, 2)
-        setup_grid.addWidget(self.paste_paths_button, 1, 3)
+        setup_grid.addWidget(self.source_box, 1, 1)
+        setup_grid.addWidget(self.paste_paths_button, 1, 2)
+        setup_grid.addWidget(self.select_source_button, 1, 3)
+        setup_grid.addWidget(self.source_helper_label, 2, 1, 1, 3)
 
-        setup_grid.addWidget(options_label, 2, 0)
+        setup_grid.addWidget(options_label, 3, 0)
 
         options_box = QWidget()
         options_box.setObjectName("TransparentWidget")
@@ -1492,7 +1538,8 @@ class XccMainWindow(QMainWindow):
         options_box_layout.addWidget(self.max_chars_input)
         options_box_layout.addStretch(1)
 
-        setup_grid.addWidget(options_box, 2, 1, 1, 3)
+        setup_grid.addWidget(options_box, 3, 1, 1, 3)
+        setup_grid.addWidget(self.options_helper_label, 4, 1, 1, 3)
 
         setup_grid.setColumnStretch(0, 0)
         setup_grid.setColumnStretch(1, 1)
@@ -1756,25 +1803,41 @@ class XccMainWindow(QMainWindow):
         if not hasattr(self, "paste_paths_button"):
             return
 
-        selected_files_mode = self._current_mode() == "files"
-        self.paste_paths_button.setVisible(selected_files_mode)
-        self.select_source_button.setText(
-            "Select Files" if selected_files_mode else "Select Source"
+        mode = self._current_mode()
+        presentation = collect_mode_presentation(mode)
+        selected_files_mode = mode == "files"
+
+        self.paste_paths_button.setVisible(
+            presentation.paste_paths_visible
         )
+        self.select_source_button.setText(presentation.action_label)
+        self.select_source_button.setAccessibleName(
+            presentation.action_label
+        )
+        self.select_source_button.setToolTip(presentation.action_label)
+        self.source_input.setPlaceholderText(
+            presentation.source_placeholder
+        )
+        self.source_input.setAccessibleDescription(
+            presentation.source_helper
+        )
+        self.source_helper_label.setText(presentation.source_helper)
 
         if selected_files_mode:
-            self.source_input.setPlaceholderText(
-                "No files selected — choose files or paste paths"
-            )
             self.clear_source_button.setToolTip("Clear selected files")
+            self.clear_source_button.setAccessibleName("Clear selected files")
             self._refresh_selected_files_source()
             has_source = bool(self.selected_paths)
         else:
-            self.source_input.setPlaceholderText("No source selected")
+            source_text = self.source_input.text().strip()
             self.clear_source_button.setToolTip("Clear selected source")
-            has_source = self.project_root is not None or bool(
-                self.source_input.text().strip()
+            self.clear_source_button.setAccessibleName(
+                "Clear selected source"
             )
+            self.source_input.setCursor(Qt.CursorShape.ArrowCursor)
+            self.source_input.setToolTip(source_text)
+            set_widget_property(self.source_box, "reviewable", False)
+            has_source = self.project_root is not None or bool(source_text)
 
         self.clear_source_button.setEnabled(
             has_source and not self._collection_active
@@ -1785,18 +1848,22 @@ class XccMainWindow(QMainWindow):
             self.source_input.clear()
             self.source_input.setToolTip("")
             self.source_input.setCursor(Qt.CursorShape.ArrowCursor)
+            set_widget_property(self.source_box, "reviewable", False)
             return
 
         self.source_input.setCursor(Qt.CursorShape.PointingHandCursor)
+        set_widget_property(self.source_box, "reviewable", True)
 
         count = len(self.selected_paths)
-        suffix = "file" if count == 1 else "files"
         root = self.project_root
 
         if root is not None and self._all_selected_paths_inside_root(root):
             root_name = root.name or str(root)
             self.source_input.setText(
-                f"{root_name} · {count} {suffix} selected"
+                selected_files_source_summary(
+                    count,
+                    project_name=root_name,
+                )
             )
             self.source_input.setToolTip(
                 f"Project root:\n{root}\n\nClick to review selected files."
@@ -1804,7 +1871,10 @@ class XccMainWindow(QMainWindow):
             return
 
         self.source_input.setText(
-            f"{count} {suffix} selected · Mixed locations"
+            selected_files_source_summary(
+                count,
+                mixed_locations=True,
+            )
         )
         self.source_input.setToolTip(
             "Selected files do not share one reliable project root.\n\n"
@@ -2018,6 +2088,7 @@ class XccMainWindow(QMainWindow):
 
     def _select_source(self) -> None:
         mode = self._current_mode()
+        presentation = collect_mode_presentation(mode)
         initial_directory = (
             str(self._recent_project_root)
             if self._recent_project_root is not None
@@ -2027,7 +2098,7 @@ class XccMainWindow(QMainWindow):
         if mode == "files":
             selected, _ = QFileDialog.getOpenFileNames(
                 self,
-                "Select context files",
+                presentation.dialog_title,
                 initial_directory,
                 qt_context_file_filter(),
             )
@@ -2077,7 +2148,7 @@ class XccMainWindow(QMainWindow):
 
         selected_folder = QFileDialog.getExistingDirectory(
             self,
-            "Select project folder",
+            presentation.dialog_title,
             initial_directory,
         )
 
@@ -2558,7 +2629,7 @@ class XccMainWindow(QMainWindow):
         )
         self.settings_compact_mode = self._settings_row(
             "Compact mode",
-            "Remove repeated empty lines and reduce output noise.",
+            "Reduce XCC-generated structural whitespace; source contents remain unchanged.",
             value="Enabled" if self.compact_checkbox.isChecked() else "Disabled",
         )
         self.settings_current_max_chars = self._settings_row(
