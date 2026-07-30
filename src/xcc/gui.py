@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QButtonGroup,
     QCheckBox,
+    QDialog,
     QFileDialog,
     QFrame,
     QHBoxLayout,
@@ -18,6 +19,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QMainWindow,
     QMessageBox,
+    QPlainTextEdit,
     QPushButton,
     QRadioButton,
     QSizePolicy,
@@ -29,7 +31,17 @@ from PySide6.QtWidgets import (
     QStyledItemDelegate,
     QStyle,
 )
-from PySide6.QtGui import QAction, QColor, QFont, QIcon, QIntValidator, QPainter, QPixmap
+from PySide6.QtGui import (
+    QAction,
+    QColor,
+    QFont,
+    QIcon,
+    QIntValidator,
+    QKeySequence,
+    QPainter,
+    QPixmap,
+    QShortcut,
+)
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
 from PySide6.QtSvg import QSvgRenderer
 from . import __version__
@@ -48,6 +60,12 @@ from .safety import (
     should_show_safety_confirmation,
 )
 from .resources import resource_path
+from .path_list_parser import parse_path_list
+from .selected_files_importer import (
+    SelectedFilesImportResult,
+    import_selected_files,
+    infer_project_root,
+)
 
 APP_ICON_PATH = resource_path("assets", "xcc_app.ico")
 APP_IMAGE_PATH = resource_path("assets", "xcc_app.png")
@@ -334,6 +352,174 @@ class SingleInstanceServer(QObject):
         self.window._show_from_tray()
 
 
+class PastePathsDialog(QDialog):
+    """Resolve pasted AI file lists against one visible project root."""
+
+    def __init__(
+        self,
+        text: str,
+        *,
+        existing_paths: list[Path],
+        initial_root: Path | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+
+        self.setObjectName("PastePathsDialog")
+        self.setWindowTitle("Paste File Paths")
+        self.setModal(True)
+        self.setMinimumSize(680, 470)
+        self.resize(760, 520)
+
+        self._existing_paths = list(existing_paths)
+        self.import_result = SelectedFilesImportResult()
+        self.project_root: Path | None = None
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(14)
+
+        title = QLabel("Paste File Paths")
+        title.setObjectName("DialogTitle")
+
+        description = QLabel(
+            "Choose the project root once. Relative paths from the pasted "
+            "AI response will be resolved and validated before they are added."
+        )
+        description.setObjectName("DialogDescription")
+        description.setWordWrap(True)
+
+        layout.addWidget(title)
+        layout.addWidget(description)
+
+        root_label = QLabel("Project root")
+        root_label.setObjectName("FieldLabel")
+        layout.addWidget(root_label)
+
+        root_row = QHBoxLayout()
+        root_row.setContentsMargins(0, 0, 0, 0)
+        root_row.setSpacing(10)
+
+        self.root_input = QLineEdit(
+            str(initial_root) if initial_root is not None else ""
+        )
+        self.root_input.setPlaceholderText("Select the repository or project folder")
+        self.root_input.setFixedHeight(40)
+
+        self.browse_button = QPushButton("Browse")
+        self.browse_button.setFixedHeight(40)
+        self.browse_button.setMinimumWidth(104)
+
+        root_row.addWidget(self.root_input, 1)
+        root_row.addWidget(self.browse_button)
+        layout.addLayout(root_row)
+
+        paths_label = QLabel("File paths")
+        paths_label.setObjectName("FieldLabel")
+        layout.addWidget(paths_label)
+
+        self.paths_input = QPlainTextEdit()
+        self.paths_input.setObjectName("PathListInput")
+        self.paths_input.setPlainText(text)
+        self.paths_input.setPlaceholderText(
+            "src/package/module.py\ndocs/ROADMAP.md"
+        )
+        self.paths_input.setMinimumHeight(210)
+        layout.addWidget(self.paths_input, 1)
+
+        self.summary_label = QLabel()
+        self.summary_label.setObjectName("DialogSummary")
+        self.summary_label.setWordWrap(True)
+        layout.addWidget(self.summary_label)
+
+        button_row = QHBoxLayout()
+        button_row.setContentsMargins(0, 0, 0, 0)
+        button_row.setSpacing(10)
+        button_row.addStretch(1)
+
+        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button.setFixedHeight(40)
+        self.cancel_button.setMinimumWidth(100)
+
+        self.add_button = QPushButton("Add Files")
+        self.add_button.setObjectName("DialogPrimaryButton")
+        self.add_button.setFixedHeight(40)
+        self.add_button.setMinimumWidth(132)
+
+        button_row.addWidget(self.cancel_button)
+        button_row.addWidget(self.add_button)
+        layout.addLayout(button_row)
+
+        self.browse_button.clicked.connect(self._browse_root)
+        self.cancel_button.clicked.connect(self.reject)
+        self.add_button.clicked.connect(self._accept_import)
+        self.root_input.textChanged.connect(self._refresh_preview)
+        self.paths_input.textChanged.connect(self._refresh_preview)
+
+        self._refresh_preview()
+
+    def _browse_root(self) -> None:
+        initial = self.root_input.text().strip()
+        selected = QFileDialog.getExistingDirectory(
+            self,
+            "Select project root",
+            initial,
+        )
+        if selected:
+            self.root_input.setText(selected)
+
+    def _refresh_preview(self) -> None:
+        root_text = self.root_input.text().strip()
+        root = Path(root_text) if root_text else None
+        result = import_selected_files(
+            self.paths_input.toPlainText(),
+            project_root=root,
+            existing_paths=self._existing_paths,
+        )
+        self.import_result = result
+
+        if not result.parsed:
+            summary = "No file paths were detected in the pasted text."
+        elif result.root_required:
+            summary = (
+                f"Detected {len(result.parsed)} path(s). Choose a project root "
+                "to resolve relative paths."
+            )
+        elif result.root_error:
+            summary = result.root_error
+        else:
+            summary = (
+                f"Found {result.added_count} file(s) · "
+                f"Missing {len(result.missing)} · "
+                f"Duplicates {len(result.duplicates)} · "
+                f"Other issues {result.issue_count - len(result.missing)}"
+            )
+
+        self.summary_label.setText(summary)
+        self.add_button.setEnabled(result.added_count > 0)
+        self.add_button.setText(
+            f"Add {result.added_count} File"
+            f"{'s' if result.added_count != 1 else ''}"
+        )
+
+    def _accept_import(self) -> None:
+        if self.import_result.added_count <= 0:
+            return
+
+        root_text = self.root_input.text().strip()
+        if root_text:
+            root = Path(root_text)
+            try:
+                resolved = root.resolve(strict=True)
+            except (OSError, RuntimeError):
+                resolved = None
+
+            if resolved is not None and resolved.is_dir():
+                self.project_root = resolved
+
+        self.accept()
+
+
 class XccMainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -345,6 +531,7 @@ class XccMainWindow(QMainWindow):
 
         self.selected_paths: list[Path] = []
         self.project_root: Path | None = None
+        self._recent_project_root: Path | None = None
         self.history_entries: list[CollectionRunRecord] = []
         settings_result = load_settings_result()
         self.app_settings: AppSettings = settings_result.settings
@@ -440,6 +627,15 @@ class XccMainWindow(QMainWindow):
         self.close_to_tray_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.safety_confirmation_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+        self.paste_paths_button.clicked.connect(self._paste_paths_from_clipboard)
+
+        self.paste_paths_shortcut = QShortcut(
+            QKeySequence(QKeySequence.StandardKey.Paste),
+            self,
+        )
+        self.paste_paths_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
+        self.paste_paths_shortcut.activated.connect(self._on_paste_paths_shortcut)
+        self._refresh_source_controls()
 
     def _setup_global_hotkey(self) -> None:
         self._cleanup_global_hotkey()
@@ -521,7 +717,9 @@ class XccMainWindow(QMainWindow):
         if self._is_loading_settings:
             return
 
-        self._clear_source()
+        self._clear_source(announce=False)
+        self._refresh_source_controls()
+        self._set_status("Collection mode changed.")
     
     def _apply_loaded_settings(self) -> None:
         mode_to_button = {
@@ -541,6 +739,7 @@ class XccMainWindow(QMainWindow):
         if last_source and self.app_settings.default_mode in {"folder", "git", "tree"}:
             self.source_input.setText(last_source)
             self.project_root = Path(last_source)
+            self._recent_project_root = self.project_root
             self._set_status("Loaded saved settings.")
 
         try:
@@ -552,6 +751,8 @@ class XccMainWindow(QMainWindow):
 
         if hasattr(self, "start_with_windows_checkbox"):
             self.start_with_windows_checkbox.setChecked(real_autostart_state)
+
+        self._refresh_source_controls()
 
     def _save_current_settings(self) -> None:
         settings = AppSettings(
@@ -940,8 +1141,16 @@ class XccMainWindow(QMainWindow):
         self.clear_source_button.setCursor(Qt.CursorShape.PointingHandCursor)
 
         self.select_source_button = QPushButton("Select Source")
-        self.select_source_button.setMinimumWidth(160)
+        self.select_source_button.setMinimumWidth(148)
         self.select_source_button.setFixedHeight(40)
+
+        self.paste_paths_button = QPushButton("Paste Paths")
+        self.paste_paths_button.setObjectName("PastePathsButton")
+        self.paste_paths_button.setMinimumWidth(138)
+        self.paste_paths_button.setFixedHeight(40)
+        self.paste_paths_button.setToolTip(
+            "Paste a file list from the clipboard into Selected Files"
+        )
 
         options_label = QLabel("Options")
         options_label.setObjectName("FieldLabel")
@@ -961,7 +1170,7 @@ class XccMainWindow(QMainWindow):
         self.max_chars_input.setFixedHeight(40)
 
         setup_grid.addWidget(mode_label, 0, 0)
-        setup_grid.addWidget(mode_buttons, 0, 1, 1, 2)
+        setup_grid.addWidget(mode_buttons, 0, 1, 1, 3)
 
         source_box = QFrame()
         source_box.setObjectName("SourceInputBox")
@@ -981,6 +1190,7 @@ class XccMainWindow(QMainWindow):
         setup_grid.addWidget(source_label, 1, 0)
         setup_grid.addWidget(source_box, 1, 1)
         setup_grid.addWidget(self.select_source_button, 1, 2)
+        setup_grid.addWidget(self.paste_paths_button, 1, 3)
 
         setup_grid.addWidget(options_label, 2, 0)
 
@@ -996,11 +1206,12 @@ class XccMainWindow(QMainWindow):
         options_box_layout.addWidget(self.max_chars_input)
         options_box_layout.addStretch(1)
 
-        setup_grid.addWidget(options_box, 2, 1, 1, 2)
+        setup_grid.addWidget(options_box, 2, 1, 1, 3)
 
         setup_grid.setColumnStretch(0, 0)
         setup_grid.setColumnStretch(1, 1)
         setup_grid.setColumnStretch(2, 0)
+        setup_grid.setColumnStretch(3, 0)
 
         setup_layout.addLayout(setup_grid)
 
@@ -1254,14 +1465,211 @@ class XccMainWindow(QMainWindow):
         if hasattr(self, "settings_hotkey"):
             self.settings_hotkey.value_label.setText(self._hotkey_status_message)
 
+    def _refresh_source_controls(self) -> None:
+        if not hasattr(self, "paste_paths_button"):
+            return
+
+        selected_files_mode = self._current_mode() == "files"
+        self.paste_paths_button.setVisible(selected_files_mode)
+        self.select_source_button.setText(
+            "Select Files" if selected_files_mode else "Select Source"
+        )
+
+        if selected_files_mode:
+            self.source_input.setPlaceholderText(
+                "No files selected — choose files or paste paths"
+            )
+            self.clear_source_button.setToolTip("Clear selected files")
+            self._refresh_selected_files_source()
+        else:
+            self.source_input.setPlaceholderText("No source selected")
+            self.clear_source_button.setToolTip("Clear selected source")
+
+    def _refresh_selected_files_source(self) -> None:
+        if not self.selected_paths:
+            self.source_input.clear()
+            self.source_input.setToolTip("")
+            return
+
+        count = len(self.selected_paths)
+        suffix = "file" if count == 1 else "files"
+        root = self.project_root
+
+        if root is not None and self._all_selected_paths_inside_root(root):
+            root_name = root.name or str(root)
+            self.source_input.setText(
+                f"{root_name} · {count} {suffix} selected"
+            )
+            self.source_input.setToolTip(f"Project root:\n{root}")
+            return
+
+        self.source_input.setText(
+            f"{count} {suffix} selected · Mixed locations"
+        )
+        self.source_input.setToolTip(
+            "Selected files do not share one reliable project root."
+        )
+
+    def _all_selected_paths_inside_root(self, root: Path) -> bool:
+        try:
+            resolved_root = root.resolve(strict=False)
+        except (OSError, RuntimeError):
+            return False
+
+        for path in self.selected_paths:
+            try:
+                path.resolve(strict=False).relative_to(resolved_root)
+            except (OSError, RuntimeError, ValueError):
+                return False
+
+        return True
+
+    def _on_paste_paths_shortcut(self) -> None:
+        if self._collection_active or self._current_mode() != "files":
+            return
+
+        focus = QApplication.focusWidget()
+        if isinstance(focus, QPlainTextEdit):
+            return
+        if isinstance(focus, QLineEdit) and not focus.isReadOnly():
+            return
+
+        self._paste_paths_from_clipboard()
+
+    def _paste_paths_from_clipboard(self) -> None:
+        if self._collection_active or self._current_mode() != "files":
+            return
+
+        text = QApplication.clipboard().text()
+        parsed = parse_path_list(text)
+        if not parsed:
+            self._set_status("No file paths found in clipboard.")
+            QMessageBox.information(
+                self,
+                "Paste Paths",
+                "The clipboard does not contain a recognizable file list.",
+            )
+            return
+
+        root = self.project_root
+        result = import_selected_files(
+            text,
+            project_root=root,
+            existing_paths=self.selected_paths,
+        )
+
+        if result.root_required:
+            dialog = PastePathsDialog(
+                text,
+                existing_paths=self.selected_paths,
+                initial_root=self._recent_project_root,
+                parent=self,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                self._set_status("Paste paths cancelled.")
+                return
+
+            result = dialog.import_result
+            if dialog.project_root is not None:
+                self.project_root = dialog.project_root
+                self._recent_project_root = dialog.project_root
+
+        self._apply_selected_files_import(result)
+
+    def _apply_selected_files_import(
+        self,
+        result: SelectedFilesImportResult,
+    ) -> None:
+        if result.added:
+            self.selected_paths.extend(result.added)
+
+            if self.project_root is None or not self._all_selected_paths_inside_root(
+                self.project_root
+            ):
+                self.project_root = infer_project_root(self.selected_paths)
+
+            if self.project_root is not None:
+                self._recent_project_root = self.project_root
+
+        self._refresh_selected_files_source()
+        self._save_current_settings()
+        self._refresh_settings_page()
+
+        if result.added_count > 0 and result.issue_count == 0:
+            self._set_status(
+                f"Added {result.added_count} file"
+                f"{'s' if result.added_count != 1 else ''}. "
+                f"Total: {len(self.selected_paths)}."
+            )
+            return
+
+        if result.added_count > 0:
+            self._set_status(
+                f"Added {result.added_count} file"
+                f"{'s' if result.added_count != 1 else ''}; "
+                f"{result.issue_count} path"
+                f"{'s' if result.issue_count != 1 else ''} need review."
+            )
+        elif result.duplicates and result.issue_count == 0:
+            self._set_status("All pasted files are already selected.")
+        else:
+            self._set_status("No files were added from the pasted paths.")
+
+        if result.has_reportable_details:
+            self._show_selected_files_import_report(result)
+
+    def _show_selected_files_import_report(
+        self,
+        result: SelectedFilesImportResult,
+    ) -> None:
+        lines = [
+            f"Added: {result.added_count}",
+            f"Already selected: {len(result.duplicates)}",
+            f"Not found: {len(result.missing)}",
+            f"Directories ignored: {len(result.directories)}",
+            f"Unsupported files: {len(result.unsupported)}",
+            f"Invalid or outside root: "
+            f"{len(result.invalid) + len(result.outside_root)}",
+        ]
+
+        detail_groups = (
+            ("Not found", result.missing),
+            ("Directories ignored", result.directories),
+            ("Unsupported files", result.unsupported),
+            ("Outside project root", result.outside_root),
+            ("Invalid paths", result.invalid),
+            ("Already selected", result.duplicates),
+        )
+
+        for title, values in detail_groups:
+            if not values:
+                continue
+
+            lines.extend(["", f"{title}:"])
+            lines.extend(f"- {value}" for value in values[:8])
+            remaining = len(values) - min(len(values), 8)
+            if remaining:
+                lines.append(f"- ... {remaining} additional path(s)")
+
+        QMessageBox.information(
+            self,
+            "Paste Paths Result",
+            "\n".join(lines),
+        )
+
     def _select_source(self) -> None:
         mode = self._current_mode()
+        initial_directory = (
+            str(self._recent_project_root)
+            if self._recent_project_root is not None
+            else ""
+        )
 
         if mode == "files":
             selected, _ = QFileDialog.getOpenFileNames(
                 self,
                 "Select context files",
-                "",
+                initial_directory,
                 qt_context_file_filter(),
             )
 
@@ -1269,37 +1677,39 @@ class XccMainWindow(QMainWindow):
                 self._set_status("Source selection cancelled.")
                 return
 
-            new_paths = [Path(path) for path in selected]
-
-            existing_paths = {
-                path.resolve()
+            existing_keys = {
+                str(path.resolve(strict=False)).casefold()
                 for path in self.selected_paths
-                if path.exists()
             }
-
             added_count = 0
 
-            for path in new_paths:
-                resolved_path = path.resolve()
+            for raw_path in selected:
+                path = Path(raw_path)
+                try:
+                    key = str(path.resolve(strict=False)).casefold()
+                except (OSError, RuntimeError):
+                    key = str(path.absolute()).casefold()
 
-                if resolved_path in existing_paths:
+                if key in existing_keys:
                     continue
 
                 self.selected_paths.append(path)
-                existing_paths.add(resolved_path)
+                existing_keys.add(key)
                 added_count += 1
 
-            self.project_root = None
+            self.project_root = infer_project_root(self.selected_paths)
+            if self.project_root is not None:
+                self._recent_project_root = self.project_root
 
-            total_count = len(self.selected_paths)
-            self.source_input.setText(f"{total_count} file{'s' if total_count != 1 else ''} selected")
+            self._refresh_selected_files_source()
 
             if added_count == 0:
                 self._set_status("Selected files already added.")
             else:
                 self._set_status(
-                    f"Added {added_count} file{'s' if added_count != 1 else ''}. "
-                    f"Total: {total_count}."
+                    f"Added {added_count} file"
+                    f"{'s' if added_count != 1 else ''}. "
+                    f"Total: {len(self.selected_paths)}."
                 )
 
             self._save_current_settings()
@@ -1309,7 +1719,7 @@ class XccMainWindow(QMainWindow):
         selected_folder = QFileDialog.getExistingDirectory(
             self,
             "Select project folder",
-            "",
+            initial_directory,
         )
 
         if not selected_folder:
@@ -1329,7 +1739,9 @@ class XccMainWindow(QMainWindow):
 
         self.selected_paths = []
         self.project_root = folder
+        self._recent_project_root = folder
         self.source_input.setText(str(folder))
+        self.source_input.setToolTip(str(folder))
 
         if mode == "git":
             self._set_status("Git repository selected.")
@@ -1577,6 +1989,7 @@ class XccMainWindow(QMainWindow):
 
         for control in (
             self.select_source_button,
+            self.paste_paths_button,
             self.clear_source_button,
             self.compact_checkbox,
             self.max_chars_input,
@@ -1679,14 +2092,16 @@ class XccMainWindow(QMainWindow):
     def _set_metric_value(self, metric: QFrame, value: str) -> None:
         metric.value_label.setText(value)
 
-    def _clear_source(self) -> None:
+    def _clear_source(self, *, announce: bool = True) -> None:
         self.selected_paths = []
         self.project_root = None
         self.source_input.clear()
-        self.source_input.setPlaceholderText("No source selected")
+        self.source_input.setToolTip("")
+        self._refresh_source_controls()
         self._save_current_settings()
         self._refresh_settings_page()
-        self._set_status("Source cleared.")
+        if announce:
+            self._set_status("Source cleared.")
 
     def _set_status(self, message: str) -> None:
         self.status_label.setText(message)
@@ -2684,6 +3099,69 @@ class XccMainWindow(QMainWindow):
                 background: #D6A93A;
                 border: 1px solid #D6A93A;
                 color: #111111;
+            }
+
+            #PastePathsDialog {
+                background: #0F0F10;
+            }
+
+            #DialogTitle {
+                color: #F2F2F2;
+                font-size: 20px;
+                font-weight: 800;
+                background: transparent;
+            }
+
+            #DialogDescription {
+                color: #AFAFAF;
+                font-size: 12px;
+                background: transparent;
+            }
+
+            #DialogSummary {
+                color: #D6A93A;
+                font-size: 12px;
+                font-weight: 700;
+                background: #171717;
+                border: 1px solid #3A311C;
+                border-radius: 8px;
+                padding: 8px 10px;
+            }
+
+            #PathListInput {
+                background: #101010;
+                border: 1px solid #5A4820;
+                border-radius: 10px;
+                padding: 10px;
+                color: #F2F2F2;
+                selection-background-color: #D6A93A;
+                selection-color: #111111;
+                font-family: Consolas;
+                font-size: 12px;
+            }
+
+            #PathListInput:hover,
+            #PathListInput:focus {
+                border: 1px solid #D6A93A;
+            }
+
+            #DialogPrimaryButton {
+                background: #C79A31;
+                border: 1px solid #C79A31;
+                color: #111111;
+                font-weight: 800;
+            }
+
+            #DialogPrimaryButton:hover {
+                background: #D6A93A;
+                border: 1px solid #D6A93A;
+                color: #111111;
+            }
+
+            #DialogPrimaryButton:disabled {
+                background: #2A2A2A;
+                border: 1px solid #3A3A3A;
+                color: #777777;
             }
             """
         )
