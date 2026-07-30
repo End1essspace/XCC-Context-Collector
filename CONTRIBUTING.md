@@ -1,13 +1,20 @@
 # Contributing to XCC Context Collector
 
-XCC is a Windows-first Python desktop utility. Contributions should preserve source fidelity, deterministic output, safe context handling, and a responsive GUI.
+XCC is a Windows-first Python desktop utility. Contributions should preserve four core properties:
+
+1. collected source payloads remain exact;
+2. output is deterministic and transparent;
+3. context safety remains warning-only and privacy-conscious;
+4. the PySide6 interface stays responsive during collection.
 
 ## Supported development environment
 
-- Windows 10 or Windows 11 x64
+- Windows 10 or Windows 11, 64-bit
 - CPython 3.13.x
-- PowerShell
 - Git
+- Windows PowerShell 5.1 or PowerShell 7+
+
+Create an isolated environment:
 
 ```powershell
 py -3.13 -m venv .venv
@@ -16,15 +23,41 @@ python -m pip install --upgrade pip
 python -m pip install -e ".[dev,build]"
 ```
 
-## Required local gate
+`pyproject.toml` is the canonical dependency manifest. `requirements.txt` is retained only as a compatibility installer for the supported GUI runtime.
+
+## Supported architecture boundary
+
+New product work must follow:
+
+```text
+gui.py
+  -> xcc.gui
+  -> xcc.pipeline / xcc.qt_worker
+  -> scanner, Git, safety, formatter, and budget modules
+```
+
+The root `run.py`, root `hotkey.py`, `xcc.main`, `xcc.picker`, and `xcc.hotkey` paths are unsupported legacy development tools. Do not add new product behavior only to those paths.
+
+Read before cross-cutting changes:
+
+- `docs/ARCHITECTURE.md`
+- `docs/roadmap.md`
+- `docs/BUG_REPORTING.md`
+- `SECURITY.md`
+
+## Required local validation
+
+For every code or documentation change:
 
 ```powershell
 python -m compileall -q src tests scripts gui.py run.py hotkey.py
-python scripts/check_version_consistency.py
+python scripts\check_version_consistency.py
 python -m pytest -q
 ```
 
-Changes to packaging or release automation must also run:
+Behavior changes require regression tests. Documentation changes must preserve version markers, release-note markers, internal links, and the current screenshot paths.
+
+For packaging, runtime assets, tray, startup, or release automation changes, also run:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
@@ -32,16 +65,64 @@ powershell -ExecutionPolicy Bypass -File scripts\smoke_packaged_app.ps1
 powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
 ```
 
+For a complete release-candidate validation:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
+```
+
+## Change guidelines
+
+### Source fidelity
+
+Never apply whitespace compaction, `strip()`, newline normalization, or content rewriting to collected file payloads or Git diff data. Formatting helpers may only transform XCC-generated metadata and structure.
+
+### Git behavior
+
+Preserve the distinction between index and worktree status. New Git behavior must cover staged, unstaged, untracked, rename/copy, delete, spaces, and Unicode paths where applicable.
+
+### Character budgets
+
+The final output must never exceed the configured character limit. Omission must remain explicit; source files and Git diffs must not be silently cut in the middle.
+
+### Safety behavior
+
+Do not log or persist detected secret values. Safety output may contain only sanitized metadata such as relative path, line number, and warning category. Disabling the modal confirmation must not disable detection.
+
+### Threading and UI
+
+Collection work belongs outside the Qt main thread. Clipboard access, dialogs, and widget mutation remain on the GUI thread. Cancellation must be cooperative and must not publish partial output.
+
+## Documentation and screenshots
+
+Keep terminology aligned across README, architecture, release notes, validation docs, and the UI:
+
+- Selected Files
+- Full Folder
+- Git Changed Files
+- Project Tree
+- Safety confirmation
+- Collect & Copy
+- Last Run
+- Runtime History
+
+Update `docs/screenshots/xcc-collect.png` and `docs/screenshots/xcc-history.png` only when they represent the current release UI. Screenshots must not expose private paths, credentials, or proprietary project content.
+
 ## Workspace cleanup
 
-Generated caches, packaging metadata, PyInstaller intermediates, and local build outputs can be removed with:
+Preview cleanup first:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1 -DryRun
+```
+
+Remove normal generated outputs:
+
+```powershell
 powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1
 ```
 
-The default cleanup preserves `.venv`, `artifacts`, and the legacy local `release` archive. Remove them explicitly only when appropriate:
+The default command preserves `.venv`, `artifacts`, and the legacy local `release` directory. Remove those only through explicit switches:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1 `
@@ -50,27 +131,30 @@ powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1 `
     -IncludeVirtualEnvironment
 ```
 
-Do not replace this with `git clean -xfd`: that command can delete release-candidate evidence and local environments without distinguishing generated data from intentional local files.
+Do not substitute `git clean -xfd`; it cannot distinguish disposable build outputs from release-candidate evidence or local environments.
 
 ## Pull requests
 
-Keep each pull request focused on one roadmap milestone or defect. Include regression tests for behavior changes. Do not commit:
+Keep each pull request focused on one defect, milestone, or coherent documentation update.
+
+A pull request should include:
+
+- a clear user-visible or repository-level summary;
+- regression tests for behavior changes;
+- updated documentation where behavior or workflow changed;
+- exact validation commands and results;
+- UI screenshots when visual behavior changed.
+
+Do not commit:
 
 - collected project contexts;
-- credentials, tokens, keys, or private paths;
-- `dist`, `build`, `release`, `*.egg-info`, cache folders, or generated executables;
-- local `.xcc` configuration.
+- credentials, tokens, private keys, or connection strings;
+- proprietary source or confidential Git diffs;
+- private absolute paths or personal configuration;
+- `build`, `dist`, `artifacts`, `release`, `*.egg-info`, caches, generated executables, or local `.xcc` data.
 
-Use the pull request template and report the exact validation commands executed.
+Use `.github/pull_request_template.md` and resolve all applicable checklist items before review.
 
-## Architecture boundaries
+## Security reports
 
-The supported product path is:
-
-```text
-gui.py -> xcc.gui -> xcc.pipeline -> collection modules
-```
-
-The Tkinter picker and `keyboard` listener are unsupported compatibility tools. New product features must target the PySide6 GUI and native hotkey path.
-
-Read `docs/ARCHITECTURE.md`, `docs/roadmap.md`, and `docs/BUG_REPORTING.md` before making cross-cutting changes.
+Do not report vulnerabilities through a public issue when the report contains exploit details, secrets, private source, or personal data. Follow `SECURITY.md` and use GitHub private vulnerability reporting.

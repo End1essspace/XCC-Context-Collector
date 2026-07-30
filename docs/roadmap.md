@@ -1,310 +1,309 @@
 # XCC Roadmap
 
-
 ## v0.1 Core MVP
 
-Status: DONE
+**Status: DONE**
 
-* [x] project structure
-* [x] data models
-* [x] file collector
-* [x] formatter
-* [x] clipboard support
-* [x] file picker
-* [x] folder picker
-* [x] recursive project scanner
-* [x] basic config
-* [x] root launcher
-* [x] test suite stable
-* [x] manual real-project test
+- [x] project structure
+- [x] data models
+- [x] file collector
+- [x] formatter
+- [x] clipboard support
+- [x] file picker
+- [x] folder picker
+- [x] recursive project scanner
+- [x] basic config
+- [x] root launcher
+- [x] test suite stable
+- [x] manual real-project test
 
 
 ## v0.2 Context Optimization
 
-Status: DONE
+**Status: DONE**
 
-* [x] compact mode
-* [x] project tree in output
-* [x] token/character budget
-* [x] skip large files
-* [x] output metadata
-* [x] summarize oversized files
-* [x] truncation status through model result
-* [x] cache directories excluded
+- [x] compact mode
+- [x] project tree in output
+- [x] token/character budget
+- [x] skip large files
+- [x] output metadata
+- [x] summarize oversized files
+- [x] truncation status through model result
+- [x] cache directories excluded
 
 
 ## v0.3 Git Context Mode
 
-Status: DONE
+**Status: DONE**
 
-* [x] detect git repository
-* [x] collect modified files
-* [x] collect untracked files
-* [x] filter git files by allowed extensions
-* [x] filter git files by excluded directories
-* [x] include git diff
-* [x] add mode metadata
-* [x] test git diff extraction
-* [x] git tests
+- [x] detect git repository
+- [x] collect modified files
+- [x] collect untracked files
+- [x] filter git files by allowed extensions
+- [x] filter git files by excluded directories
+- [x] include git diff
+- [x] add mode metadata
+- [x] test git diff extraction
+- [x] git tests
 
 
 ## v0.4 Hotkey Mode
 
-Status: DONE
+**Status: DONE**
 
-* [x] global hotkey
-* [x] safe hotkey selected: Ctrl+Alt+X
-* [x] no conflict with XClip
-* [x] background listener
-* [x] background process
-* [x] prevent concurrent runs
-* [x] graceful Ctrl+C shutdown
-* [x] hotkey launcher
+- [x] global hotkey
+- [x] safe hotkey selected: Ctrl+Alt+X
+- [x] no conflict with XClip
+- [x] background listener
+- [x] background process
+- [x] prevent concurrent runs
+- [x] graceful Ctrl+C shutdown
+- [x] hotkey launcher
 
 
 ## v0.5 PySide6 GUI
 
-Status: DONE
+**Status: DONE**
 
-* [x] PySide6 dependency
-* [x] gui.py launcher
-* [x] main window
-* [x] black/yellow theme
-* [x] header
-* [x] sidebar navigation
-* [x] Collect page
-* [x] Settings placeholder
-* [x] History placeholder
-* [x] About placeholder
-* [x] Select Source works
-* [x] Full Folder mode works
-* [x] Selected Files mode works
-* [x] Git Changed Files mode works
-* [x] Collect & Copy works
-* [x] clipboard copy works
-* [x] metrics update after run
-* [x] success popup removed
-* [x] inline success feedback
-* [x] max chars validator
-* [x] Setup layout alignment
-* [x] Options row composition
-* [x] dark strip behind Mode removed
-* [x] Sidebar hover polish
-* [x] Last Run visual hierarchy
-* [x] History page runtime entries
-* [x] History empty state
-* [x] History newest-first ordering
-* [x] History scroll area
-* [x] History row height polish
-* [x] Settings page basic controls
-* [x] Settings tile layout
-* [x] Settings runtime values refresh
-* [x] Settings final polish
-* [x] manual GUI test
-* [x] test suite pass
+- [x] PySide6 dependency
+- [x] gui.py launcher
+- [x] main window
+- [x] black/yellow theme
+- [x] header
+- [x] sidebar navigation
+- [x] Collect page
+- [x] Settings placeholder
+- [x] History placeholder
+- [x] About placeholder
+- [x] Select Source works
+- [x] Full Folder mode works
+- [x] Selected Files mode works
+- [x] Git Changed Files mode works
+- [x] Collect & Copy works
+- [x] clipboard copy works
+- [x] metrics update after run
+- [x] success popup removed
+- [x] inline success feedback
+- [x] max chars validator
+- [x] Setup layout alignment
+- [x] Options row composition
+- [x] dark strip behind Mode removed
+- [x] Sidebar hover polish
+- [x] Last Run visual hierarchy
+- [x] History page runtime entries
+- [x] History empty state
+- [x] History newest-first ordering
+- [x] History scroll area
+- [x] History row height polish
+- [x] Settings page basic controls
+- [x] Settings tile layout
+- [x] Settings runtime values refresh
+- [x] Settings final polish
+- [x] manual GUI test
+- [x] test suite pass
 
 
 ## v0.6 Settings Persistence
 
-Status: DONE
+**Status: DONE**
 
-* [x] config.json
-* [x] save default mode
-* [x] save max chars
-* [x] save compact mode
-* [x] save last source
-* [x] load settings on GUI startup
-* [x] validate config values
-* [x] fallback to defaults on invalid config
-* [x] manual persistence test
-* [x] test suite pass
-* [x] files mode restore guarded
-* [x] startup save guard
+- [x] config.json
+- [x] save default mode
+- [x] save max chars
+- [x] save compact mode
+- [x] save last source
+- [x] load settings on GUI startup
+- [x] validate config values
+- [x] fallback to defaults on invalid config
+- [x] manual persistence test
+- [x] test suite pass
+- [x] files mode restore guarded
+- [x] startup save guard
 
 
 ## v0.7 Tray Mode
 
-Status: DONE
+**Status: DONE**
 
-* [x] tray icon
-* [x] show/hide GUI
-* [x] quit from tray
-* [x] background GUI behavior
-* [x] safe shutdown from tray
-* [x] tray menu polish
-* [x] first minimize notification
-* [x] double click restore
-* [x] maximized startup
+- [x] tray icon
+- [x] show/hide GUI
+- [x] quit from tray
+- [x] background GUI behavior
+- [x] safe shutdown from tray
+- [x] tray menu polish
+- [x] first minimize notification
+- [x] double click restore
+- [x] maximized startup
 
 
 ## v0.8 Settings Expansion
 
-Status: DONE
+**Status: DONE**
 
-* [x] autostart with Windows
-* [x] start minimized to tray
-* [x] close to tray option
-* [x] start maximized option
-* [x] tray behavior settings
-* [x] settings controls UI
-* [x] persist new settings
-* [x] validate new settings
-* [x] manual settings test
-* [x] test suite pass
+- [x] autostart with Windows
+- [x] start minimized to tray
+- [x] close to tray option
+- [x] start maximized option
+- [x] tray behavior settings
+- [x] settings controls UI
+- [x] persist new settings
+- [x] validate new settings
+- [x] manual settings test
+- [x] test suite pass
 
 
 ## v0.9 Optimization
 
-Status: DONE
+**Status: DONE**
 
-* [x] code cleanup
-* [x] remove unused imports
-* [x] remove duplicate model definitions
-* [x] remove unused placeholder helpers
-* [x] normalize GUI helper naming
-* [x] reduce duplicated settings layout code
-* [x] improve settings page spacing
-* [x] optimize startup flow
-* [x] verify tray startup edge cases
-* [x] verify start minimized behavior
-* [x] verify close-to-tray behavior
-* [x] verify invalid config recovery
-* [x] improve error messages
-* [x] update README for GUI usage
-* [x] update roadmap before release
-* [x] full manual app test
-* [x] full pytest pass
-* [x] measure idle CPU/RAM usage
-* [x] verify no background scanning in tray mode
-* [x] verify collect-only workload behavior
+- [x] code cleanup
+- [x] remove unused imports
+- [x] remove duplicate model definitions
+- [x] remove unused placeholder helpers
+- [x] normalize GUI helper naming
+- [x] reduce duplicated settings layout code
+- [x] improve settings page spacing
+- [x] optimize startup flow
+- [x] verify tray startup edge cases
+- [x] verify start minimized behavior
+- [x] verify close-to-tray behavior
+- [x] verify invalid config recovery
+- [x] improve error messages
+- [x] update README for GUI usage
+- [x] update roadmap before release
+- [x] full manual app test
+- [x] full pytest pass
+- [x] measure idle CPU/RAM usage
+- [x] verify no background scanning in tray mode
+- [x] verify collect-only workload behavior
 
 
 ## v0.9.5 Settings/About Polish
 
-Status: DONE
+**Status: DONE**
 
-* [x] redesign Settings as control panel
-* [x] separate behavior settings from read-only system info
-* [x] replace checkbox cards with setting rows
-* [x] simplify Settings visual hierarchy
-* [x] redesign About page
-* [x] add app identity block to About
-* [x] add product badges to About
-* [x] add config/startup path info to About
-* [x] manual visual review
-* [x] tune yellow accent to muted amber
-* [x] reduce bright yellow usage in secondary UI
-* [x] soften checkbox and radio checked color
-* [x] soften card and row borders
-* [x] manual color review
+- [x] redesign Settings as control panel
+- [x] separate behavior settings from read-only system info
+- [x] replace checkbox cards with setting rows
+- [x] simplify Settings visual hierarchy
+- [x] redesign About page
+- [x] add app identity block to About
+- [x] add product badges to About
+- [x] add config/startup path info to About
+- [x] manual visual review
+- [x] tune yellow accent to muted amber
+- [x] reduce bright yellow usage in secondary UI
+- [x] soften checkbox and radio checked color
+- [x] soften card and row borders
+- [x] manual color review
 
 
 ## v0.9.6 Integrated Restore Hotkey
 
-Status: DONE
+**Status: DONE**
 
-* [x] add GUI global hotkey listener
-* [x] restore window with Ctrl+Alt+X
-* [x] route hotkey callback through Qt signal
-* [x] cleanup hotkey on app exit
-* [x] keep legacy hotkey.py as dev-only mode
-* [x] update README for integrated restore hotkey
-* [x] manual hotkey test
-* [x] test suite pass
+- [x] add GUI global hotkey listener
+- [x] restore window with Ctrl+Alt+X
+- [x] route hotkey callback through Qt signal
+- [x] cleanup hotkey on app exit
+- [x] keep legacy hotkey.py as dev-only mode
+- [x] update README for integrated restore hotkey
+- [x] manual hotkey test
+- [x] test suite pass
 
 
 ## v1.0 Windows Release
 
-Status: DONE
+**Status: DONE**
 
-* [x] define GUI as primary release entry point
-* [x] exclude legacy scripts from primary release flow
-* [x] Esc hides window to tray
-* [x] PyInstaller dependency
-* [x] PyInstaller build
-* [x] release build script
-* [x] repeatable clean build
-* [x] app icon
-* [x] tray icon
-* [x] PyInstaller resource paths
-* [x] packaged exe resource loading
-* [x] single-instance protection
-* [x] second launch restores existing window
-* [x] verify single-instance protection in exe
-* [x] packaged exe autostart target
-* [x] verify autostart shortcut in exe mode
-* [x] clean gitignore for build artifacts
-* [x] release folder
-* [x] README release update
-* [x] basic install instructions
-* [x] manual release test
-* [x] release zip package
-* [x] verify ZIP contains exe and _internal folder
-* [x] final v1.0 package smoke test
+- [x] define GUI as primary release entry point
+- [x] exclude legacy scripts from primary release flow
+- [x] Esc hides window to tray
+- [x] PyInstaller dependency
+- [x] PyInstaller build
+- [x] release build script
+- [x] repeatable clean build
+- [x] app icon
+- [x] tray icon
+- [x] PyInstaller resource paths
+- [x] packaged exe resource loading
+- [x] single-instance protection
+- [x] second launch restores existing window
+- [x] verify single-instance protection in exe
+- [x] packaged exe autostart target
+- [x] verify autostart shortcut in exe mode
+- [x] clean gitignore for build artifacts
+- [x] release folder
+- [x] README release update
+- [x] basic install instructions
+- [x] manual release test
+- [x] release zip package
+- [x] verify ZIP contains exe and _internal folder
+- [x] final v1.0 package smoke test
 
 
 ## v1.0.1 Hotkey Reliability Patch
 
-Status: DONE
+**Status: DONE**
 
-* [x] replace GUI `keyboard` listener with native Windows `RegisterHotKey` restore hotkey
-* [x] route `WM_HOTKEY` through Qt native event filter
-* [x] keep legacy `hotkey.py` as development-only workflow
-* [x] show hotkey unavailable status in UI/tray/settings
-* [x] acquire single-instance lock before creating the main window
-* [x] register restore hotkey only after single-instance server is ready
-* [x] add native hotkey parser tests
+- [x] replace GUI `keyboard` listener with native Windows `RegisterHotKey` restore hotkey
+- [x] route `WM_HOTKEY` through Qt native event filter
+- [x] keep legacy `hotkey.py` as development-only workflow
+- [x] show hotkey unavailable status in UI/tray/settings
+- [x] acquire single-instance lock before creating the main window
+- [x] register restore hotkey only after single-instance server is ready
+- [x] add native hotkey parser tests
 
 
 ## v1.1 Source Coverage Expansion
 
-Status: DONE
+**Status: DONE**
 
-* [x] expand supported source file extensions
-* [x] add filename-based allowlist
-* [x] support Dockerfile, Makefile, package/config files
-* [x] avoid sensitive defaults like .env, .pem, .key
-* [x] update scanner and collector filtering
-* [x] update tests
-* [x] update README supported file types
+- [x] expand supported source file extensions
+- [x] add filename-based allowlist
+- [x] support Dockerfile, Makefile, package/config files
+- [x] avoid sensitive defaults like .env, .pem, .key
+- [x] update scanner and collector filtering
+- [x] update tests
+- [x] update README supported file types
 
 
 ## v1.1.1 Context Filtering Patch
 
-Status: DONE
+**Status: DONE**
 
-* [x] centralize context file allowlist logic in `config.py`
-* [x] generate GUI file picker filters from supported context file definitions
-* [x] update Selected Files mode to use the expanded extension list
-* [x] update legacy picker file filters
-* [x] apply filename-based allowlist support to Git Changed Files mode
-* [x] remove duplicated file allowlist checks from scanner and collector
-* [x] add tests for allowed extensions, allowed filenames, and sensitive file exclusion
-* [x] add tests for GUI/Tk file filter generation
-* [x] add tests for Dockerfile support in scanner, collector, and Git mode
-* [x] verify expanded source coverage works consistently across files, folder, and git modes
+- [x] centralize context file allowlist logic in `config.py`
+- [x] generate GUI file picker filters from supported context file definitions
+- [x] update Selected Files mode to use the expanded extension list
+- [x] update legacy picker file filters
+- [x] apply filename-based allowlist support to Git Changed Files mode
+- [x] remove duplicated file allowlist checks from scanner and collector
+- [x] add tests for allowed extensions, allowed filenames, and sensitive file exclusion
+- [x] add tests for GUI/Tk file filter generation
+- [x] add tests for Dockerfile support in scanner, collector, and Git mode
+- [x] verify expanded source coverage works consistently across files, folder, and git modes
 
 
 ## v1.1.2 Project Tree Mode Patch
 
-Status: DONE
+**Status: DONE**
 
-* [x] add Project Tree collection mode to GUI
-* [x] persist Project Tree as a valid settings mode
-* [x] add tree-only formatter output
-* [x] build full project directory tree without reading file contents
-* [x] include both files and directories in Project Tree mode
-* [x] exclude cache, build, dependency, IDE, and VCS folders from Project Tree mode
-* [x] remove Project Tree from Selected Files output
-* [x] keep Project Tree in Full Folder and Git Changed Files modes
-* [x] add tests for directory tree builder
-* [x] add tests for tree-only formatter output
-* [x] add settings validation test for Project Tree mode
-* [x] verify Project Tree output does not include file content sections
+- [x] add Project Tree collection mode to GUI
+- [x] persist Project Tree as a valid settings mode
+- [x] add tree-only formatter output
+- [x] build full project directory tree without reading file contents
+- [x] include both files and directories in Project Tree mode
+- [x] exclude cache, build, dependency, IDE, and VCS folders from Project Tree mode
+- [x] remove Project Tree from Selected Files output
+- [x] keep Project Tree in Full Folder and Git Changed Files modes
+- [x] add tests for directory tree builder
+- [x] add tests for tree-only formatter output
+- [x] add settings validation test for Project Tree mode
+- [x] verify Project Tree output does not include file content sections
 
 ## v1.2.0 Context Integrity & Reliability
 
-**Status: IN PROGRESS**
+**Status: RELEASE CANDIDATE PREPARED — FINAL VALIDATION PENDING**
 
 ### Release Goal
 
@@ -680,7 +679,7 @@ legacy:
 - keyboard ==0.13.5
 ```
 
-Implementation completed in the eighth v1.2.0 batch. The repository now uses a standard installable `src` layout with import package `xcc`, canonical PEP 621 metadata in `pyproject.toml`, dynamic version metadata sourced from `xcc.__version__`, separated optional dependency groups, and version-aware PyInstaller resources. Legacy Tkinter and `keyboard` workflows are retained only as unsupported development compatibility tools. Clean-install validation passed in new Windows CPython 3.13 virtual environments with the complete 152-test suite, editable package installation, canonical version verification, GUI import checks, and confirmation that the optional legacy `keyboard` dependency is absent from the normal runtime install.
+Implementation completed in the eighth v1.2.0 batch. The repository now uses a standard installable `src` layout with import package `xcc`, canonical PEP 621 metadata in `pyproject.toml`, dynamic version metadata sourced from `xcc.__version__`, separated optional dependency groups, and version-aware PyInstaller resources. Legacy Tkinter and `keyboard` workflows are retained only as unsupported development compatibility tools. Clean-install validation covers a fresh Windows CPython 3.13 virtual environment, editable package installation, canonical version verification, the full regression suite, GUI import checks, and confirmation that the optional legacy `keyboard` dependency is absent from the normal runtime install.
 
 ---
 
@@ -723,7 +722,7 @@ release archive structure validation
 
 Implementation completed in the ninth v1.2.0 batch. The repository now has a Windows-only Python 3.13 CI gate, safe pip caching through `setup-python`, deterministic source compilation and tests, canonical version checks, clean PyInstaller packaging, offscreen packaged startup smoke validation, portable ZIP generation, SHA-256 checksums, and archive-structure validation. Governance and support documentation now includes changelog, contribution, security, diagnostics, issue/PR templates, portable usage, release checklist, release links, CI badge, and current UI previews.
 
-The local 162-test, build, packaged-smoke, portable-archive, and checksum gates passed. The committed M9 workflow also completed successfully on the GitHub-hosted `windows-latest` runner after push to `main`.
+The M9 local compile, regression, build, packaged-smoke, portable-archive, and checksum gates passed, and the committed Windows CI workflow completed successfully on the GitHub-hosted `windows-latest` runner. Later v1.2.0 work extended the same repository gate with packaged artwork checks, optional Safety confirmation coverage, workspace cleanup, and final documentation consistency.
 
 ---
 
@@ -733,30 +732,38 @@ The local 162-test, build, packaged-smoke, portable-archive, and checksum gates 
 
 **Priority: RELEASE BLOCKER**
 
-- [ ] all automated tests pass on the v1.2.0 release candidate
-- [ ] no regression in existing four collection modes
-- [ ] source fidelity regression suite passes
-- [ ] staged Git changes test passes
-- [ ] rename and delete Git tests pass
-- [ ] duplicate filename test passes
-- [ ] budget boundary test suite passes
-- [ ] `.xccignore` validation passes
-- [ ] secret-warning validation passes
-- [ ] cancellation validation passes
-- [ ] large-project GUI responsiveness test passes
-- [ ] clean Windows 10 packaged-app smoke test
-- [ ] clean Windows 11 packaged-app smoke test
-- [ ] tray restore test passes
-- [ ] hotkey conflict remains non-fatal
-- [ ] autostart shortcut test passes
-- [ ] invalid-config recovery test passes
-- [ ] release ZIP contents verified for v1.2.0
-- [ ] SHA-256 checksum generated for v1.2.0
-- [x] README updated to v1.2.0
-- [x] roadmap updated for the release-candidate gate
-- [x] changelog updated and v1.2.0 section dated
-- [x] release notes created
-- [ ] final release tag created
+#### Release-candidate implementation
+
+- [x] automated release-candidate orchestration exists
+- [x] canonical version consistency gate exists
+- [x] source fidelity regression coverage exists
+- [x] staged/unstaged/rename/copy/delete/untracked Git coverage exists
+- [x] duplicate filename and cross-root identity coverage exists
+- [x] character-budget boundary coverage exists
+- [x] `.xccignore`, `.gitignore`, and safety-warning coverage exists
+- [x] progress and cancellation coverage exists
+- [x] clean-install validation exists
+- [x] packaged startup and required-asset smoke validation exists
+- [x] portable ZIP and SHA-256 validation exists
+- [x] Windows 10/11 evidence schema and validator exist
+- [x] release-readiness validator exists
+- [x] README, changelog, release notes, architecture, security, contributing, diagnostics, portable-use, and release docs are aligned for v1.2.0
+- [x] deterministic workspace cleanup exists and supports Windows PowerShell 5.1
+
+#### Final evidence still required
+
+- [ ] rerun the complete automated gate on the final documentation/UI commit
+- [ ] confirm all four packaged collection modes on the final archive
+- [ ] complete large-project GUI responsiveness and cooperative cancellation validation
+- [ ] complete packaged visual, tray, native hotkey, autostart, config-recovery, and single-instance validation
+- [ ] record complete clean-host Windows 10 evidence
+- [ ] record complete clean-host Windows 11 evidence
+- [ ] confirm both records reference the same final archive SHA-256
+- [ ] run combined evidence validation
+- [ ] run final repository and archive readiness validation
+- [ ] create annotated `v1.2.0` tag
+- [ ] publish the GitHub Release with ZIP and checksum
+- [ ] verify the downloaded release assets after publication
 
 #### Release-Candidate Tooling
 
@@ -835,60 +842,50 @@ The application may detect a newer version and open its GitHub Release page. A f
 
 ---
 
-## Recommended Implementation Order
+## v1.2.0 Implementation Sequence
 
-### Stage 1 — Stabilize Output Integrity
+The implementation sequence is complete. It was intentionally staged to stabilize data integrity before threading and release automation.
 
-Implement:
+### Stage 1 — Output integrity — DONE
 
-1. M1 — Source Content Fidelity
-2. M3 — Stable File Identity
-3. M4 — Structure-Aware Character Budget
+- M1: exact source-content fidelity
+- M3: stable file identity and relative paths
+- M4: structure-aware character budgeting
 
-These components form one formatter/output pipeline.
+### Stage 2 — Git correctness — DONE
 
-The budget system should not be redesigned until source rendering is guaranteed to preserve exact file content.
+- typed null-delimited Git status parsing
+- staged and unstaged diff separation
+- rename, copy, delete, and untracked semantics
+- complete Git regression coverage
 
-### Stage 2 — Rebuild Git Mode
+### Stage 3 — Context safety — DONE
 
-Implement:
+- `.xccignore` and mode-aware `.gitignore` behavior
+- warning-only sensitive filename and content detection
+- sanitized pre-copy warning metadata
+- optional persistent Safety confirmation prompt
 
-1. typed Git change model;
-2. porcelain `-z` parsing;
-3. staged and unstaged diff support;
-4. rename, delete, and untracked semantics;
-5. complete Git regression suite.
+### Stage 4 — Responsive desktop pipeline — IMPLEMENTED
 
-Git mode should pass normalized structured data into the formatter instead of raw command-line strings.
+- background collection worker
+- progress phases and one-job enforcement
+- cooperative cancellation
+- metadata-only result health and runtime history
 
-### Stage 3 — Add Safety Layer
+The implementation is complete; the final packaged large-project manual gate remains part of M6/M10 evidence.
 
-Implement:
+### Stage 5 — Repository and release engineering — IMPLEMENTED
 
-1. `.xccignore`;
-2. optional `.gitignore` integration;
-3. sensitive filename warnings;
-4. secret-pattern warnings;
-5. pre-copy warning state.
+- canonical metadata and versioning
+- dependency groups and clean-install validation
+- Windows CI and package smoke
+- portable archive and checksum validation
+- workspace hygiene tooling
+- governance and release documentation
+- Windows 10/11 evidence and final readiness contracts
 
-Safety checks depend on reliable scanner and Git file-selection behavior.
-
-### Stage 4 — Move Collection into Worker Pipeline
-
-Add background execution only after the collection APIs and result models are stable.
-
-This avoids debugging core logic and multithreading at the same time.
-
-### Stage 5 — GitHub and Release Gate
-
-Complete:
-
-1. dependency cleanup;
-2. CI;
-3. documentation;
-4. Windows validation;
-5. release artifacts;
-6. final `v1.2.0` tag.
+Only final clean-host evidence, tagging, publication, and post-publication verification remain.
 
 ---
 
@@ -910,7 +907,7 @@ The user can see which files were included, omitted, summarized, or partially in
 
 ### 4. Safety Visibility
 
-XCC warns about likely sensitive context before copying.
+XCC detects and reports likely sensitive context; the pre-copy modal warning is enabled by default and can be disabled without disabling detection.
 
 ### 5. UI Responsiveness
 
@@ -918,23 +915,23 @@ Large projects do not block the interface, and collection can be cancelled safel
 
 ---
 
-## Next Development Stage
+## Immediate Next Step
 
-Proceed with:
+Complete M10 on the exact final release commit:
 
-> **M8 — Dependency and Project Structure Cleanup**
+1. run `scripts\validate_release_candidate.ps1`;
+2. validate the packaged ZIP on clean Windows 10 and Windows 11 hosts;
+3. record both evidence files for the same archive SHA-256;
+4. run `scripts\validate_release_evidence.py`;
+5. push the final release commit and confirm Windows CI;
+6. run `scripts\check_release_readiness.py`;
+7. create the annotated `v1.2.0` tag;
+8. create and review the draft GitHub Release;
+9. publish and verify the downloaded ZIP and checksum;
+10. mark M6 and M10 complete in the post-release status update.
 
-Required files for the next stage:
+The next product-development milestone after publication is:
 
-```text
-requirements.txt
-README.md
-docs/roadmap.md
-scripts/build_release.ps1
-src/xcc/__init__.py
-src/xcc/gui.py
+> **v1.3.0 — Windows Workflow & Distribution**
 
-tests/test_project_metadata.py
-```
-
-A new root `pyproject.toml` will be added. The full project is not required for the initial dependency and metadata cleanup.
+No additional v1.2.0 feature work should be added unless it fixes a release-blocking defect discovered by the final gate.

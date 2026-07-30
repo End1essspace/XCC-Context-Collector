@@ -1,53 +1,64 @@
 # Changelog
 
-All notable changes to XCC Context Collector are documented here.
+All notable changes to XCC Context Collector are documented in this file.
 
-The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow semantic versioning.
+The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses semantic versioning.
 
 ## [Unreleased]
 
-## [1.2.0] - 2026-07-27
+## [1.2.0] - 2026-07-30
 
 ### Added
 
-- Deterministic PowerShell workspace cleanup tooling for caches, packaging metadata, and local build outputs.
-- Source-content fidelity guarantees and regression coverage.
-- Complete typed Git change handling for staged, unstaged, renamed, copied, deleted, and untracked files.
-- Stable relative paths for selected files, including duplicate filenames and cross-root selections.
-- Structure-aware output budgeting with explicit included, omitted, summarized, and partial-file statistics.
-- `.xccignore`, root `.gitignore` integration, and pre-copy sensitive-context warnings.
-- Responsive background collection pipeline with progress phases and cooperative cancellation.
-- Typed run outcomes, duration, coverage metrics, and metadata-only runtime history.
-- Standard installable `src` layout, canonical `pyproject.toml`, and separated dependency groups.
-- Windows GitHub Actions CI, packaged startup smoke testing, portable ZIP validation, and SHA-256 generation.
-- Repository contribution, security, bug-reporting, portable-use, and release documentation.
-- Automated release-candidate gate and machine-readable Windows 10/11 validation evidence contract.
-- Persistent Safety confirmation setting; enabled by default and optional for repeated trusted-project workflows.
+- Exact source-payload fidelity guarantees with regression coverage for whitespace-sensitive content.
+- Typed Git change handling for staged, unstaged, untracked, renamed, copied, and deleted files.
+- Stable relative display paths for Selected Files mode, including duplicate basenames and cross-root selections.
+- Structure-aware character budgeting with explicit included, omitted, summarized, and partial-file statistics.
+- `.xccignore` support and root `.gitignore` integration for folder and tree workflows.
+- Heuristic sensitive-context warnings for filenames, private-key material, tokens, credentials, and credential-bearing connection strings.
+- Persistent **Safety confirmation** setting, enabled by default and optional for trusted repeated workflows.
+- Background collection pipeline with progress phases, one-job enforcement, and cooperative cancellation.
+- Typed run outcomes, duration and coverage metrics, Last Run health, and metadata-only runtime history.
+- Standard installable `src` layout, canonical PEP 621 metadata, and separated runtime, development, build, and legacy dependency groups.
+- Native Windows restore hotkey, single-instance restore behavior, tray workflow, and optional Windows autostart integration.
+- Windows GitHub Actions CI, clean-install validation, packaged startup smoke, portable ZIP validation, and SHA-256 generation.
+- Machine-readable automated release report and Windows 10/11 manual evidence contract.
+- Deterministic PowerShell workspace cleanup for caches, packaging metadata, and local build outputs.
+- Lucide-based sidebar navigation and final v1.2.0 desktop UI polish.
 
 ### Changed
 
-- Successful PyInstaller builds now remove intermediate `build` data and generated spec files automatically.
-- Release builds bundle only runtime assets instead of the entire source asset directory.
-- The supported runtime is the PySide6 GUI on CPython 3.13.x and Windows 10/11 x64.
+- Compact mode now affects only XCC-generated structure and never rewrites collected source payloads or Git diff content.
+- Git mode now keeps staged and unstaged diff sections separate and reports Git command failures instead of presenting an empty result.
+- Output budgeting now plans complete sections before rendering and emits a bounded budget summary when content is omitted.
+- Safety confirmation can be disabled without disabling detection, generated warning summaries, counters, outcomes, or history metadata.
+- Runtime history records successful, warning-bearing, cancelled, and failed runs without storing collected payloads.
+- The supported product boundary is the PySide6 GUI on CPython 3.13.x and Windows 10/11 x64.
 - Legacy Tkinter and `keyboard` workflows are retained only as unsupported development compatibility tools.
-- Release builds read the application version from `xcc.__version__` and embed the same value in executable metadata and `VERSION.txt`.
-- Runtime history now records successful, warning-bearing, cancelled, and failed operations without storing collected payloads.
-- Disabling Safety confirmation suppresses only the modal prompt; warning detection, generated summaries, counters, and outcomes remain active.
+- Release builds read the canonical version from `xcc.__version__`, embed Windows version resources, and write matching `VERSION.txt` metadata.
+- PyInstaller packages now include only required runtime artwork and navigation assets.
+- Successful builds remove intermediate `build` data and generated spec files automatically.
+- Project governance, architecture, diagnostics, portable-use, validation, release, and bilingual user documentation were aligned for v1.2.0.
 
 ### Fixed
 
-- Compact mode no longer rewrites source payload whitespace.
-- Git mode no longer silently loses staged-only, rename, copy, delete, Unicode-path, or untracked changes.
-- Selected files with identical basenames no longer receive ambiguous output headers.
-- Character budgeting no longer cuts source files or Git diff sections in the middle.
-- Cancellation no longer copies partial output or leaves conflicting controls active.
-- Packaged builds now resolve application and tray artwork from the PyInstaller runtime data directory.
+- Repeated blank lines, trailing spaces, multiline strings, YAML block content, and final source newlines are preserved.
+- Staged-only, rename, copy, delete, Unicode-path, and untracked Git changes are no longer silently lost.
+- Files with identical basenames no longer receive ambiguous output headers.
+- Character limits no longer cut source files or Git diff sections in the middle.
+- Cancellation no longer copies partial output or leaves conflicting controls enabled.
+- Packaged builds resolve application, header, About, taskbar, and tray artwork from the PyInstaller runtime directory.
+- Settings groups are top-aligned when their content heights differ.
+- Sidebar SVG icons render sharply at Windows DPI scaling with consistent spacing and state colors.
+- The cleanup script now works with Windows PowerShell 5.1 without relying on `System.IO.Path.GetRelativePath`.
 
 ### Security
 
-- Warning summaries and runtime history exclude detected secret values and collected file contents.
-- Release archives are validated for safe paths, required files, canonical version, and companion checksum.
+- Warning summaries contain only relative paths, line numbers, and categories; detected values are not displayed or stored in runtime history.
+- XCC remains warning-only and does not silently redact or mutate collected source code.
 - Built-in excluded directories cannot be re-enabled through project ignore rules.
+- Release archives are checked for safe paths, one application root, required runtime files, canonical version, and a matching SHA-256 checksum.
+- Official release publication is blocked until automated validation and matching clean-host Windows 10/11 evidence pass.
 
 ## [1.1.2]
 

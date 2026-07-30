@@ -7,13 +7,15 @@ body:
   - type: markdown
     attributes:
       value: |
-        Remove secrets and private source code before submitting. See `docs/BUG_REPORTING.md`.
+        Thank you for reporting an XCC issue.
+
+        Remove credentials, private source, confidential Git diffs, usernames, and absolute private paths before submitting. Do not paste generated XCC context unless every line is intentionally public. See `docs/BUG_REPORTING.md` and `SECURITY.md`.
 
   - type: input
     id: version
     attributes:
       label: XCC version
-      description: Copy the version from About or VERSION.txt.
+      description: Copy the version from About, VERSION.txt, or `python -c "import xcc; print(xcc.__version__)"`.
       placeholder: "1.2.0"
     validations:
       required: true
@@ -29,26 +31,39 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: mode
+  - type: input
+    id: windows
     attributes:
-      label: Collection mode
+      label: Windows version, build, and architecture
+      placeholder: "Windows 11 24H2, build 26100, x64"
+    validations:
+      required: true
+
+  - type: input
+    id: display
+    attributes:
+      label: Display scale and monitor setup
+      description: Required for layout, icon, DPI, or multi-monitor defects.
+      placeholder: "150%, 2560x1440 primary monitor"
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
       options:
         - Selected Files
         - Full Folder
         - Git Changed Files
         - Project Tree
-        - Startup / tray / settings
-        - Build or packaging
+        - Output formatting or character budget
+        - Safety confirmation or warnings
+        - Runtime history or result metrics
+        - GUI layout or navigation
+        - Tray, hotkey, autostart, or single instance
+        - Settings or config recovery
+        - Build, portable ZIP, or release tooling
+        - Documentation
         - Other
-    validations:
-      required: true
-
-  - type: input
-    id: windows
-    attributes:
-      label: Windows version
-      placeholder: "Windows 11 24H2, x64"
     validations:
       required: true
 
@@ -56,11 +71,12 @@ body:
     id: steps
     attributes:
       label: Reproduction steps
-      description: Provide the smallest deterministic sequence.
+      description: Provide the smallest deterministic sequence using sanitized names and paths.
       placeholder: |
-        1. Start XCC
+        1. Start XCC v1.2.0
         2. Select Full Folder
-        3. ...
+        3. Choose a sanitized test project
+        4. ...
     validations:
       required: true
 
@@ -75,6 +91,7 @@ body:
     id: actual
     attributes:
       label: Actual behavior
+      description: Include the XCC outcome and visible warning/error counts when relevant.
     validations:
       required: true
 
@@ -82,15 +99,25 @@ body:
     id: diagnostics
     attributes:
       label: Sanitized diagnostics
-      description: Include outcome, mode, counts, error category, and relevant CI/build output. Never paste collected context or credentials.
+      description: Include only the relevant final error block, relative paths, counts, outcome, or CI/build output. Never paste secrets or collected context.
       render: text
+
+  - type: textarea
+    id: visual
+    attributes:
+      label: Sanitized screenshot or recording
+      description: Drag and drop visual evidence for GUI, tray, icon, or DPI issues. Remove private paths and project content first.
 
   - type: checkboxes
     id: safety
     attributes:
       label: Submission checks
       options:
-        - label: I removed secrets, tokens, private paths, and proprietary source content.
+        - label: I removed credentials, tokens, private keys, connection strings, and detected values.
+          required: true
+        - label: I removed private paths, proprietary source, and confidential Git diffs.
           required: true
         - label: I checked existing issues for duplicates.
+          required: true
+        - label: This is not a private security vulnerability requiring a GitHub security advisory.
           required: true

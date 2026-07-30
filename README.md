@@ -2,177 +2,119 @@
 [![Latest Release](https://img.shields.io/github/v/release/End1essspace/xcc-context-collector?display_name=tag)](https://github.com/End1essspace/xcc-context-collector/releases)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 
-[ENG]
+# XCC Context Collector
 
-📋 **XCC Context Collector**
+**English** · [Русский](#русский)
 
-**XCC Context Collector** is a Windows desktop utility for collecting clean project code context  
-and copying it directly to the clipboard for AI coding workflows.
+XCC Context Collector is a Windows desktop utility that turns project files, folders, Git changes, or a project tree into one structured context block for AI coding assistants.
 
-It is designed for developers working with **ChatGPT, Codex, Claude, and other AI assistants**,  
-where structured project context needs to be prepared quickly and consistently.
+It is built for developers working with ChatGPT, Codex, Claude, and similar tools when sending many project files manually is slow, repetitive, or blocked by attachment and context-size limits.
 
-AI chats often have limits on file uploads, attached files, and context size. Manually sending many project files is slow, repetitive, and often impossible in one message. XCC solves this by turning selected files, full project folders, Git changes, or a project tree into one structured AI-ready context block that can be pasted directly into an AI chat.
+Current version: **v1.2.0**
 
-⬇️ **Download:** [GitHub Releases](https://github.com/End1essspace/xcc-context-collector/releases)
+[Download from GitHub Releases](https://github.com/End1essspace/xcc-context-collector/releases)
 
-🖼 **Interface**
+## Interface
 
 | Collect and result health | Metadata-only runtime history |
 |---|---|
 | ![XCC Collect page](docs/screenshots/xcc-collect.png) | ![XCC History page](docs/screenshots/xcc-history.png) |
 
-These previews show the v1.2.0 release layout. The portable build is published through GitHub Releases after the complete Windows validation gate.
+Official builds are published through GitHub Releases after the automated and clean-host Windows validation gates described in [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
 
+## What XCC does
 
-🚀 **Core Features**
+XCC provides four collection modes:
 
-📂 **Project Context Collection**
-- Select individual files
-- Select a full project folder
-- Collect Git changed files
-- Copy project tree only, without file contents
-- Include Git diff in Git mode
-- Filter supported source, documentation, configuration, script, API, and database text files
-- Skip cache, build, dependency, and IDE folders
+| Mode | Purpose |
+|---|---|
+| **Selected Files** | Collect explicitly selected files, including files from different folders or drives. |
+| **Full Folder** | Scan a project folder, apply built-in exclusions and project ignore rules, and include a project tree. |
+| **Git Changed Files** | Collect supported changed files plus separately labelled staged and unstaged Git diffs. |
+| **Project Tree** | Produce structure-only context without file contents. |
 
-🧠 **AI-Ready Output**
-- Structured output header
-- Project tree included for folder/Git modes
-- Standalone Project Tree mode for structure-only context
-- Per-file content sections
-- Source/output statistics
-- Compact mode for cleaner prompts
-- Character budget with truncation status
-- Oversized file summarization
-- `.xccignore` support and root `.gitignore` filtering in folder/tree modes
-- Optional pre-copy confirmation for likely secrets, credentials, and sensitive filenames
-- Typed run outcomes: success, success with warnings, cancelled, or failed
+The generated output can include:
 
-📋 **Fast Clipboard Workflow**
-- One-click **Collect & Copy**
-- Output copied directly to clipboard
-- Runtime history for recent collection runs
-- Background collection worker keeps the GUI responsive on large projects
-- Live collection phases and processed-file counts
-- Cooperative Cancel action with no partial clipboard copy
-- Runtime duration, coverage, warning, and error statistics
-- History records successful, cancelled, and failed runs without storing file contents or detected values
-- Last selected source and settings are restored between launches
+- XCC version, mode, and collection statistics;
+- safety-warning summaries;
+- typed Git status and staged/unstaged diffs;
+- a project tree;
+- complete per-file sections;
+- errors and an explicit budget summary when output is truncated.
 
-🖥 **Windows Desktop Integration**
-- PySide6 desktop GUI
-- System tray mode
-- `Ctrl+Alt+X` restores the app window through a native Windows hotkey
-- `Esc` hides the window to tray
+## v1.2.0 highlights
+
+### Source-content fidelity
+
+Collected file payloads are framed without trimming, compacting, normalizing, or rewriting their contents. Compact mode affects only XCC-generated structural text.
+
+### Complete Git context
+
+Git mode uses null-delimited porcelain status data and a typed change model. It handles staged, unstaged, untracked, renamed, copied, and deleted changes, including paths with spaces and Unicode.
+
+### Stable file identity
+
+Selected files receive stable, distinguishable display paths. Duplicate basenames and cross-root selections no longer collapse into ambiguous filename-only headers.
+
+### Structure-aware character budget
+
+XCC adds complete structural sections while space remains and reports what was included, omitted, summarized, or partially represented. Source files and Git diffs are not silently cut in the middle.
+
+### Context safety visibility
+
+XCC detects likely sensitive filenames, private-key headers, API tokens, credentials, and credential-bearing connection strings. Detection is heuristic and warning-only: source code is not silently redacted or modified.
+
+The **Safety confirmation** setting controls only the modal pre-copy prompt. Disabling it does not disable detection, warning summaries, counters, outcomes, or metadata-only history.
+
+### Responsive collection pipeline
+
+Scanning, Git inspection, file reading, safety analysis, formatting, and budget processing run outside the Qt main thread. The GUI stays interactive, only one job can run, and cooperative cancellation never copies a partial result.
+
+### Result health and runtime history
+
+Every run has one outcome:
+
+```text
+SUCCESS
+SUCCESS_WITH_WARNINGS
+CANCELLED
+FAILED
+```
+
+Last Run and Runtime History show duration, coverage, truncation, warnings, and errors. History is in-memory and stores metadata only; it does not store collected file contents, Git diffs, detected values, or failure-message bodies.
+
+## Windows integration
+
+- PySide6 desktop interface
+- System-tray mode
+- `Ctrl+Alt+X` native restore hotkey
+- `Esc` to hide the window to tray
 - Close-to-tray behavior
 - Single-instance protection
-- Optional Windows autostart
+- Optional Start with Windows shortcut
+- Persistent local settings
+- Packaged application and tray artwork
 
+## Supported files
 
-🏗 **Architecture Overview**
+XCC collects supported text files by extension and selected project files by exact filename.
 
-Layered Python design:
-
-```text
-config      → constants and supported extensions
-models      → typed collection results, outcomes, statistics, and runtime history records
-scanner     → project folder scanning
-collector   → file reading, progress reporting, and cancellation checks
-pipeline    → background-safe collection orchestration
-qt_worker   → QThread worker and Qt progress/result signals
-formatter   → AI-ready output formatting
-optimizer   → compact output processing
-budget      → character budget and truncation logic
-ignore      → .xccignore and project ignore rule matching
-safety      → sensitive-context warning detection
-git_utils   → Git repository detection, changed files, diff extraction
-settings    → persistent config loading, validation, recovery
-autostart   → Windows Startup shortcut integration
-gui         → PySide6 GUI, tray, settings, history, hotkey restore
-main        → legacy tkinter picker workflow
-hotkey      → legacy standalone hotkey workflow
-```
-
-The installable package uses the standard `src` layout and the import name `xcc`. Project metadata and dependency groups are defined in `pyproject.toml`; `src/xcc/__init__.py` is the single source of the application version. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the supported runtime boundary.
-
-The PySide6 GUI is the only supported release mode. Tkinter picker and `keyboard`-based listener modules are retained only as unsupported development compatibility tools.
-
-
-🗂 **Supported File Types**
-
-XCC supports common source, documentation, configuration, script, API, and database text files.
+### Extensions
 
 ```text
-Python:
-.py
-.pyw
-
-JavaScript / TypeScript / frontend:
-.js
-.jsx
-.ts
-.tsx
-.mjs
-.cjs
-.html
-.css
-.scss
-.sass
-.less
-.vue
-.svelte
-
-Backend / system languages:
-.java
-.kt
-.kts
-.cs
-.go
-.rs
-.c
-.h
-.cpp
-.hpp
-.cc
-.cxx
-.php
-.rb
-.swift
-
-Data / API / database:
-.sql
-.graphql
-.gql
-
-Documentation:
-.md
-.mdx
-.rst
-.txt
-
-Configuration:
-.json
-.jsonc
-.yaml
-.yml
-.toml
-.ini
-.cfg
-.conf
-.properties
-.xml
-
-Scripts:
-.sh
-.bash
-.zsh
-.ps1
-.bat
-.cmd
+Python:                 .py .pyw
+JavaScript / frontend:  .js .jsx .ts .tsx .mjs .cjs .html .css
+                        .scss .sass .less .vue .svelte
+Backend / system:       .java .kt .kts .cs .go .rs .c .h .cpp
+                        .hpp .cc .cxx .php .rb .swift
+Data / API / database:  .sql .graphql .gql
+Documentation:          .md .mdx .rst .txt
+Configuration:          .json .jsonc .yaml .yml .toml .ini .cfg
+                        .conf .properties .xml
+Scripts:                .sh .bash .zsh .ps1 .bat .cmd
 ```
 
-XCC also supports common project filenames without relying only on extensions.
+### Exact filenames
 
 ```text
 Dockerfile
@@ -190,6 +132,7 @@ vite.config.ts
 next.config.js
 next.config.ts
 .gitignore
+.xccignore
 .dockerignore
 .gitattributes
 .editorconfig
@@ -198,10 +141,9 @@ next.config.ts
 .env.sample
 ```
 
-Sensitive files such as `.env`, private keys, certificates, databases, logs, archives, and binaries are not included by default.
+Files such as real `.env` files, private keys, certificates, databases, logs, archives, and binaries are not included by default.
 
-
-🚫 **Excluded Folders**
+## Built-in excluded folders
 
 ```text
 .git
@@ -220,367 +162,254 @@ bin
 obj
 ```
 
+Built-in exclusions cannot be re-enabled by project ignore rules.
 
-🛡 **Context Safety and Ignore Rules**
+## `.xccignore` and `.gitignore`
 
-Create a `.xccignore` file in the project root to exclude additional paths from XCC context.
-
-Supported rule semantics:
+Create `.xccignore` in the project root to add XCC-specific exclusions:
 
 ```text
 # comments and empty lines are ignored
-*.generated.py       # match a file or directory name at any depth
+*.generated.py       # name pattern at any depth
 private/**           # recursive path pattern
 /cache/              # root-anchored directory
-!private/example.py  # re-include a matching path
+!private/example.py  # re-include a matching project path
 ```
 
-Rules use forward-slash paths and support `*`, `?`, `**`, trailing `/`, root-leading `/`, and `!` negation. The last matching project rule wins. Built-in excluded directories such as `.git`, `node_modules`, `dist`, and `build` remain excluded and cannot be re-enabled.
+Supported semantics include `*`, `?`, `**`, trailing `/`, root-leading `/`, and `!` negation. The last matching project rule wins.
 
-Full Folder and Project Tree modes also respect the project-root `.gitignore` by default. Git Changed Files mode uses Git status for normal Git ignore behavior and applies `.xccignore` as an additional XCC-only exclusion layer. Selected Files mode treats explicit selection as intentional and does not apply project ignore rules.
+Mode behavior:
 
-Before copying file content or Git diffs, XCC performs a lightweight heuristic scan for:
+- **Full Folder** and **Project Tree** respect root `.gitignore` and `.xccignore` by default.
+- **Git Changed Files** relies on Git status for normal Git ignore behavior and applies `.xccignore` as an additional XCC-only layer.
+- **Selected Files** treats explicit user selection as intentional and does not apply project ignore rules.
 
-- sensitive filenames;
-- private-key headers;
-- likely API tokens and access keys;
-- likely password assignments;
-- connection strings containing credentials.
+## Character budget behavior
 
-When findings exist, XCC shows a confirmation dialog by default and allows the operation to be cancelled. The **Safety confirmation** toggle in Settings can disable this modal interruption. Detection remains active when the dialog is disabled: findings still appear in generated context, warning counts, outcomes, and runtime history metadata. Warning summaries contain only the relative filename, line number, and warning category. Detected values are not displayed or stored in runtime history.
+The configured **Max output chars** value is a hard upper bound for generated context.
 
-Detection is heuristic. It can produce false positives and is not a security guarantee. XCC warns but does not silently redact or modify collected source code.
+When the full result does not fit, XCC emits an `# XCC Budget Summary` describing:
 
+- limit and used characters;
+- included and omitted files;
+- summarized and partial files;
+- Git diff, project tree, error, and safety-warning section status;
+- a bounded list of omitted paths.
 
-⚙️ **Responsive Collection Pipeline**
+Partial source-file inclusion is disabled by default in v1.2.0, so `Partial files` remains `0` for normal collection output.
 
-Folder scanning, Git inspection, file reading, safety analysis, formatting, and budget processing run outside the Qt main thread. The window remains interactive while a collection is running, including moving, minimizing, restoring from tray, and navigating to non-conflicting pages.
+## Local data and privacy
 
-The status bar reports the active phase and available progress counts. Source, mode, and context-option controls are locked for the duration of the job, while the primary action becomes **Cancel**. Cancellation is cooperative between files and never copies a partial result. Clipboard access and safety confirmation dialogs remain on the GUI thread.
-
-
-📊 **Result Health and Runtime History**
-
-Every collection run has one explicit outcome:
-
-```text
-SUCCESS
-SUCCESS_WITH_WARNINGS
-CANCELLED
-FAILED
-```
-
-Recoverable file-level issues and safety findings remain separate counters. A completed result becomes `SUCCESS_WITH_WARNINGS` when either counter is non-zero, while worker exceptions are `FAILED` and cooperative cancellation is `CANCELLED`.
-
-Last Run and Runtime History show duration, included/omitted/summarized/partial file counts, truncation, warning count, and error count. History stores metadata only: it never stores collected file contents, Git diff payloads, detected secret values, or failure message bodies.
-
-
-🗃 **Data Storage**
-
-All settings are stored locally.
-
-Default configuration path:
+Settings are stored locally at:
 
 ```text
 %USERPROFILE%\.xcc\config.json
 ```
 
-XCC does not require cloud storage or remote accounts.
+XCC has no cloud account requirement and does not upload collected context. The final generated block is copied to the Windows clipboard only after collection completes and any enabled safety confirmation is accepted.
 
+## Portable package
 
-🖥 **Primary App Mode**
-
-Run the GUI from source:
-
-```bash
-python gui.py
-```
-
-For Windows release builds, the primary executable is built from:
+The official Windows x64 package is a portable ZIP:
 
 ```text
-gui.py
+XCC-Context-Collector-v1.2.0-win64.zip
+XCC-Context-Collector-v1.2.0-win64.zip.sha256
 ```
 
+Extract the complete `XCC Context Collector` directory and run:
 
-🧩 **Legacy Development Modes**
-
-These entry points are retained only for unsupported development compatibility. They are not part of the supported release workflow.
-
-Legacy Tkinter picker:
-
-```bash
-python run.py
+```text
+XCC Context Collector.exe
 ```
 
-Legacy standalone `keyboard` listener requires the optional dependency group:
+Keep `_internal` and `VERSION.txt` beside the executable. Python is not required for the packaged build.
 
-```bash
-python -m pip install -e ".[legacy]"
-python hotkey.py
-```
+See [`docs/PORTABLE_ZIP.md`](docs/PORTABLE_ZIP.md) for checksum verification, upgrades, removal, and troubleshooting.
 
-The supported release uses the PySide6 GUI and native Windows restore hotkey.
+## Run from source
 
-
-📦 **Reproducible Source Setup**
-
-XCC v1.2.0 targets **CPython 3.13.x** for source development and release builds. Create an isolated environment and install the required dependency group:
+XCC v1.2.0 supports **CPython 3.13.x** on Windows 10/11 x64.
 
 ```powershell
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
-python -m compileall -q src tests
+python -m compileall -q src tests scripts gui.py run.py hotkey.py
+python scripts\check_version_consistency.py
 python -m pytest -q
+python gui.py
 ```
 
-Runtime, development, build, and legacy dependencies are separated in `pyproject.toml`. `requirements.txt` remains only as a compatibility wrapper for `pip install -r requirements.txt`.
+The installed GUI entry point is also available after installation:
 
-Install build tooling and create the Windows package:
+```powershell
+xcc-context-collector
+```
+
+## Build and validate the Windows package
 
 ```powershell
 python -m pip install -e ".[dev,build]"
-powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
-```
-
-Build output:
-
-```text
-dist\XCC Context Collector\XCC Context Collector.exe
-dist\XCC Context Collector\VERSION.txt
-```
-
-Create a validated portable ZIP and SHA-256 checksum:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\smoke_packaged_app.ps1
-powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
-```
-
-Portable usage and checksum verification are documented in [`docs/PORTABLE_ZIP.md`](docs/PORTABLE_ZIP.md). Release engineering uses [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
-
-Run the isolated M8 installation gate:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_clean_install.ps1
-```
-
-Run the complete v1.2.0 release-candidate gate:
-
-```powershell
 powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
 ```
 
-Manual Windows 10/11 validation and final publication are documented in [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
+The release-candidate gate performs compilation, version checks, the full test suite, clean-install validation, PyInstaller packaging, packaged startup smoke, portable ZIP creation, checksum generation, and archive validation.
 
+Manual Windows 10/11 validation and evidence recording are documented in [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
 
-🖥 **System Requirements**
+## Legacy development tools
 
-* Windows 10 / 11 (64-bit)
-* CPython 3.13.x for supported source/development mode
-* No Python installation required for packaged PyInstaller release
+The supported product is the PySide6 GUI. These root entry points remain only for unsupported development compatibility:
 
+```powershell
+python run.py
+python -m pip install -e ".[legacy]"
+python hotkey.py
+```
 
-🔄 **Versioning**
+New product features must target `gui.py -> xcc.gui -> xcc.pipeline` and the native Windows hotkey path.
 
-Current version: **v1.2.0**
+## Documentation
 
+- [Architecture](docs/ARCHITECTURE.md)
+- [Bug-report diagnostics](docs/BUG_REPORTING.md)
+- [Portable ZIP usage](docs/PORTABLE_ZIP.md)
+- [v1.2.0 validation procedure](docs/M10_VALIDATION.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
+- [Roadmap](docs/roadmap.md)
+- [v1.2.0 release notes](docs/releases/v1.2.0.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
-👨‍💻 **Author**
+## System requirements
+
+- Windows 10 or Windows 11, 64-bit
+- CPython 3.13.x only for supported source/development mode
+- No Python installation required for the packaged application
+
+## Author
 
 **XCON | RX**  
 Telegram: [@End1essspace](https://t.me/End1essspace)  
 GitHub: [End1essspace](https://github.com/End1essspace)
 
+## License
 
-🧾 **License**
-
-XCC Context Collector is licensed under the GNU General Public License v3.0 (GPL-3.0).
-
-You are free to use, modify, and distribute this software under the terms of the GPL v3.
-Any distributed modified versions must also be licensed under GPL v3 and include source code.
-
-
-🧾 **Copyright**
+XCC Context Collector is licensed under the [GNU General Public License v3.0](LICENSE).
 
 Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 
+---
 
------------------------------
+# Русский
 
-[RUS]
+**XCC Context Collector** — Windows-приложение, которое собирает выбранные файлы, папку проекта, Git-изменения или только дерево проекта в один структурированный блок контекста для AI-ассистентов.
 
-📋 **XCC Context Collector**
+XCC рассчитан на разработчиков, работающих с ChatGPT, Codex, Claude и аналогичными инструментами, когда ручная отправка множества файлов занимает время или упирается в ограничения на вложения и размер контекста.
 
-**XCC Context Collector** — это Windows-утилита для сбора чистого контекста кода проекта  
-и копирования его напрямую в буфер обмена для работы с AI-инструментами.
+Текущая версия: **v1.2.0**
 
-Приложение рассчитано на разработчиков, которые работают с **ChatGPT, Codex, Claude и другими AI-ассистентами**,  
-где важно быстро и стабильно подготовить структурированный контекст проекта.
+[Скачать на GitHub Releases](https://github.com/End1essspace/xcc-context-collector/releases)
 
-У AI-чатов часто есть лимиты на загрузку файлов, количество attachments и общий размер контекста. Ручная отправка множества файлов проекта занимает время, повторяется каждый раз и часто не помещается в одно сообщение. XCC решает эту проблему: превращает выбранные файлы, папку проекта, Git-изменения или дерево проекта в один структурированный AI-ready context block для вставки в AI-чат.
+## Интерфейс
 
-⬇️ **Скачать:** [GitHub Releases](https://github.com/End1essspace/xcc-context-collector/releases)
-
-🖼 **Интерфейс**
-
-| Сбор и состояние результата | Metadata-only runtime history |
+| Сбор и состояние результата | История запусков без содержимого файлов |
 |---|---|
 | ![Страница Collect](docs/screenshots/xcc-collect.png) | ![Страница History](docs/screenshots/xcc-history.png) |
 
-Эти repository previews соответствуют текущему layout разработки v1.2. Нативные снимки packaged build обновляются во время финального release gate.
+Официальные сборки публикуются через GitHub Releases после автоматической проверки и ручной валидации на чистых Windows-хостах по процедуре из [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
 
+## Режимы сбора
 
-🚀 **Основные возможности**
+| Режим | Назначение |
+|---|---|
+| **Selected Files** | Сбор явно выбранных файлов, в том числе из разных папок и дисков. |
+| **Full Folder** | Сканирование папки проекта с учётом встроенных исключений и project ignore rules. |
+| **Git Changed Files** | Сбор поддерживаемых изменённых файлов и раздельных staged/unstaged Git diff. |
+| **Project Tree** | Контекст только по структуре проекта, без содержимого файлов. |
 
-📂 **Сбор контекста проекта**
-- Выбор отдельных файлов
-- Выбор полной папки проекта
-- Сбор изменённых Git-файлов
-- Копирование только дерева проекта без содержимого файлов
-- Добавление Git diff в Git-режиме
-- Фильтрация поддерживаемых файлов исходного кода, документации, конфигурации, скриптов, API и баз данных
-- Исключение cache, build, dependency и IDE-папок
+Готовый output может содержать:
 
-🧠 **AI-ready output**
-- Структурированный заголовок
-- Project tree для folder/Git режимов
-- Отдельный Project Tree mode для context только по структуре проекта
-- Отдельные секции по каждому файлу
-- Статистика source/output
-- Compact mode для более чистого prompt
-- Лимит символов с truncation status
-- Summarize для слишком больших файлов
-- Поддержка `.xccignore` и фильтрация по корневому `.gitignore` в folder/tree modes
-- Опциональное подтверждение перед копированием при вероятных секретах, credentials и чувствительных именах файлов
-- Typed outcomes запуска: success, success with warnings, cancelled или failed
+- версию XCC, режим и статистику;
+- краткий список safety warnings;
+- typed Git status и раздельные staged/unstaged diff;
+- дерево проекта;
+- полные секции файлов;
+- ошибки и явный budget summary при ограничении output.
 
-📋 **Быстрый clipboard workflow**
-- One-click **Collect & Copy**
-- Готовый output сразу копируется в буфер обмена
-- Runtime history последних сборов
-- Background worker сохраняет отзывчивость GUI на больших проектах
-- Текущая фаза и количество обработанных файлов отображаются во время сборки
-- Cooperative Cancel не копирует частичный результат в clipboard
-- Runtime duration, coverage, warning и error statistics
-- History учитывает successful, cancelled и failed runs без хранения содержимого файлов и найденных значений
-- Last selected source и настройки восстанавливаются между запусками
+## Главное в v1.2.0
 
-🖥 **Интеграция с Windows**
-- PySide6 desktop GUI
+### Точное сохранение исходного содержимого
+
+XCC не обрезает, не уплотняет и не нормализует payload собранных файлов. Compact mode применяется только к структурному тексту, созданному самим XCC.
+
+### Полный Git-контекст
+
+Git mode использует null-delimited porcelain status и typed change model. Поддерживаются staged, unstaged, untracked, renamed, copied и deleted изменения, включая пути с пробелами и Unicode.
+
+### Стабильная идентичность файлов
+
+Выбранные файлы получают различимые относительные пути. Одинаковые basenames и выбор из разных корней больше не превращаются в неоднозначные filename-only заголовки.
+
+### Structure-aware character budget
+
+XCC добавляет только целые структурные секции и явно сообщает, какие файлы включены, пропущены или заменены summary. Исходные файлы и Git diff не обрываются молча посередине.
+
+### Видимость чувствительного контекста
+
+XCC эвристически обнаруживает чувствительные имена файлов, заголовки приватных ключей, вероятные API tokens, credentials и connection strings с credentials.
+
+Настройка **Safety confirmation** управляет только модальным предупреждением перед копированием. При её отключении detection, warning summary, counters, outcomes и metadata-only history продолжают работать.
+
+### Отзывчивый pipeline
+
+Сканирование, Git inspection, чтение файлов, safety analysis, форматирование и budget processing выполняются вне Qt main thread. Одновременно может работать только одна задача, а cooperative cancellation не копирует частичный результат.
+
+### Result health и runtime history
+
+Каждый запуск получает один outcome:
+
+```text
+SUCCESS
+SUCCESS_WITH_WARNINGS
+CANCELLED
+FAILED
+```
+
+Last Run и Runtime History показывают duration, coverage, truncation, warnings и errors. История хранится только в памяти и содержит metadata, но не содержимое файлов, Git diff, найденные значения или тексты failure messages.
+
+## Интеграция с Windows
+
+- PySide6 desktop interface
 - System tray mode
-- `Ctrl+Alt+X` восстанавливает окно приложения через нативный Windows hotkey
-- `Esc` скрывает окно в трей
-- Close-to-tray поведение
-- Защита от двойного запуска
-- Опциональный Windows autostart
+- Нативный restore hotkey `Ctrl+Alt+X`
+- `Esc` для скрытия окна в tray
+- Close-to-tray
+- Защита от второго экземпляра
+- Опциональный Start with Windows
+- Локальное сохранение настроек
+- Корректные application и tray icons в packaged build
 
+## Поддерживаемые файлы
 
-🏗 **Архитектура**
-
-Слоистая Python-структура:
-
-```text
-config      → константы и поддерживаемые расширения
-models      → typed результаты, outcomes, statistics и runtime history records
-scanner     → сканирование папки проекта
-collector   → чтение файлов, progress reporting и cancellation checks
-pipeline    → background-safe orchestration процесса сборки
-qt_worker   → QThread worker и Qt progress/result signals
-formatter   → AI-ready форматирование
-optimizer   → compact output
-budget      → лимит символов и truncation
-ignore      → обработка .xccignore и project ignore rules
-safety      → предупреждения о потенциально чувствительном context
-git_utils   → Git repository detection, changed files, diff extraction
-settings    → загрузка, валидация и recovery настроек
-autostart   → Windows Startup shortcut integration
-gui         → PySide6 GUI, tray, settings, history, hotkey restore
-main        → legacy tkinter picker workflow
-hotkey      → legacy standalone hotkey workflow
-```
-
-Устанавливаемый package использует стандартный `src` layout и import name `xcc`. Метаданные проекта и группы зависимостей определены в `pyproject.toml`, а `src/xcc/__init__.py` является единственным источником версии приложения. Подробная архитектурная граница описана в [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-PySide6 GUI — единственный поддерживаемый release mode. Tkinter picker и listener на базе `keyboard` сохранены только как неподдерживаемые development compatibility tools.
-
-
-🗂 **Поддерживаемые типы файлов**
-
-XCC поддерживает распространённые текстовые файлы исходного кода, документации, конфигурации, скриптов, API и баз данных.
+### Расширения
 
 ```text
-Python:
-.py
-.pyw
-
-JavaScript / TypeScript / frontend:
-.js
-.jsx
-.ts
-.tsx
-.mjs
-.cjs
-.html
-.css
-.scss
-.sass
-.less
-.vue
-.svelte
-
-Backend / system languages:
-.java
-.kt
-.kts
-.cs
-.go
-.rs
-.c
-.h
-.cpp
-.hpp
-.cc
-.cxx
-.php
-.rb
-.swift
-
-Data / API / database:
-.sql
-.graphql
-.gql
-
-Документация:
-.md
-.mdx
-.rst
-.txt
-
-Конфигурация:
-.json
-.jsonc
-.yaml
-.yml
-.toml
-.ini
-.cfg
-.conf
-.properties
-.xml
-
-Скрипты:
-.sh
-.bash
-.zsh
-.ps1
-.bat
-.cmd
+Python:                 .py .pyw
+JavaScript / frontend:  .js .jsx .ts .tsx .mjs .cjs .html .css
+                        .scss .sass .less .vue .svelte
+Backend / system:       .java .kt .kts .cs .go .rs .c .h .cpp
+                        .hpp .cc .cxx .php .rb .swift
+Data / API / database:  .sql .graphql .gql
+Документация:           .md .mdx .rst .txt
+Конфигурация:           .json .jsonc .yaml .yml .toml .ini .cfg
+                        .conf .properties .xml
+Скрипты:                .sh .bash .zsh .ps1 .bat .cmd
 ```
 
-XCC также поддерживает распространённые проектные файлы по имени, а не только по расширению.
+### Точные имена файлов
 
 ```text
 Dockerfile
@@ -598,6 +427,7 @@ vite.config.ts
 next.config.js
 next.config.ts
 .gitignore
+.xccignore
 .dockerignore
 .gitattributes
 .editorconfig
@@ -606,10 +436,9 @@ next.config.ts
 .env.sample
 ```
 
-Чувствительные файлы вроде `.env`, приватных ключей, сертификатов, баз данных, логов, архивов и бинарных файлов не включаются по умолчанию.
+Настоящие `.env`, приватные ключи, сертификаты, базы данных, логи, архивы и бинарные файлы по умолчанию не включаются.
 
-
-🚫 **Исключаемые папки**
+## Встроенные исключения
 
 ```text
 .git
@@ -628,189 +457,141 @@ bin
 obj
 ```
 
+Встроенные исключения нельзя включить обратно через project ignore rules.
 
-🛡 **Безопасность контекста и ignore rules**
+## `.xccignore` и `.gitignore`
 
-Создай файл `.xccignore` в корне проекта, чтобы исключить дополнительные пути из XCC context.
-
-Поддерживаемая семантика правил:
+Для дополнительных исключений создай `.xccignore` в корне проекта:
 
 ```text
 # комментарии и пустые строки игнорируются
-*.generated.py       # имя файла или папки на любой глубине
+*.generated.py       # совпадение имени на любой глубине
 private/**           # рекурсивный path pattern
-/cache/              # директория относительно корня проекта
-!private/example.py  # повторное включение совпавшего пути
+/cache/              # директория относительно корня
+!private/example.py  # повторное включение matching path
 ```
 
-Правила используют пути с `/` и поддерживают `*`, `?`, `**`, завершающий `/`, начальный `/` для привязки к корню и `!` для negation. Побеждает последнее совпавшее project rule. Встроенные исключения вроде `.git`, `node_modules`, `dist` и `build` всегда остаются исключёнными и не могут быть включены обратно.
+Поддерживаются `*`, `?`, `**`, завершающий `/`, начальный `/` и `!` negation. Побеждает последнее совпавшее project rule.
 
-Full Folder и Project Tree modes по умолчанию также учитывают корневой `.gitignore`. Git Changed Files mode использует Git status для обычного Git ignore behavior и применяет `.xccignore` как дополнительный XCC-only exclusion layer. В Selected Files mode явный выбор пользователя считается намеренным, поэтому project ignore rules не применяются.
+Поведение по режимам:
 
-Перед копированием содержимого файлов или Git diff XCC выполняет лёгкую эвристическую проверку на:
+- **Full Folder** и **Project Tree** по умолчанию учитывают корневые `.gitignore` и `.xccignore`.
+- **Git Changed Files** использует Git status для стандартного Git ignore behavior и применяет `.xccignore` как дополнительный XCC-only слой.
+- **Selected Files** считает явный выбор пользователя намеренным и не применяет project ignore rules.
 
-- чувствительные имена файлов;
-- заголовки приватных ключей;
-- вероятные API tokens и access keys;
-- вероятные password assignments;
-- connection strings с credentials.
+## Лимит символов
 
-При наличии findings XCC по умолчанию показывает confirmation dialog и позволяет отменить операцию. Новый переключатель **Safety confirmation** в Settings позволяет отключить это модальное окно. Detection при этом остаётся активной: findings продолжают попадать в generated context, warning counters, outcome и metadata runtime history. Warning summary содержит только относительный путь, номер строки и категорию предупреждения. Найденные значения не показываются и не сохраняются в runtime history.
+**Max output chars** является жёсткой верхней границей generated context.
 
-Проверка является эвристической, может давать false positives и не является гарантией безопасности. XCC предупреждает пользователя, но не выполняет скрытую redaction и не изменяет исходный код.
+Если весь результат не помещается, XCC добавляет `# XCC Budget Summary` с информацией о:
 
+- лимите и фактически использованных символах;
+- включённых и пропущенных файлах;
+- summary и partial files;
+- состоянии Git diff, project tree, errors и safety warnings;
+- ограниченном списке пропущенных путей.
 
-⚙️ **Responsive collection pipeline**
+В v1.2.0 частичное включение исходных файлов по умолчанию отключено, поэтому в обычном output `Partial files` остаётся равным `0`.
 
-Сканирование папки, Git inspection, чтение файлов, safety analysis, форматирование и budget processing выполняются вне Qt main thread. Во время сборки окно остаётся отзывчивым: его можно перемещать, сворачивать, восстанавливать из tray и открывать страницы, не конфликтующие с активной операцией.
+## Локальные данные и приватность
 
-Status bar показывает текущую фазу и доступные progress counts. Source, mode и context-option controls блокируются до завершения job, а основная кнопка превращается в **Cancel**. Отмена выполняется между файлами и никогда не копирует частичный результат. Clipboard access и safety confirmation dialogs остаются в GUI thread.
-
-
-📊 **Result health и runtime history**
-
-Каждый collection run получает один явный outcome:
-
-```text
-SUCCESS
-SUCCESS_WITH_WARNINGS
-CANCELLED
-FAILED
-```
-
-Recoverable file-level errors и safety warnings учитываются отдельными счётчиками. Успешно завершённый результат становится `SUCCESS_WITH_WARNINGS`, когда хотя бы один из этих счётчиков ненулевой. Worker exceptions получают `FAILED`, cooperative cancellation — `CANCELLED`.
-
-Last Run и Runtime History показывают duration, included/omitted/summarized/partial file counts, truncation, warnings и errors. History хранит только metadata: содержимое файлов, Git diff payloads, найденные secret values и тексты failure messages в неё не записываются.
-
-
-🗃 **Хранение данных**
-
-Все настройки хранятся локально.
-
-Путь по умолчанию:
+Настройки хранятся локально:
 
 ```text
 %USERPROFILE%\.xcc\config.json
 ```
 
-XCC не требует облачного хранилища или удалённых аккаунтов.
+XCC не требует облачного аккаунта и не загружает собранный context. Финальный блок попадает в Windows clipboard только после завершения collection и подтверждения safety dialog, если он включён.
 
+## Portable ZIP
 
-🖥 **Основной режим запуска**
-
-Запуск GUI из исходников:
-
-```bash
-python gui.py
-```
-
-Для Windows release основной executable собирается из:
+Официальный Windows x64 package распространяется как portable ZIP:
 
 ```text
-gui.py
+XCC-Context-Collector-v1.2.0-win64.zip
+XCC-Context-Collector-v1.2.0-win64.zip.sha256
 ```
 
+Распакуй всю папку `XCC Context Collector` и запусти:
 
-🧩 **Legacy development modes**
-
-Эти entry points сохранены только для неподдерживаемой development-совместимости и не относятся к основному release workflow.
-
-Legacy Tkinter picker:
-
-```bash
-python run.py
+```text
+XCC Context Collector.exe
 ```
 
-Legacy listener на базе `keyboard` требует optional dependency group:
+Не отделяй executable от `_internal` и `VERSION.txt`. Для packaged build установка Python не нужна.
 
-```bash
-python -m pip install -e ".[legacy]"
-python hotkey.py
-```
+Подробности: [`docs/PORTABLE_ZIP.md`](docs/PORTABLE_ZIP.md).
 
-Поддерживаемый релиз использует PySide6 GUI и нативный Windows restore hotkey.
+## Запуск из исходников
 
-
-📦 **Воспроизводимая установка из исходников**
-
-Для разработки и release build XCC v1.2.0 поддерживает **CPython 3.13.x**. Создай изолированное окружение и установи нужную группу зависимостей:
+XCC v1.2.0 поддерживает **CPython 3.13.x** на Windows 10/11 x64.
 
 ```powershell
 py -3.13 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e ".[dev]"
-python -m compileall -q src tests
+python -m compileall -q src tests scripts gui.py run.py hotkey.py
+python scripts\check_version_consistency.py
 python -m pytest -q
+python gui.py
 ```
 
-Runtime, development, build и legacy dependencies разделены в `pyproject.toml`. `requirements.txt` оставлен только как compatibility wrapper для `pip install -r requirements.txt`.
+После установки также доступна команда:
 
-Установка build tools и сборка Windows package:
+```powershell
+xcc-context-collector
+```
+
+## Сборка и release validation
 
 ```powershell
 python -m pip install -e ".[dev,build]"
-powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
-```
-
-Результат сборки:
-
-```text
-dist\XCC Context Collector\XCC Context Collector.exe
-dist\XCC Context Collector\VERSION.txt
-```
-
-Создание проверенного portable ZIP и SHA-256 checksum:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\smoke_packaged_app.ps1
-powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
-```
-
-Portable usage и проверка checksum описаны в [`docs/PORTABLE_ZIP.md`](docs/PORTABLE_ZIP.md). Release engineering выполняется по [`docs/RELEASE_CHECKLIST.md`](docs/RELEASE_CHECKLIST.md).
-
-Изолированный M8 installation gate:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_clean_install.ps1
-```
-
-Полный v1.2.0 release-candidate gate:
-
-```powershell
 powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
 ```
 
-Ручная Windows 10/11 validation и финальная публикация описаны в [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
+Release-candidate gate выполняет compileall, version consistency, полный test suite, clean-install validation, PyInstaller build, packaged startup smoke, создание portable ZIP, SHA-256 и archive validation.
 
+Ручная Windows 10/11 validation и evidence recording описаны в [`docs/M10_VALIDATION.md`](docs/M10_VALIDATION.md).
 
-🖥 **Системные требования**
+## Legacy development tools
 
-* Windows 10 / 11 (64-bit)
-* CPython 3.13.x для поддерживаемого запуска из исходников
-* Для packaged PyInstaller release установка Python не требуется
+Поддерживаемый продукт — PySide6 GUI. Эти entry points сохранены только для неподдерживаемой development-совместимости:
 
+```powershell
+python run.py
+python -m pip install -e ".[legacy]"
+python hotkey.py
+```
 
-🔄 **Версионирование**
+Новые product features должны развиваться через `gui.py -> xcc.gui -> xcc.pipeline` и native Windows hotkey path.
 
-Текущая версия: **v1.2.0**
+## Документация
 
+- [Архитектура](docs/ARCHITECTURE.md)
+- [Диагностика bug reports](docs/BUG_REPORTING.md)
+- [Использование portable ZIP](docs/PORTABLE_ZIP.md)
+- [Процедура validation v1.2.0](docs/M10_VALIDATION.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
+- [Roadmap](docs/roadmap.md)
+- [Release notes v1.2.0](docs/releases/v1.2.0.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
-👨‍💻 **Автор**
+## Системные требования
+
+- Windows 10 или Windows 11, 64-bit
+- CPython 3.13.x только для поддерживаемого запуска из исходников
+- Для packaged application Python не требуется
+
+## Автор
 
 **XCON | RX**  
-TG: [@End1essspace](https://t.me/End1essspace)  
+Telegram: [@End1essspace](https://t.me/End1essspace)  
 GitHub: [End1essspace](https://github.com/End1essspace)
 
+## Лицензия
 
-🧾 **Лицензия**
-
-XCC Context Collector распространяется под лицензией GNU General Public License v3.0 (GPL-3.0).
-
-Вы имеете право использовать, изменять и распространять данное программное обеспечение в соответствии с условиями GPL v3.
-Любые распространяемые модифицированные версии также должны быть лицензированы по GPL v3 и сопровождаться исходным кодом.
-
-
-🧾 **Copyright**
+XCC Context Collector распространяется по лицензии [GNU General Public License v3.0](LICENSE).
 
 Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)

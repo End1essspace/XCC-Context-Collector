@@ -4,11 +4,17 @@ title: "[Feature]: "
 labels:
   - enhancement
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Describe the workflow problem first. Keep requests within the supported PySide6 product boundary and do not attach private project content.
+
   - type: textarea
     id: problem
     attributes:
-      label: Problem
-      description: Describe the workflow limitation, not only the proposed UI.
+      label: Workflow problem
+      description: Explain what is difficult, repetitive, unsafe, or unclear in the current XCC workflow.
+      placeholder: "When I use ..., I cannot ... because ..."
     validations:
       required: true
 
@@ -16,35 +22,64 @@ body:
     id: proposal
     attributes:
       label: Proposed behavior
-      description: Explain the expected user-visible behavior and scope boundary.
+      description: Describe the expected user-visible behavior, including relevant states and failure handling.
     validations:
       required: true
 
   - type: dropdown
     id: area
     attributes:
-      label: Area
+      label: Product area
       options:
         - Collection and scanning
         - Git context
-        - Output formatting and budget
-        - Safety warnings
-        - GUI and tray workflow
+        - Output formatting and character budget
+        - Ignore rules and context safety
+        - Result health and runtime history
+        - GUI and navigation
+        - Tray, hotkey, autostart, or single instance
         - Packaging and releases
         - Documentation
         - Other
     validations:
       required: true
 
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Primary benefit
+      options:
+        - Reliability or data integrity
+        - Safety or privacy visibility
+        - Performance or responsiveness
+        - Workflow speed
+        - Windows integration
+        - Distribution or maintenance
+        - Accessibility or usability
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Example workflow
+      description: Use sanitized filenames and paths. Do not attach real collected context.
+
   - type: textarea
     id: alternatives
     attributes:
       label: Alternatives considered
+      description: Describe current workarounds or smaller-scope options.
 
   - type: checkboxes
     id: scope
     attributes:
       label: Scope checks
       options:
-        - label: This request does not require sending private project content.
+        - label: This request targets the supported PySide6 desktop application rather than only a legacy entry point.
+          required: true
+        - label: This request does not require posting private project content or credentials.
+          required: true
+        - label: I checked the roadmap and existing issues for related work.
           required: true
