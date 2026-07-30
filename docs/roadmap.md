@@ -403,7 +403,7 @@ M15 is the release blocker. The `v1.3.0` tag must not be created until all M15 s
 
 ## M15.1 — Release Gate Hardening
 
-**Status: IMPLEMENTED — LOCAL PASS, COMMIT, AND PUSH CONFIRMATION PENDING**
+**Status: DONE**
 
 ### Goal
 
@@ -419,10 +419,10 @@ Ensure final readiness cannot pass without the complete automated report, clean-
 - [x] bind readiness to the final ZIP name and SHA-256;
 - [x] extend Windows evidence questions for Paste Paths and Review;
 - [x] preserve compatibility with historical v1.2.0 evidence;
-- [ ] apply the M15 hardening archive to the repository;
-- [ ] run complete local tests;
-- [ ] inspect generated reports;
-- [ ] commit and push the hardening changes.
+- [x] apply the M15 hardening archive to the repository;
+- [x] run complete local tests;
+- [x] inspect generated reports;
+- [x] commit and push the hardening changes.
 
 ### Intended commit
 
@@ -434,7 +434,7 @@ build: harden v1.3.0 release gates
 
 ## M15.2 — Final UI Reference Contract
 
-**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 ### Goal
 
@@ -491,7 +491,7 @@ docs: define v1.3.0 interface reference
 
 ## M15.3 — Theme and Reusable UI Foundation
 
-**Status: PLANNED**
+**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
 
 ### Goal
 
@@ -508,19 +508,28 @@ tests/test_ui_components.py
 
 ### Work
 
-- [ ] extract color tokens;
-- [ ] extract spacing and radius constants;
-- [ ] extract typography sizes and weights;
-- [ ] extract shared QSS;
-- [ ] add reusable section/card headers;
-- [ ] add reusable status capsules;
-- [ ] add reusable metric rows;
-- [ ] add primary and secondary button variants;
-- [ ] add helper-text component;
-- [ ] preserve all existing behavior;
+- [x] extract color tokens;
+- [x] extract spacing and radius constants;
+- [x] extract typography sizes and weights;
+- [x] extract shared QSS;
+- [x] add reusable section/card headers;
+- [x] add reusable status capsules;
+- [x] add reusable metric rows;
+- [x] add primary and secondary button variants;
+- [x] add helper-text component;
+- [x] preserve all existing behavior;
 - [ ] verify source and packaged resource loading.
 
+### Implementation Result
+
+- shared semantic palette and geometry tokens live in `src/xcc/ui_theme.py`;
+- application and tray stylesheets are no longer embedded in `XccMainWindow`;
+- reusable component factories and metric/status widgets live in `src/xcc/ui_components.py`;
+- `src/xcc/gui.py` delegates shared visual construction without changing collection-domain behavior;
+- dedicated theme and component tests cover the new boundary.
+
 ### Acceptance Criteria
+
 
 - no collection behavior changes;
 - all current tests pass;

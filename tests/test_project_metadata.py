@@ -105,6 +105,33 @@ def test_v130_ui_reference_contract_is_frozen() -> None:
         assert marker in reference
 
     assert "## M15.2 — Final UI Reference Contract" in roadmap
-    assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in roadmap
+    assert "**Status: DONE**" in roadmap[roadmap.index("## M15.2"):roadmap.index("## M15.3")]
     assert "docs/UI_REFERENCE_v1.3.0.md" in roadmap
 
+def test_v130_ui_foundation_modules_are_registered() -> None:
+    theme_path = PROJECT_ROOT / "src" / "xcc" / "ui_theme.py"
+    components_path = PROJECT_ROOT / "src" / "xcc" / "ui_components.py"
+    gui_path = PROJECT_ROOT / "src" / "xcc" / "gui.py"
+    roadmap_path = PROJECT_ROOT / "docs" / "roadmap.md"
+
+    assert theme_path.is_file()
+    assert components_path.is_file()
+
+    theme = theme_path.read_text(encoding="utf-8")
+    components = components_path.read_text(encoding="utf-8")
+    gui = gui_path.read_text(encoding="utf-8")
+    roadmap = roadmap_path.read_text(encoding="utf-8")
+
+    assert "class UiPalette" in theme
+    assert "class UiMetrics" in theme
+    assert "def build_application_stylesheet" in theme
+    assert "def build_tray_menu_stylesheet" in theme
+    assert "class MetricCapsule" in components
+    assert "class StatusCapsule" in components
+    assert "def make_primary_button" in components
+    assert "def make_secondary_button" in components
+    assert "from .ui_theme import (" in gui
+    assert "from .ui_components import (" in gui
+    assert "self.setStyleSheet(build_application_stylesheet())" in gui
+    assert "tray_menu.setStyleSheet(build_tray_menu_stylesheet())" in gui
+    assert "## M15.3 — Theme and Reusable UI Foundation" in roadmap

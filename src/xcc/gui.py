@@ -61,6 +61,24 @@ from .safety import (
     should_show_safety_confirmation,
 )
 from .resources import resource_path
+from .ui_components import (
+    MetricCapsule,
+    make_card,
+    make_card_layout,
+    make_card_title,
+    make_helper_text,
+    make_primary_button,
+    make_secondary_button,
+    make_section_title,
+    make_status_capsule,
+    set_metric_value,
+)
+from .ui_theme import (
+    METRICS,
+    PALETTE,
+    build_application_stylesheet,
+    build_tray_menu_stylesheet,
+)
 from .path_list_parser import parse_path_list
 from .selected_files_importer import (
     SelectedFilesImportResult,
@@ -121,7 +139,7 @@ class SidebarItemDelegate(QStyledItemDelegate):
 
         if selected:
             painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor("#D6A93A"))
+            painter.setBrush(QColor(PALETTE.accent))
             painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
         elif hovered:
             painter.setPen(Qt.PenStyle.NoPen)
@@ -129,17 +147,17 @@ class SidebarItemDelegate(QStyledItemDelegate):
             painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
 
         if not enabled:
-            icon_color = "#666A70"
-            text_color = "#777B80"
+            icon_color = PALETTE.disabled_text
+            text_color = PALETTE.muted_text
         elif selected:
-            icon_color = "#111111"
-            text_color = "#111111"
+            icon_color = PALETTE.dark_text
+            text_color = PALETTE.dark_text
         elif hovered:
-            icon_color = "#D6A93A"
-            text_color = "#F2F2F2"
+            icon_color = PALETTE.accent
+            text_color = PALETTE.primary_text
         else:
-            icon_color = "#AEB3BA"
-            text_color = "#D6D8DB"
+            icon_color = PALETTE.secondary_text
+            text_color = PALETTE.primary_text
 
         icon_x = item_rect.left() + self.CONTENT_LEFT
         icon_y = item_rect.top() + (item_rect.height() - self.ICON_SIZE) // 2
@@ -231,7 +249,7 @@ class SidebarNavigation(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.setObjectName("Sidebar")
-        self.setFixedWidth(192)
+        self.setFixedWidth(METRICS.sidebar_width)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 8, 0, 8)
@@ -425,12 +443,11 @@ class SelectedFilesReviewDialog(QDialog):
         title_row.addWidget(self.count_label)
         layout.addLayout(title_row)
 
-        description = QLabel(
+        description = make_helper_text(
             "Review relative paths, remove individual files, or clear the "
-            "selection before collecting context."
+            "selection before collecting context.",
+            object_name="DialogDescription",
         )
-        description.setObjectName("DialogDescription")
-        description.setWordWrap(True)
         layout.addWidget(description)
 
         root_label = QLabel("Project root")
@@ -481,14 +498,16 @@ class SelectedFilesReviewDialog(QDialog):
         footer_row.setSpacing(10)
         footer_row.addStretch(1)
 
-        self.cancel_button = QPushButton("Cancel")
-        self.cancel_button.setFixedHeight(40)
-        self.cancel_button.setMinimumWidth(100)
+        self.cancel_button = make_secondary_button(
+            "Cancel",
+            minimum_width=100,
+        )
 
-        self.apply_button = QPushButton("Apply Changes")
-        self.apply_button.setObjectName("DialogPrimaryButton")
-        self.apply_button.setFixedHeight(40)
-        self.apply_button.setMinimumWidth(138)
+        self.apply_button = make_primary_button(
+            "Apply Changes",
+            object_name="DialogPrimaryButton",
+            minimum_width=138,
+        )
 
         footer_row.addWidget(self.cancel_button)
         footer_row.addWidget(self.apply_button)
@@ -597,12 +616,11 @@ class PastePathsDialog(QDialog):
         title = QLabel("Paste File Paths")
         title.setObjectName("DialogTitle")
 
-        description = QLabel(
+        description = make_helper_text(
             "Choose the project root once. Relative paths from the pasted "
-            "AI response will be resolved and validated before they are added."
+            "AI response will be resolved and validated before they are added.",
+            object_name="DialogDescription",
         )
-        description.setObjectName("DialogDescription")
-        description.setWordWrap(True)
 
         layout.addWidget(title)
         layout.addWidget(description)
@@ -652,14 +670,16 @@ class PastePathsDialog(QDialog):
         button_row.setSpacing(10)
         button_row.addStretch(1)
 
-        self.cancel_button = QPushButton("Cancel")
-        self.cancel_button.setFixedHeight(40)
-        self.cancel_button.setMinimumWidth(100)
+        self.cancel_button = make_secondary_button(
+            "Cancel",
+            minimum_width=100,
+        )
 
-        self.add_button = QPushButton("Add Files")
-        self.add_button.setObjectName("DialogPrimaryButton")
-        self.add_button.setFixedHeight(40)
-        self.add_button.setMinimumWidth(132)
+        self.add_button = make_primary_button(
+            "Add Files",
+            object_name="DialogPrimaryButton",
+            minimum_width=132,
+        )
 
         button_row.addWidget(self.cancel_button)
         button_row.addWidget(self.add_button)
@@ -810,7 +830,7 @@ class XccMainWindow(QMainWindow):
 
         status_bar = QFrame()
         status_bar.setObjectName("StatusBar")
-        status_bar.setFixedHeight(32)
+        status_bar.setFixedHeight(METRICS.footer_height)
 
         status_layout = QHBoxLayout(status_bar)
         status_layout.setContentsMargins(18, 0, 18, 0)
@@ -1061,7 +1081,7 @@ class XccMainWindow(QMainWindow):
     def _build_header(self) -> QWidget:
         header = QFrame()
         header.setObjectName("Header")
-        header.setFixedHeight(56)
+        header.setFixedHeight(METRICS.header_height)
 
         layout = QHBoxLayout(header)
         layout.setContentsMargins(18, 0, 18, 0)
@@ -1086,13 +1106,15 @@ class XccMainWindow(QMainWindow):
         title = QLabel("XCC Context Collector")
         title.setObjectName("HeaderTitle")
 
-        self.header_status = QLabel("Ready")
-        self.header_status.setObjectName("StatusCapsule")
-        self.header_status.setFixedHeight(34)
+        self.header_status = make_status_capsule(
+            "Ready",
+            object_name="StatusCapsule",
+        )
 
-        hotkey = QLabel(f"Hotkey: {DEFAULT_HOTKEY}")
-        hotkey.setObjectName("HotkeyCapsule")
-        hotkey.setFixedHeight(34)
+        hotkey = make_status_capsule(
+            f"Hotkey: {DEFAULT_HOTKEY}",
+            object_name="HotkeyCapsule",
+        )
 
         layout.addWidget(icon_label)
         layout.addWidget(title, 1)
@@ -1123,35 +1145,7 @@ class XccMainWindow(QMainWindow):
 
         tray_menu = QMenu(self)
         tray_menu.setObjectName("TrayMenu")
-        tray_menu.setStyleSheet(
-            """
-            QMenu {
-                background: #151515;
-                border: 1px solid #5A4820;
-                padding: 6px;
-                color: #F2F2F2;
-                font-family: Segoe UI;
-                font-size: 12px;
-            }
-
-            QMenu::item {
-                background: transparent;
-                padding: 8px 28px 8px 22px;
-                border-radius: 6px;
-            }
-
-            QMenu::item:selected {
-                background: #D6A93A;
-                color: #111111;
-            }
-
-            QMenu::separator {
-                height: 1px;
-                background: #2F2A1C;
-                margin: 5px 4px;
-            }
-            """
-        )
+        tray_menu.setStyleSheet(build_tray_menu_stylesheet())
 
         show_action = QAction("Show XCC", self)
         show_action.triggered.connect(self._show_from_tray)
@@ -1535,10 +1529,11 @@ class XccMainWindow(QMainWindow):
 
         layout.addSpacing(18)
 
-        self.collect_button = QPushButton("Collect && Copy")
-        self.collect_button.setObjectName("PrimaryButton")
-        self.collect_button.setFixedHeight(48)
-        self.collect_button.setMinimumHeight(48)
+        self.collect_button = make_primary_button(
+            "Collect && Copy",
+            height=METRICS.primary_action_height,
+        )
+        self.collect_button.setMinimumHeight(METRICS.primary_action_height)
         self.collect_button.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
@@ -2389,7 +2384,7 @@ class XccMainWindow(QMainWindow):
         )
 
     def _set_metric_value(self, metric: QFrame, value: str) -> None:
-        metric.value_label.setText(value)
+        set_metric_value(metric, value)
 
     def _clear_source(self, *, announce: bool = True) -> None:
         self.selected_paths = []
@@ -2694,29 +2689,17 @@ class XccMainWindow(QMainWindow):
         return page
 
     def _section_title(self, text: str) -> QLabel:
-        label = QLabel(text)
-        label.setObjectName("SectionTitle")
-        return label
+        return make_section_title(text)
 
     def _card_title(self, text: str) -> QLabel:
-        label = QLabel(text)
-        label.setObjectName("CardTitle")
-        label.setFixedHeight(18)
-        label.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        return label
+        return make_card_title(text)
 
     def _card(self) -> QFrame:
-        card = QFrame()
-        card.setObjectName("Card")
-        return card
-    
+        return make_card()
+
     def _card_layout(self, card: QFrame) -> QVBoxLayout:
-        layout = QVBoxLayout(card)
-        layout.setContentsMargins(24, 18, 24, 18)
-        layout.setSpacing(20)
-        layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        return layout
-    
+        return make_card_layout(card)
+
     def _add_history_entry(self, record: CollectionRunRecord) -> None:
         self.history_entries.insert(0, record)
         self._render_history_entries()
@@ -2833,682 +2816,11 @@ class XccMainWindow(QMainWindow):
         badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
         return badge
 
-    def _metric_capsule(self, label: str, value: str) -> QFrame:
-        capsule = QFrame()
-        capsule.setObjectName("MetricCapsule")
-        capsule.setMinimumWidth(0)
-        capsule.setFixedHeight(52)
-
-        layout = QVBoxLayout(capsule)
-        layout.setContentsMargins(14, 6, 14, 6)
-        layout.setSpacing(2)
-
-        label_widget = QLabel(label)
-        label_widget.setObjectName("MetricLabel")
-
-        value_widget = QLabel(value)
-        value_widget.setObjectName("MetricValue")
-
-        capsule.value_label = value_widget
-
-        layout.addWidget(label_widget)
-        layout.addWidget(value_widget)
-
-        return capsule
+    def _metric_capsule(self, label: str, value: str) -> MetricCapsule:
+        return MetricCapsule(label, value)
     
     def _apply_theme(self) -> None:
-        self.setStyleSheet(
-            """
-            QMainWindow {
-                background: #0F0F10;
-            }
-
-            QWidget {
-                background: #0F0F10;
-                color: #F2F2F2;
-                font-family: Segoe UI;
-                font-size: 13px;
-            }
-
-            #Header {
-                background: #151515;
-                border-bottom: 1px solid #2F2A1C;
-            }
-
-            #HeaderTitle {
-                font-size: 15px;
-                font-weight: 700;
-                color: #D6A93A;
-                background: transparent;
-            }
-
-            #StatusCapsule {
-                background: #1A1A1A;
-                border: 1px solid #5A4820;
-                border-radius: 10px;
-                padding: 4px 12px;
-                color: #F2F2F2;
-            }
-
-            #HotkeyCapsule {
-                background: #171717;
-                border: 1px solid #302A1D;
-                border-radius: 10px;
-                padding: 4px 11px;
-                color: #A98B48;
-            }
-
-            #Sidebar {
-                background: #121212;
-                border-right: 1px solid #2F2A1C;
-            }
-
-            #SidebarList {
-                background: transparent;
-                border: none;
-                outline: none;
-                padding: 0px;
-            }
-
-            #SidebarList::item {
-                background: transparent;
-                border: none;
-                padding: 0px;
-                margin: 0px;
-            }
-
-            #SectionTitle {
-                font-size: 22px;
-                font-weight: 700;
-                color: #F2F2F2;
-                background: transparent;
-            }
-
-            #Card {
-                background: #161616;
-                border: 1px solid #443820;
-                border-radius: 14px;
-            }
-
-            #CardTitle {
-                color: #D6A93A;
-                font-size: 13px;
-                font-weight: 800;
-                background: transparent;
-                padding: 0px;
-                margin: 0px;
-            }
-            #FieldLabel {
-                color: #D6D6D6;
-                font-size: 13px;
-                font-weight: 700;
-                background: transparent;
-            }
-
-            #FieldLabelSmall {
-                color: #B8B8B8;
-                background: transparent;
-            }
-
-            QLineEdit {
-                background: #101010;
-                border: 1px solid #5A4820;
-                border-radius: 10px;
-                padding: 8px 10px;
-                color: #F2F2F2;
-                selection-background-color: #D6A93A;
-                selection-color: #111111;
-            }
-
-            QLineEdit:hover {
-                border: 1px solid #C79A2E;
-            }
-
-            QLineEdit:focus {
-                border: 1px solid #D6A93A;
-            }
-
-            QPushButton {
-                background: #1A1A1A;
-                border: 1px solid #5A4820;
-                border-radius: 10px;
-                padding: 9px 14px;
-                color: #F2F2F2;
-            }
-
-            QPushButton:hover {
-                background: #232323;
-                border: 1px solid #D6A93A;
-                color: #D6A93A;
-            }
-
-            QPushButton:pressed {
-                background: #2A2412;
-            }
-
-            #PrimaryButton {
-                background: #C79A31;
-                color: #111111;
-                font-size: 14px;
-                font-weight: 800;
-                border: 1px solid #C79A31;
-                border-radius: 11px;
-            }
-
-            #PrimaryButton:hover {
-                background: #D6A93A;
-                border: 1px solid #D6A93A;
-                color: #111111;
-            }
-
-            #PrimaryButton:pressed {
-                background: #B98A28;
-                border: 1px solid #B98A28;
-            }
-
-            QRadioButton,
-            QCheckBox {
-                spacing: 8px;
-                padding: 2px 0;
-                background: transparent;
-                font-size: 13px;
-            }
-
-            QRadioButton:hover,
-            QCheckBox:hover {
-                color: #D6A93A;
-            }
-
-            QRadioButton::indicator,
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-                background: #101010;
-                border: 1px solid #5A4820;
-            }
-
-            QRadioButton::indicator {
-                border-radius: 8px;
-            }
-
-            QCheckBox::indicator {
-                border-radius: 4px;
-            }
-
-            QRadioButton::indicator:hover,
-            QCheckBox::indicator:hover {
-                border: 1px solid #D6A93A;
-            }
-
-            QRadioButton::indicator:checked,
-            QCheckBox::indicator:checked {
-                background: #D6A93A;
-                border: 1px solid #D6A93A;
-            }
-
-            #MetricCapsule {
-                background: #181818;
-                border: 1px solid #40341D;
-                border-radius: 10px;
-            }
-
-            #MetricCapsule:hover {
-                background: #1E1B12;
-                border: 1px solid #D6A93A;
-            }
-
-            #MetricLabel {
-                color: #AFAFAF;
-                font-size: 11px;
-                background: transparent;
-            }
-
-            #MetricValue {
-                color: #D6A93A;
-                font-size: 15px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #LastRunState {
-                color: #9A9A9A;
-                font-size: 11px;
-                background: #111111;
-                border: 1px solid #3A311C;
-                border-radius: 8px;
-                padding: 4px 10px;
-                min-width: 132px;
-            }
-
-            #StatusBar {
-                background: #151515;
-                border-top: 1px solid #2F2A1C;
-            }
-
-            #StatusText {
-                color: #AFAFAF;
-                font-size: 12px;
-                background: transparent;
-            }
-
-            #StatusVersion {
-                color: #858585;
-                font-size: 11px;
-                background: transparent;
-            }
-            #MetricGroupTitle {
-                color: #E0E0E0;
-                font-size: 12px;
-                font-weight: 700;
-                background: transparent;
-                margin-bottom: 2px;
-            }
-            #TransparentWidget {
-                background: transparent;
-            }
-            #HistoryEntry {
-                background: #181818;
-                border: 1px solid #3A3018;
-                border-radius: 10px;
-            }
-
-            #HistoryEntry:hover {
-                background: #1E1B12;
-                border: 1px solid #D6A93A;
-            }
-
-            #HistoryTime {
-                color: #D6A93A;
-                font-size: 12px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #HistoryModeCapsule,
-            #HistoryOutcomeCapsule {
-                background: #101010;
-                border: 1px solid #5A4820;
-                border-radius: 8px;
-                padding: 3px 10px;
-                color: #F2F2F2;
-                font-size: 11px;
-                font-weight: 700;
-            }
-
-            #HistoryOutcomeCapsule {
-                color: #D6A93A;
-            }
-
-            #HistorySource {
-                color: #D6D6D6;
-                font-size: 12px;
-                background: transparent;
-            }
-
-            #HistoryStats {
-                color: #AFAFAF;
-                font-size: 11px;
-                background: transparent;
-            }
-
-            #HistoryHealth {
-                color: #8F8F8F;
-                font-size: 11px;
-                background: transparent;
-            }
-
-            #HistoryEmpty {
-                color: #8F8F8F;
-                font-size: 13px;
-                background: transparent;
-            }
-            #HistoryScrollArea {
-                background: transparent;
-                border: none;
-            }
-
-            #HistoryScrollArea QWidget {
-                background: transparent;
-            }
-
-            QScrollBar:vertical {
-                background: #101010;
-                width: 10px;
-                margin: 0px;
-                border-radius: 5px;
-            }
-
-            QScrollBar::handle:vertical {
-                background: #463817;
-                min-height: 28px;
-                border-radius: 5px;
-            }
-
-            QScrollBar::handle:vertical:hover {
-                background: #D6A93A;
-            }
-
-            QScrollBar::add-line:vertical,
-            QScrollBar::sub-line:vertical {
-                height: 0px;
-            }
-
-            QScrollBar::add-page:vertical,
-            QScrollBar::sub-page:vertical {
-                background: transparent;
-            }
-            #PageSubtitle {
-                color: #8F8F8F;
-                font-size: 12px;
-                background: transparent;
-                padding: 0px;
-                margin: 0px;
-            }
-
-            #HeaderAppIcon {
-                background: transparent;
-            }
-            #SettingsSectionTitle {
-                color: #D6A93A;
-                font-size: 12px;
-                font-weight: 800;
-                background: transparent;
-                margin-top: 0px;
-            }
-            #SettingsToggle {
-                background: transparent;
-                border: none;
-                color: #D6D6D6;
-                font-size: 11px;
-                font-weight: 700;
-            }
-
-            #SettingsToggle:hover {
-                color: #D6A93A;
-            }
-            #SettingsGroup {
-                background: #141414;
-                border: 1px solid #2F2A1C;
-                border-radius: 12px;
-            }
-
-            #SettingsGroup:hover {
-                border: 1px solid #5A4820;
-            }
-
-            #SettingsRow {
-                background: #181818;
-                border: 1px solid #2F2A1C;
-                border-radius: 10px;
-            }
-
-            #SettingsRow:hover {
-                background: #1E1B12;
-                border: 1px solid #5A4820;
-            }
-
-            #SettingsRowTitle {
-                color: #F2F2F2;
-                font-size: 12px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #SettingsRowDescription {
-                color: #8F8F8F;
-                font-size: 11px;
-                background: transparent;
-            }
-
-            #SettingsRowValue {
-                color: #D6A93A;
-                font-size: 13px;
-                font-weight: 800;
-                background: transparent;
-                min-width: 110px;
-            }
-            #AboutCard {
-                background: #161616;
-                border: 1px solid #302A1D;
-                border-radius: 14px;
-            }
-
-            #AboutAppIcon {
-                background: transparent;
-            }
-
-            #AboutTitle {
-                color: #F2F2F2;
-                font-size: 22px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #AboutSubtitle {
-                color: #D6A93A;
-                font-size: 14px;
-                font-weight: 700;
-                background: transparent;
-            }
-
-            #AboutVersion {
-                color: #8F8F8F;
-                font-size: 12px;
-                background: transparent;
-            }
-
-            #AboutDescription {
-                color: #C9C9C9;
-                font-size: 13px;
-                background: transparent;
-            }
-
-            #AboutBadge {
-                background: #181818;
-                border: 1px solid #2F2A1C;
-                border-radius: 10px;
-                padding: 4px 12px;
-                color: #D6A93A;
-                font-size: 11px;
-                font-weight: 800;
-            }
-
-            #AboutBadge:hover {
-                background: #1E1B12;
-                border: 1px solid #5A4820;
-            }
-
-            #AboutSectionTitle {
-                color: #D6A93A;
-                font-size: 13px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #AboutInfoRow {
-                background: #181818;
-                border: 1px solid #2F2A1C;
-                border-radius: 10px;
-            }
-
-            #AboutInfoLabel {
-                color: #AFAFAF;
-                font-size: 11px;
-                font-weight: 700;
-                background: transparent;
-            }
-
-            #AboutInfoValue {
-                color: #D6A93A;
-                font-size: 12px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #AboutFooter {
-                color: #8F8F8F;
-                font-size: 12px;
-                background: transparent;
-                padding-top: 4px;
-            }
-            #SourceInputBox {
-                background: #101010;
-                border: 1px solid #5A4820;
-                border-radius: 10px;
-            }
-
-            #SourceInputBox:hover {
-                border: 1px solid #C79A2E;
-            }
-
-            #SourceInputEmbedded {
-                background: transparent;
-                border: none;
-                border-radius: 0px;
-                padding: 0px;
-                color: #F2F2F2;
-                selection-background-color: #D6A93A;
-                selection-color: #111111;
-            }
-
-            #SourceInputEmbedded:hover,
-            #SourceInputEmbedded:focus {
-                border: none;
-            }
-
-            #ClearSourceButton {
-                background: transparent;
-                border: 1px solid #5A4820;
-                border-radius: 12px;
-                color: #D6A93A;
-                font-size: 14px;
-                font-weight: 800;
-                padding: 0px;
-                margin: 0px;
-                text-align: center;
-            }
-
-            #ClearSourceButton:hover {
-                background: #2A2412;
-                border: 1px solid #D6A93A;
-                color: #F2F2F2;
-            }
-
-            #ClearSourceButton:pressed {
-                background: #D6A93A;
-                border: 1px solid #D6A93A;
-                color: #111111;
-            }
-
-            #PastePathsDialog {
-                background: #0F0F10;
-            }
-
-            #DialogTitle {
-                color: #F2F2F2;
-                font-size: 20px;
-                font-weight: 800;
-                background: transparent;
-            }
-
-            #DialogDescription {
-                color: #AFAFAF;
-                font-size: 12px;
-                background: transparent;
-            }
-
-            #DialogSummary {
-                color: #D6A93A;
-                font-size: 12px;
-                font-weight: 700;
-                background: #171717;
-                border: 1px solid #3A311C;
-                border-radius: 8px;
-                padding: 8px 10px;
-            }
-
-            #PathListInput {
-                background: #101010;
-                border: 1px solid #5A4820;
-                border-radius: 10px;
-                padding: 10px;
-                color: #F2F2F2;
-                selection-background-color: #D6A93A;
-                selection-color: #111111;
-                font-family: Consolas;
-                font-size: 12px;
-            }
-
-            #PathListInput:hover,
-            #PathListInput:focus {
-                border: 1px solid #D6A93A;
-            }
-
-            #DialogPrimaryButton {
-                background: #C79A31;
-                border: 1px solid #C79A31;
-                color: #111111;
-                font-weight: 800;
-            }
-
-            #DialogPrimaryButton:hover {
-                background: #D6A93A;
-                border: 1px solid #D6A93A;
-                color: #111111;
-            }
-
-            #DialogPrimaryButton:disabled {
-                background: #2A2A2A;
-                border: 1px solid #3A3A3A;
-                color: #777777;
-            }
-
-            #SelectedFilesReviewDialog {
-                background: #0F0F10;
-            }
-
-            #SelectedFilesCount {
-                color: #D6A93A;
-                font-size: 12px;
-                font-weight: 800;
-                background: #171717;
-                border: 1px solid #3A311C;
-                border-radius: 8px;
-                padding: 5px 10px;
-            }
-
-            #ReviewRootInput {
-                color: #B9B9B9;
-            }
-
-            #SelectedFilesReviewList {
-                background: #101010;
-                border: 1px solid #5A4820;
-                border-radius: 10px;
-                padding: 6px;
-                outline: none;
-                color: #E7E7E7;
-                font-family: Consolas;
-                font-size: 12px;
-            }
-
-            #SelectedFilesReviewList::item {
-                min-height: 30px;
-                border-radius: 6px;
-                padding: 3px 8px;
-            }
-
-            #SelectedFilesReviewList::item:hover {
-                background: #211D12;
-                color: #F2F2F2;
-            }
-
-            #SelectedFilesReviewList::item:selected {
-                background: #D6A93A;
-                color: #111111;
-            }
-            """
-        )
+        self.setStyleSheet(build_application_stylesheet())
 
 
 def run_gui() -> None:
