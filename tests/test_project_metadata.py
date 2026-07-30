@@ -301,15 +301,18 @@ def test_v130_responsive_collect_layout_is_registered() -> None:
         roadmap.index("## M15.7"):
         roadmap.index("## M15.8")
     ]
-    assert "M15.7.3 COMPOSITION POLISH" in m157
+    assert "M15.7.4 PRODUCT DENSITY AND BRANDING POLISH" in m157
     assert "### M15.7.2 — Geometry Architecture Reset and Sidebar Rebuild" in m157
     assert "### M15.7.3 — Mode Group and Sidebar Brand Composition" in m157
+    assert "### M15.7.4 — Product Density and Branding Polish" in m157
     assert "content viewport" in m157
     assert "expanding Last Run" in m157
     assert "real navigation buttons" in m157
     assert "compact left-aligned radio group" in m157
-    assert "flat 68 px brand lockup" in m157
+    assert "product-scale 82 px brand lockup" in m157
+    assert "balanced Setup and Last Run density" in m157
     assert "mode_group_max_width" in responsive
     assert "ModeSelectorGroup" in gui
-    assert "SidebarBrandMark" in sidebar
-    assert "#SidebarBrandMark" in theme
+    assert "SidebarBrandIcon" in sidebar
+    assert "identity_mark" not in sidebar
+    assert "#SidebarBrandMark" not in theme

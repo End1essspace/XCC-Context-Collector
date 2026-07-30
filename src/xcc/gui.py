@@ -1182,18 +1182,18 @@ class XccMainWindow(QMainWindow):
         )
         self.collect_page_layout.setSpacing(geometry.page_gap)
 
-        setup_horizontal = 18 if compact else 20 if medium else 22
-        setup_top = 15 if compact else 16 if medium else 18
-        setup_bottom = 15 if compact else 16 if medium else 18
+        setup_horizontal = 18 if compact else 21 if medium else 24
+        setup_top = 17 if compact else 19 if medium else 22
+        setup_bottom = 17 if compact else 19 if medium else 22
         self.setup_card_layout.setContentsMargins(
             setup_horizontal,
             setup_top,
             setup_horizontal,
             setup_bottom,
         )
-        self.setup_card_layout.setSpacing(10 if compact else 11 if medium else 12)
+        self.setup_card_layout.setSpacing(12 if compact else 14 if medium else 16)
         self.setup_grid.setHorizontalSpacing(10 if compact else 12 if medium else 14)
-        self.setup_grid.setVerticalSpacing(6 if compact else 7 if medium else 8)
+        self.setup_grid.setVerticalSpacing(8 if compact else 10 if medium else 12)
         self.setup_card.setMinimumHeight(0)
         self.setup_card.setMaximumHeight(16_777_215)
         self.setup_card.setSizePolicy(
@@ -1201,15 +1201,15 @@ class XccMainWindow(QMainWindow):
             QSizePolicy.Policy.Fixed,
         )
 
-        stats_horizontal = 18 if compact else 21 if medium else 24
-        stats_vertical = 16 if compact else 18 if medium else 20
+        stats_horizontal = 18 if compact else 20 if medium else 22
+        stats_vertical = 14 if compact else 15 if medium else 16
         self.stats_card_layout.setContentsMargins(
             stats_horizontal,
             stats_vertical,
             stats_horizontal,
             stats_vertical,
         )
-        self.stats_card_layout.setSpacing(12 if compact else 14 if medium else 16)
+        self.stats_card_layout.setSpacing(10 if compact else 11 if medium else 12)
         self.stats_card.setMinimumHeight(0)
         self.stats_card.setMaximumHeight(16_777_215)
         self.stats_card.setSizePolicy(
@@ -1238,7 +1238,7 @@ class XccMainWindow(QMainWindow):
         for group in self.metric_groups:
             group_layout = group.layout()
             if group_layout is not None:
-                group_layout.setSpacing(6 if compact else 7 if medium else 8)
+                group_layout.setSpacing(5 if compact else 6)
 
         self._effective_setup_height = max(
             geometry.setup_card_height,
@@ -1436,12 +1436,12 @@ class XccMainWindow(QMainWindow):
 
         self.setup_card = self._card()
         setup_card = self.setup_card
-        setup_card.setFixedHeight(248)
+        setup_card.setFixedHeight(278)
 
         self.setup_card_layout = self._card_layout(setup_card)
         setup_layout = self.setup_card_layout
-        setup_layout.setContentsMargins(22, 18, 22, 18)
-        setup_layout.setSpacing(15)
+        setup_layout.setContentsMargins(24, 22, 24, 22)
+        setup_layout.setSpacing(16)
         setup_layout.addWidget(
             make_icon_title(
                 "Setup",
@@ -1652,7 +1652,7 @@ class XccMainWindow(QMainWindow):
 
         self.stats_card = self._card()
         stats_card = self.stats_card
-        stats_card.setMinimumHeight(310)
+        stats_card.setMinimumHeight(292)
         stats_card.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Expanding,
@@ -1660,12 +1660,12 @@ class XccMainWindow(QMainWindow):
 
         self.stats_card_layout = self._card_layout(stats_card)
         stats_layout = self.stats_card_layout
-        stats_layout.setContentsMargins(24, 18, 24, 20)
-        stats_layout.setSpacing(16)
+        stats_layout.setContentsMargins(22, 16, 22, 16)
+        stats_layout.setSpacing(12)
 
         stats_header = QWidget()
         stats_header.setObjectName("TransparentWidget")
-        stats_header.setFixedHeight(32)
+        stats_header.setFixedHeight(30)
         stats_header_layout = QHBoxLayout(stats_header)
         stats_header_layout.setContentsMargins(0, 0, 0, 0)
         stats_header_layout.setSpacing(12)
@@ -1715,8 +1715,8 @@ class XccMainWindow(QMainWindow):
 
         self.metrics_layout = QGridLayout()
         self.metrics_layout.setContentsMargins(0, 0, 0, 0)
-        self.metrics_layout.setHorizontalSpacing(18)
-        self.metrics_layout.setVerticalSpacing(14)
+        self.metrics_layout.setHorizontalSpacing(14)
+        self.metrics_layout.setVerticalSpacing(10)
 
         self.volume_metric_group = self._build_metric_group(
             "Volume",
@@ -3191,7 +3191,7 @@ class XccMainWindow(QMainWindow):
 
         layout = QVBoxLayout(group)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(6)
         layout.addWidget(
             make_icon_title(
                 title,

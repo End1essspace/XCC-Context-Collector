@@ -78,20 +78,20 @@ def test_large_tall_layout_fits_a_normal_maximized_viewport() -> None:
     assert spec.mode is CollectLayoutMode.LARGE
     assert spec.metric_columns == 4
     assert spec.mode_group_max_width == 650
-    assert spec.mode_horizontal_gap == 22
+    assert spec.mode_horizontal_gap == 20
     assert spec.mode_vertical_gap == 8
     assert spec.source_actions_below is False
     assert spec.sidebar_width == 228
     assert spec.primary_action_height == 54
     assert geometry.mode is CollectHeightMode.TALL
-    assert geometry.setup_card_height == 248
-    assert geometry.stats_card_min_height == 310
-    assert geometry.stats_card_max_height == 382
-    assert geometry.metric_min_height == 56
-    assert geometry.metric_preferred_height == 60
-    assert geometry.metric_max_height == 66
+    assert geometry.setup_card_height == 278
+    assert geometry.stats_card_min_height == 292
+    assert geometry.stats_card_max_height == 340
+    assert geometry.metric_min_height == 54
+    assert geometry.metric_preferred_height == 58
+    assert geometry.metric_max_height == 60
     assert INLINE_PAGE_HEADER_HEIGHT == 42
-    assert collect_content_min_height(spec, geometry) == 730
+    assert collect_content_min_height(spec, geometry) == 742
     assert collect_page_fits(spec, geometry, viewport_height=835)
 
 
@@ -108,9 +108,9 @@ def test_medium_layout_wraps_source_and_uses_two_by_two_metrics() -> None:
     assert spec.source_actions_below is True
     assert spec.sidebar_width == 212
     assert geometry.mode is CollectHeightMode.STANDARD
-    assert geometry.setup_card_height == 286
-    assert geometry.stats_card_min_height == 484
-    assert geometry.stats_card_max_height == 544
+    assert geometry.setup_card_height == 296
+    assert geometry.stats_card_min_height == 466
+    assert geometry.stats_card_max_height == 520
     assert not collect_page_fits(spec, geometry, viewport_height=760)
 
 
@@ -131,10 +131,10 @@ def test_compact_layout_keeps_every_control_reachable_by_vertical_scroll() -> No
     assert spec.show_source_helper is False
     assert spec.show_options_helper is False
     assert geometry.mode is CollectHeightMode.SHORT
-    assert geometry.setup_card_height == 250
-    assert geometry.stats_card_min_height == 440
-    assert geometry.stats_card_max_height == 490
-    assert collect_content_min_height(spec, geometry) == 830
+    assert geometry.setup_card_height == 254
+    assert geometry.stats_card_min_height == 430
+    assert geometry.stats_card_max_height == 480
+    assert collect_content_min_height(spec, geometry) == 824
     assert not collect_page_fits(spec, geometry, viewport_height=555)
 
 

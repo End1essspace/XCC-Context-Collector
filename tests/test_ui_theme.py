@@ -46,7 +46,8 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
         "QMainWindow",
         "#Sidebar",
         "#SidebarIdentity",
-        "#SidebarBrandMark",
+        "#SidebarBrandIcon",
+        "#SidebarBrandTitle",
         "#SidebarNavButton",
         "#ModeSelectorGroup",
         '#SidebarNavButton[selected="true"]',
@@ -85,6 +86,8 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert PALETTE.success in stylesheet
     assert PALETTE.error in stylesheet
     assert "qlineargradient" in stylesheet
+    assert "#SidebarBrandMark" not in stylesheet
+    assert "font-size: 20px" in stylesheet
     assert "min-height: 42px" in stylesheet
     assert "#BE8E27" in stylesheet
     assert "#DDB342" in stylesheet

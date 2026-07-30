@@ -824,7 +824,7 @@ feat: redesign last run metrics
 
 ## M15.7 — Responsive Layout and Premium Visual Polish
 
-**Status: IMPLEMENTED — M15.7.3 COMPOSITION POLISH, LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: IMPLEMENTED — M15.7.4 PRODUCT DENSITY AND BRANDING POLISH, LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
 
 ### Goal
 
@@ -976,6 +976,49 @@ like a detached card rather than one integrated brand lockup.
 - [x] register the composition contract in metadata and theme tests;
 - [x] keep collection-domain modules and assets unchanged.
 
+### M15.7.4 — Product Density and Branding Polish
+
+**Status: IMPLEMENTED — LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+
+Windows review confirmed that M15.7.3 corrected mode distribution, but the final
+page still had an uneven density profile: Setup was visually compressed, Last
+Run was too open, and the 42 px framed logo treatment made the product identity
+look smaller than the surrounding interface.
+
+#### Product-scale sidebar identity
+
+- [x] remove the square logo-mark container and its border treatment;
+- [x] use the transparent application artwork directly at product scale;
+- [x] use one product-scale 82 px brand lockup;
+- [x] render the logo in a 56 px area with a 54 px smooth pixmap;
+- [x] increase `XCC` to a 20 px high-weight title;
+- [x] increase and clarify the `Context Collector` subtitle;
+- [x] preserve navigation alignment, accessible identity, and bottom About
+  placement.
+
+#### balanced Setup and Last Run density
+
+- [x] increase Setup card height and internal top/bottom padding;
+- [x] increase semantic-row spacing without widening the mode group;
+- [x] keep Source and Options helper text comfortably separated from controls;
+- [x] reduce Last Run outer padding and header-to-grid spacing;
+- [x] reduce metric-group and metric-row gaps;
+- [x] lower Last Run maximum height so the card does not become an empty
+  dashboard shell;
+- [x] keep 54–60 px metric rows in the maximized large layout;
+- [x] keep the natural maximized page height below the available viewport;
+- [x] preserve conditional scrolling at short and compact sizes.
+
+#### Coverage
+
+- [x] update responsive policy assertions for the new density allocation;
+- [x] add Qt geometry assertions for Setup padding and Last Run density;
+- [x] verify the sidebar contains no framed logo-mark widget;
+- [x] register the product-scale identity and balanced-density contract in
+  metadata and theme tests;
+- [x] keep assets, collection-domain modules, and Selected Files behavior
+  unchanged.
+
 ### Required Windows evidence
 
 #### 1688×900 or maximized large window
@@ -1006,7 +1049,7 @@ like a detached card rather than one integrated brand lockup.
 ### Intended commit
 
 ```text
-fix: reset collect geometry and rebuild sidebar
+fix: balance collect density and sidebar branding
 ```
 
 ---

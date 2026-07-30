@@ -151,16 +151,6 @@ QWidget {
     border: none;
 }
 
-#SidebarBrandMark {
-    background: qlineargradient(
-        x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #1B1C20,
-        stop: 1 #151619
-    );
-    border: 1px solid #343027;
-    border-radius: 11px;
-}
-
 #SidebarBrandIcon,
 #SidebarBrandText {
     background: transparent;
@@ -168,14 +158,14 @@ QWidget {
 
 #SidebarBrandTitle {
     color: #F2F3F4;
-    font-size: 16px;
+    font-size: 20px;
     font-weight: 800;
     background: transparent;
 }
 
 #SidebarBrandSubtitle {
-    color: #8A8F97;
-    font-size: 10px;
+    color: #959AA2;
+    font-size: 11px;
     font-weight: 500;
     background: transparent;
 }

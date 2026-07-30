@@ -41,8 +41,9 @@ def test_maximized_geometry_has_no_scrollbar_and_keeps_cta_visible(
         window.collect_page_scroll.verticalScrollBarPolicy()
         == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
     )
-    assert window.setup_card.height() >= 248
-    assert window.stats_card.height() >= 310
+    assert window.setup_card.height() >= 278
+    assert window.stats_card.height() >= 292
+    assert window.stats_card.height() <= 340
     assert all(button.isVisible() for button in window.nav.buttons)
     assert window.nav.button(2).text() == "Settings"
     assert window.nav.button(2).height() == 50
@@ -57,6 +58,24 @@ def test_maximized_geometry_has_no_scrollbar_and_keeps_cta_visible(
     window.close()
 
 
+
+
+def test_maximized_density_balances_setup_and_last_run(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(1688, 900)
+    window.show()
+    _settle(qapp, window)
+
+    assert window.setup_card_layout.contentsMargins().top() == 22
+    assert window.setup_grid.verticalSpacing() == 12
+    assert window.stats_card_layout.contentsMargins().top() == 16
+    assert window.stats_card_layout.spacing() == 12
+    assert all(metric.maximumHeight() <= 60 for metric in window.metric_capsules)
+
+    window._is_quitting = True
+    window.close()
 
 def test_large_mode_selector_remains_compact_and_left_aligned(
     qapp: QApplication,

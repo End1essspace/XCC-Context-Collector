@@ -183,8 +183,11 @@ Requirements:
 
 - a compact flat brand lockup provides one visual anchor without creating a
   second full-width application header or a competing card;
-- the brand lockup uses one 42 px mark on the left and the `XCC` /
-  `Context Collector` text stack on the right;
+- the brand lockup uses the transparent application artwork directly, without
+  a square logo-card or decorative frame;
+- the identity zone is 82 px high, with a 56 px logo area and a 20 px `XCC`
+  title so the artwork reads as part of the product shell rather than a small
+  utility badge;
 - logo, title, and subtitle share one vertical center and align with the
   navigation content column;
 - Collect, History, and Settings remain in the upper workspace zone;
@@ -263,7 +266,7 @@ Source
 Options
 ```
 
-The label column must align across all rows. The card title and row labels must not compete visually.
+The label column must align across all rows. The card title and row labels must not compete visually. Setup must use comfortable vertical rhythm: card padding and semantic-row gaps must separate Mode, Source, helper text, Options, and the final helper without producing clipping or a large empty lower zone.
 
 ### 6.4 Mode row
 
@@ -398,6 +401,7 @@ The data model remains divided into four groups:
 Requirements:
 
 - use lighter metric rows rather than twelve visually heavy independent cards;
+- keep the Last Run card denser than Setup: reduce header-to-grid space, group gaps, and unused vertical expansion while preserving complete metric borders;
 - large-layout metric rows use a 56–60 px height; the v1.3.0 target is 58 px;
 - labels and values share one horizontal row and align consistently within each group;
 - group separation is visible through spacing and subtle dividers;
@@ -483,8 +487,8 @@ Standard:  viewport height 700–799 px
 Short:     viewport height < 700 px
 ```
 
-- Setup remains a fixed content-driven form;
-- Last Run is the only expanding primary card, with a density-specific maximum height;
+- Setup remains a fixed content-driven form with more internal breathing room than the metric dashboard;
+- Last Run is the only expanding primary card, but its density-specific maximum height must prevent empty dashboard space;
 - its three metric rows share available group height equally;
 - metric rows stay inside explicit minimum/preferred/maximum ranges;
 - vertical scrolling is disabled when natural content fits;
