@@ -20,7 +20,7 @@ AI chats often have limits on file uploads, attached files, and context size. Ma
 
 | Collect and result health | Metadata-only runtime history |
 |---|---|
-| ![XCC Collect page](docs/screenshots/xcc-collect.svg) | ![XCC History page](docs/screenshots/xcc-history.svg) |
+| ![XCC Collect page](docs/screenshots/xcc-collect.png) | ![XCC History page](docs/screenshots/xcc-history.png) |
 
 These previews show the v1.2.0 release layout. The portable build is published through GitHub Releases after the complete Windows validation gate.
 
@@ -428,7 +428,7 @@ Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
 
 | Сбор и состояние результата | Metadata-only runtime history |
 |---|---|
-| ![Страница Collect](docs/screenshots/xcc-collect.svg) | ![Страница History](docs/screenshots/xcc-history.svg) |
+| ![Страница Collect](docs/screenshots/xcc-collect.png) | ![Страница History](docs/screenshots/xcc-history.png) |
 
 Эти repository previews соответствуют текущему layout разработки v1.2. Нативные снимки packaged build обновляются во время финального release gate.
 

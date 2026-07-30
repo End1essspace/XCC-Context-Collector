@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import tempfile
 from datetime import datetime
-from PySide6.QtCore import QObject, QLockFile, QThread, Qt, QTimer
+from PySide6.QtCore import QObject, QLockFile, QSize, QThread, Qt, QTimer
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QApplication,
@@ -158,10 +158,27 @@ class XccMainWindow(QMainWindow):
 
         root_layout.addWidget(body, 1)
 
+        status_bar = QFrame()
+        status_bar.setObjectName("StatusBar")
+        status_bar.setFixedHeight(32)
+
+        status_layout = QHBoxLayout(status_bar)
+        status_layout.setContentsMargins(18, 0, 18, 0)
+        status_layout.setSpacing(12)
+
         self.status_label = QLabel("Ready")
-        self.status_label.setObjectName("StatusBar")
-        self.status_label.setFixedHeight(38)
-        root_layout.addWidget(self.status_label)
+        self.status_label.setObjectName("StatusText")
+
+        self.status_version_label = QLabel(f"v{__version__}")
+        self.status_version_label.setObjectName("StatusVersion")
+        self.status_version_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+
+        status_layout.addWidget(self.status_label, 1)
+        status_layout.addWidget(self.status_version_label)
+
+        root_layout.addWidget(status_bar)
 
         self.setCentralWidget(root)
 
@@ -617,12 +634,20 @@ class XccMainWindow(QMainWindow):
     def _build_nav(self) -> QListWidget:
         nav = QListWidget()
         nav.setObjectName("Sidebar")
-        nav.setFixedWidth(190)
+        nav.setFixedWidth(176)
         nav.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        nav.setSpacing(0)
 
-        for title in ["Collect", "History", "Settings", "About"]:
-            item = QListWidgetItem(title)
-            item.setSizeHint(item.sizeHint())
+        navigation_items = [
+            ("◉", "Collect"),
+            ("▤", "History"),
+            ("⚙", "Settings"),
+            ("ⓘ", "About"),
+        ]
+
+        for symbol, title in navigation_items:
+            item = QListWidgetItem(f"{symbol}   {title}")
+            item.setSizeHint(QSize(0, 46))
             nav.addItem(item)
 
         return nav
@@ -634,15 +659,17 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(self._section_title("Collect Context"))
 
         setup_card = self._card()
-        setup_card.setMinimumHeight(230)
+        setup_card.setMinimumHeight(202)
 
         setup_layout = self._card_layout(setup_card)
+        setup_layout.setContentsMargins(22, 16, 22, 16)
+        setup_layout.setSpacing(14)
         setup_layout.addWidget(self._card_title("Setup"))
 
         setup_grid = QGridLayout()
-        setup_grid.setContentsMargins(0, 6, 0, 0)
+        setup_grid.setContentsMargins(0, 2, 0, 0)
         setup_grid.setHorizontalSpacing(14)
-        setup_grid.setVerticalSpacing(14)
+        setup_grid.setVerticalSpacing(10)
 
         mode_label = QLabel("Mode")
         mode_label.setObjectName("FieldLabel")
@@ -759,19 +786,35 @@ class XccMainWindow(QMainWindow):
 
         stats_layout = self._card_layout(stats_card)
 
-        stats_layout.addWidget(self._card_title("Last Run"))
+        stats_header = QWidget()
+        stats_header.setObjectName("TransparentWidget")
+        stats_header_layout = QHBoxLayout(stats_header)
+        stats_header_layout.setContentsMargins(0, 0, 0, 0)
+        stats_header_layout.setSpacing(12)
+
+        stats_header_layout.addWidget(self._card_title("Last Run"))
+        stats_header_layout.addStretch(1)
+
+        self.last_run_state_label = QLabel("No collection yet")
+        self.last_run_state_label.setObjectName("LastRunState")
+        self.last_run_state_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        stats_header_layout.addWidget(self.last_run_state_label)
+
+        stats_layout.addWidget(stats_header)
 
         self.files_metric = self._metric_capsule("Files", "-")
         self.lines_metric = self._metric_capsule("Lines", "-")
-        self.source_chars_metric = self._metric_capsule("Source Chars", "-")
+        self.source_chars_metric = self._metric_capsule("Source Characters", "-")
 
-        self.output_chars_metric = self._metric_capsule("Output Chars", "-")
+        self.output_chars_metric = self._metric_capsule("Output Characters", "-")
         self.tokens_metric = self._metric_capsule("Output Tokens", "-")
         self.truncated_metric = self._metric_capsule("Truncated", "-")
 
         self.included_metric = self._metric_capsule("Included", "-")
         self.omitted_metric = self._metric_capsule("Omitted", "-")
-        self.coverage_metric = self._metric_capsule("Summ. / Partial", "-")
+        self.coverage_metric = self._metric_capsule("Summarized / Partial", "-")
 
         self.outcome_metric = self._metric_capsule("Outcome", "-")
         self.duration_metric = self._metric_capsule("Duration", "-")
@@ -834,9 +877,19 @@ class XccMainWindow(QMainWindow):
 
         self.collect_button = QPushButton("Collect && Copy")
         self.collect_button.setObjectName("PrimaryButton")
-        self.collect_button.setFixedHeight(52)
+        self.collect_button.setFixedHeight(46)
+        self.collect_button.setMinimumWidth(620)
+        self.collect_button.setMaximumWidth(980)
+        self.collect_button.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
 
-        layout.addWidget(self.collect_button)
+        layout.addWidget(
+            self.collect_button,
+            0,
+            Qt.AlignmentFlag.AlignHCenter,
+        )
 
         return page
 
@@ -1374,6 +1427,11 @@ class XccMainWindow(QMainWindow):
         self._update_metrics(record)
         self._add_history_entry(record)
 
+        if hasattr(self, "last_run_state_label"):
+            self.last_run_state_label.setText(
+                f"{record.health_label} · {record.timestamp}"
+            )
+
     def _update_metrics(self, record: CollectionRunRecord) -> None:
         self._set_metric_value(self.files_metric, str(record.files))
         self._set_metric_value(self.lines_metric, str(record.lines))
@@ -1889,8 +1947,7 @@ class XccMainWindow(QMainWindow):
                 background: transparent;
             }
 
-            #StatusCapsule,
-            #HotkeyCapsule {
+            #StatusCapsule {
                 background: #1A1A1A;
                 border: 1px solid #5A4820;
                 border-radius: 10px;
@@ -1899,21 +1956,25 @@ class XccMainWindow(QMainWindow):
             }
 
             #HotkeyCapsule {
-                color: #D6A93A;
+                background: #171717;
+                border: 1px solid #302A1D;
+                border-radius: 10px;
+                padding: 4px 11px;
+                color: #A98B48;
             }
 
             #Sidebar {
                 background: #121212;
                 border-right: 1px solid #2F2A1C;
-                padding: 10px;
+                padding: 8px;
                 outline: none;
             }
 
             #Sidebar::item {
-                padding: 12px 14px;
-                margin: 4px 0;
-                border-radius: 10px;
-                color: #C9C9C9;
+                padding: 10px 12px;
+                margin: 3px 0;
+                border-radius: 9px;
+                color: #BDBDBD;
                 background: transparent;
             }
 
@@ -1942,7 +2003,7 @@ class XccMainWindow(QMainWindow):
 
             #Card {
                 background: #161616;
-                border: 1px solid #5A4820;
+                border: 1px solid #302A1D;
                 border-radius: 14px;
             }
 
@@ -1956,6 +2017,7 @@ class XccMainWindow(QMainWindow):
             }
             #FieldLabel {
                 color: #D6D6D6;
+                font-size: 13px;
                 font-weight: 700;
                 background: transparent;
             }
@@ -2002,23 +2064,23 @@ class XccMainWindow(QMainWindow):
             }
 
             #PrimaryButton {
-                background: #D6A93A;
+                background: #C99B32;
                 color: #111111;
-                font-size: 15px;
+                font-size: 14px;
                 font-weight: 800;
-                border: 1px solid #D6A93A;
-                border-radius: 12px;
+                border: 1px solid #C99B32;
+                border-radius: 11px;
             }
 
             #PrimaryButton:hover {
-                background: #E8BE55;
-                border: 1px solid #E8BE55;
+                background: #D6A93A;
+                border: 1px solid #D6A93A;
                 color: #111111;
             }
 
             #PrimaryButton:pressed {
-                background: #C99831;
-                border: 1px solid #C99831;
+                background: #B98A28;
+                border: 1px solid #B98A28;
             }
 
             QRadioButton,
@@ -2026,6 +2088,7 @@ class XccMainWindow(QMainWindow):
                 spacing: 8px;
                 padding: 2px 0;
                 background: transparent;
+                font-size: 13px;
             }
 
             QRadioButton:hover,
@@ -2062,7 +2125,7 @@ class XccMainWindow(QMainWindow):
 
             #MetricCapsule {
                 background: #181818;
-                border: 1px solid #463817;
+                border: 1px solid #332B1A;
                 border-radius: 10px;
             }
 
@@ -2084,11 +2147,27 @@ class XccMainWindow(QMainWindow):
                 background: transparent;
             }
 
+            #LastRunState {
+                color: #787878;
+                font-size: 11px;
+                background: transparent;
+            }
+
             #StatusBar {
                 background: #151515;
                 border-top: 1px solid #2F2A1C;
-                padding-left: 16px;
-                color: #B8B8B8;
+            }
+
+            #StatusText {
+                color: #AFAFAF;
+                font-size: 12px;
+                background: transparent;
+            }
+
+            #StatusVersion {
+                color: #6F6F6F;
+                font-size: 11px;
+                background: transparent;
             }
             #MetricGroupTitle {
                 color: #E0E0E0;
@@ -2263,7 +2342,7 @@ class XccMainWindow(QMainWindow):
             }
             #AboutCard {
                 background: #161616;
-                border: 1px solid #5A4820;
+                border: 1px solid #302A1D;
                 border-radius: 14px;
             }
 
