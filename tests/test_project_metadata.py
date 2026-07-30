@@ -94,6 +94,7 @@ def test_v130_ui_reference_contract_is_frozen() -> None:
         "## 7. Last Run Contract",
         "## 8. Responsive Layout Contract",
         "## 9. Dialog Contract",
+        "The title and subtitle share one 42 px row",
         "`Select Files`",
         "`Select Folder`",
         "`Select Repository`",
@@ -139,6 +140,7 @@ def test_v130_ui_foundation_modules_are_registered() -> None:
 
 def test_v130_application_shell_redesign_is_registered() -> None:
     shell_path = PROJECT_ROOT / "src" / "xcc" / "ui_shell.py"
+    sidebar_path = PROJECT_ROOT / "src" / "xcc" / "ui_sidebar.py"
     components_path = PROJECT_ROOT / "src" / "xcc" / "ui_components.py"
     gui_path = PROJECT_ROOT / "src" / "xcc" / "gui.py"
     roadmap_path = PROJECT_ROOT / "docs" / "roadmap.md"
@@ -146,6 +148,7 @@ def test_v130_application_shell_redesign_is_registered() -> None:
     assert shell_path.is_file()
 
     shell = shell_path.read_text(encoding="utf-8")
+    sidebar = sidebar_path.read_text(encoding="utf-8")
     components = components_path.read_text(encoding="utf-8")
     gui = gui_path.read_text(encoding="utf-8")
     roadmap = roadmap_path.read_text(encoding="utf-8")
@@ -155,11 +158,9 @@ def test_v130_application_shell_redesign_is_registered() -> None:
     assert "class RuntimeStatusCapsule" in components
     assert "make_runtime_status_capsule" in gui
     assert "FooterStatusDot" in gui
-    assert "PALETTE.selected_surface" in gui
-    assert "PALETTE.dark_text" not in gui[
-        gui.index("class SidebarItemDelegate"):
-        gui.index("class SidebarNavigation")
-    ]
+    assert "from .ui_sidebar import SidebarNavigation" in gui
+    assert "class SidebarNavigation" in sidebar
+    assert "QListWidget" not in sidebar
     assert "## M15.4 — Application Shell Redesign" in roadmap
     m154 = roadmap[
         roadmap.index("## M15.4"):
@@ -251,3 +252,57 @@ def test_v130_last_run_metrics_redesign_is_registered() -> None:
     assert "### M15.6.1 — Icon Rendering and Visual Polish" in m156
     assert "official Lucide SVG files are tinted at runtime" in m156
 
+
+def test_v130_responsive_collect_layout_is_registered() -> None:
+    responsive_path = PROJECT_ROOT / "src" / "xcc" / "ui_responsive.py"
+    sidebar_path = PROJECT_ROOT / "src" / "xcc" / "ui_sidebar.py"
+    gui_path = PROJECT_ROOT / "src" / "xcc" / "gui.py"
+    components_path = PROJECT_ROOT / "src" / "xcc" / "ui_components.py"
+    theme_path = PROJECT_ROOT / "src" / "xcc" / "ui_theme.py"
+    roadmap_path = PROJECT_ROOT / "docs" / "roadmap.md"
+
+    assert responsive_path.is_file()
+    assert sidebar_path.is_file()
+
+    responsive = responsive_path.read_text(encoding="utf-8")
+    sidebar = sidebar_path.read_text(encoding="utf-8")
+    gui = gui_path.read_text(encoding="utf-8")
+    components = components_path.read_text(encoding="utf-8")
+    theme = theme_path.read_text(encoding="utf-8")
+    roadmap = roadmap_path.read_text(encoding="utf-8")
+
+    assert "class CollectLayoutMode" in responsive
+    assert "class CollectHeightMode" in responsive
+    assert "class CollectLayoutSpec" in responsive
+    assert "class CollectGeometrySpec" in responsive
+    assert "LARGE_CONTENT_BREAKPOINT = 1120" in responsive
+    assert "MEDIUM_CONTENT_BREAKPOINT = 820" in responsive
+    assert "MINIMUM_SUPPORTED_WINDOW_WIDTH = 920" in responsive
+    assert "def collect_geometry_spec" in responsive
+    assert "def collect_page_fits" in responsive
+
+    assert "class SidebarNavButton" in sidebar
+    assert "class SidebarNavigation" in sidebar
+    assert "QListWidget" not in sidebar
+
+    assert "def eventFilter" in gui
+    assert "def _collect_viewport_size" in gui
+    assert "def _apply_collect_geometry" in gui
+    assert "collect_page_scroll.viewport().height()" in gui
+    assert "self.collect_page_content.setMinimumHeight(0)" in gui
+    assert "layout.addWidget(stats_card, 1)" in gui
+    assert "layout.addWidget(metric, 1)" in gui
+    assert "class ElidedLabel" in components
+    assert "maximum_height" in components
+    assert "#SidebarNavButton" in theme
+    assert "#SidebarIdentity" in theme
+
+    m157 = roadmap[
+        roadmap.index("## M15.7"):
+        roadmap.index("## M15.8")
+    ]
+    assert "M15.7.2 GEOMETRY ARCHITECTURE RESET" in m157
+    assert "### M15.7.2 — Geometry Architecture Reset and Sidebar Rebuild" in m157
+    assert "content viewport" in m157
+    assert "expanding Last Run" in m157
+    assert "real navigation buttons" in m157

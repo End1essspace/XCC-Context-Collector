@@ -15,6 +15,7 @@ from xcc.resources import resource_path
 from xcc.ui_theme import METRICS, PALETTE
 
 from xcc.ui_components import (
+    ElidedLabel,
     IconTitle,
     MetricCapsule,
     PageHeader,
@@ -91,6 +92,11 @@ def test_page_header_exposes_title_and_subtitle(qapp: QApplication) -> None:
     assert header.title_label.text() == "Collect Context"
     assert header.subtitle_label.objectName() == "PageSubtitle"
     assert "AI-ready context snapshot" in header.subtitle_label.text()
+    assert header.height() == 42
+    assert isinstance(header.subtitle_label, ElidedLabel)
+    assert header.layout().itemAt(0).widget() is header.title_label
+    assert header.layout().itemAt(1).widget() is header.subtitle_label
+    assert header.layout().itemAt(2).widget() is header.actions_widget
 
     action = QLabel("Ready")
     header.add_action(action)
@@ -111,6 +117,32 @@ def test_metric_capsule_preserves_value_label_api(qapp: QApplication) -> None:
 
     set_metric_value(metric, "2,048")
     assert metric.value_label.text() == "2,048"
+
+    metric.set_density(
+        58,
+        minimum_height=54,
+        maximum_height=62,
+        horizontal_padding=12,
+    )
+    assert metric.minimumHeight() == 54
+    assert metric.maximumHeight() == 62
+    assert metric.sizeHint().height() == 58
+    assert metric.layout().contentsMargins().left() == 12
+    assert metric.layout().contentsMargins().right() == 12
+
+    with pytest.raises(ValueError):
+        metric.set_density(0, horizontal_padding=12)
+
+    with pytest.raises(ValueError):
+        metric.set_density(50, horizontal_padding=-1)
+
+    with pytest.raises(ValueError):
+        metric.set_density(
+            58,
+            minimum_height=62,
+            maximum_height=54,
+            horizontal_padding=12,
+        )
 
 
 

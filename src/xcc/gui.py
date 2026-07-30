@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import tempfile
 from datetime import datetime
-from PySide6.QtCore import QObject, QLockFile, QRect, QRectF, QSize, QThread, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QObject, QLockFile, QSize, QThread, Qt, QTimer, Signal
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QApplication,
@@ -29,18 +29,12 @@ from PySide6.QtWidgets import (
     QWidget,
     QGridLayout,
     QScrollArea,
-    QStyledItemDelegate,
-    QStyle,
 )
 from PySide6.QtGui import (
     QAction,
-    QColor,
-    QFont,
     QIcon,
     QIntValidator,
     QKeySequence,
-    QPainter,
-    QPen,
     QPixmap,
     QShortcut,
 )
@@ -90,6 +84,7 @@ from .ui_collect import (
     selected_files_source_summary,
 )
 from .ui_shell import RuntimeState, default_footer_message
+from .ui_sidebar import SidebarNavigation
 from .ui_metrics import (
     coverage_metric_state,
     format_metric_integer,
@@ -102,6 +97,14 @@ from .ui_theme import (
     PALETTE,
     build_application_stylesheet,
     build_tray_menu_stylesheet,
+)
+from .ui_responsive import (
+    CollectGeometrySpec,
+    CollectLayoutMode,
+    CollectLayoutSpec,
+    collect_content_min_height,
+    collect_geometry_spec,
+    collect_layout_spec,
 )
 from .path_list_parser import parse_path_list
 from .selected_files_importer import (
@@ -133,268 +136,6 @@ UI_PASTE_PATHS_ICON_PATH = resource_path("assets", "ui-paste-paths.svg")
 UI_COLLECT_COPY_ICON_PATH = resource_path("assets", "ui-collect-copy.svg")
 INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
 INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
-
-NAV_ICON_PATH_ROLE = int(Qt.ItemDataRole.UserRole) + 1
-
-
-class SidebarItemDelegate(QStyledItemDelegate):
-    """Paint crisp Lucide navigation items with controlled spacing and states."""
-
-    ITEM_HEIGHT = 54
-    ITEM_MARGIN_X = 12
-    ITEM_MARGIN_Y = 4
-    CONTENT_LEFT = 16
-    ICON_SIZE = 20
-    ICON_TEXT_GAP = 12
-
-    def __init__(self, parent: QListWidget) -> None:
-        super().__init__(parent)
-        self._icon_cache: dict[tuple[str, str, float], QPixmap] = {}
-
-    def sizeHint(self, option, index) -> QSize:
-        return QSize(option.rect.width(), self.ITEM_HEIGHT)
-
-    def paint(self, painter: QPainter, option, index) -> None:
-        painter.save()
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-
-        selected = bool(option.state & QStyle.StateFlag.State_Selected)
-        hovered = bool(option.state & QStyle.StateFlag.State_MouseOver)
-        enabled = bool(option.state & QStyle.StateFlag.State_Enabled)
-
-        item_rect = option.rect.adjusted(
-            self.ITEM_MARGIN_X,
-            self.ITEM_MARGIN_Y,
-            -self.ITEM_MARGIN_X,
-            -self.ITEM_MARGIN_Y,
-        )
-
-        focused = bool(option.state & QStyle.StateFlag.State_HasFocus)
-
-        if selected:
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(PALETTE.selected_surface))
-            painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
-
-            border_color = QColor(PALETTE.accent_border)
-            border_color.setAlpha(180)
-            painter.setPen(QPen(border_color, 1.0))
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRoundedRect(
-                QRectF(item_rect).adjusted(0.5, 0.5, -0.5, -0.5),
-                10.0,
-                10.0,
-            )
-
-            painter.setPen(Qt.PenStyle.NoPen)
-            indicator_rect = QRectF(
-                float(item_rect.left() + 1),
-                float(item_rect.top() + 9),
-                3.0,
-                float(max(12, item_rect.height() - 18)),
-            )
-            painter.setBrush(QColor(PALETTE.accent))
-            painter.drawRoundedRect(indicator_rect, 1.5, 1.5)
-        elif hovered or focused:
-            painter.setPen(Qt.PenStyle.NoPen)
-            painter.setBrush(QColor(PALETTE.hover_surface))
-            painter.drawRoundedRect(QRectF(item_rect), 10.0, 10.0)
-
-        if not enabled:
-            icon_color = PALETTE.disabled_text
-            text_color = PALETTE.muted_text
-        elif selected:
-            icon_color = PALETTE.accent
-            text_color = PALETTE.primary_text
-        elif hovered or focused:
-            icon_color = PALETTE.accent
-            text_color = PALETTE.primary_text
-        else:
-            icon_color = PALETTE.secondary_text
-            text_color = PALETTE.primary_text
-
-        icon_x = item_rect.left() + self.CONTENT_LEFT
-        icon_y = item_rect.top() + (item_rect.height() - self.ICON_SIZE) // 2
-        icon_rect = QRect(icon_x, icon_y, self.ICON_SIZE, self.ICON_SIZE)
-
-        icon_path_value = index.data(NAV_ICON_PATH_ROLE)
-        if icon_path_value:
-            self._paint_svg_icon(
-                painter,
-                Path(str(icon_path_value)),
-                icon_rect,
-                icon_color,
-                option.widget,
-            )
-
-        text_left = icon_rect.right() + 1 + self.ICON_TEXT_GAP
-        text_rect = QRect(
-            text_left,
-            item_rect.top(),
-            max(0, item_rect.right() - text_left - 12),
-            item_rect.height(),
-        )
-
-        font = QFont(option.font)
-        font.setPointSizeF(max(10.0, font.pointSizeF()))
-        font.setWeight(QFont.Weight.DemiBold if selected else QFont.Weight.Normal)
-        painter.setFont(font)
-        painter.setPen(QColor(text_color))
-        painter.drawText(
-            text_rect,
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-            str(index.data(Qt.ItemDataRole.DisplayRole) or ""),
-        )
-        painter.restore()
-
-    def _paint_svg_icon(
-        self,
-        painter: QPainter,
-        path: Path,
-        target_rect: QRect,
-        color: str,
-        widget: QWidget | None,
-    ) -> None:
-        if not path.exists():
-            return
-
-        device_ratio = 1.0
-        if widget is not None:
-            device_ratio = max(1.0, float(widget.devicePixelRatioF()))
-        cache_ratio = round(device_ratio, 2)
-        cache_key = (str(path), color, cache_ratio)
-
-        pixmap = self._icon_cache.get(cache_key)
-        if pixmap is None:
-            physical_size = max(1, round(self.ICON_SIZE * device_ratio))
-            pixmap = QPixmap(physical_size, physical_size)
-            pixmap.setDevicePixelRatio(device_ratio)
-            pixmap.fill(Qt.GlobalColor.transparent)
-
-            renderer = QSvgRenderer(str(path))
-            if not renderer.isValid():
-                return
-
-            icon_painter = QPainter(pixmap)
-            icon_painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-            icon_painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, False)
-            renderer.render(
-                icon_painter,
-                QRectF(1.0, 1.0, self.ICON_SIZE - 2.0, self.ICON_SIZE - 2.0),
-            )
-            icon_painter.setCompositionMode(
-                QPainter.CompositionMode.CompositionMode_SourceIn
-            )
-            icon_painter.fillRect(
-                QRectF(0.0, 0.0, self.ICON_SIZE, self.ICON_SIZE),
-                QColor(color),
-            )
-            icon_painter.end()
-            self._icon_cache[cache_key] = pixmap
-
-        painter.drawPixmap(target_rect.topLeft(), pixmap)
-
-
-class SidebarNavigation(QFrame):
-    """Two-zone sidebar with primary navigation above and About anchored below."""
-
-    currentRowChanged = Signal(int)
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self.setObjectName("Sidebar")
-        self.setFixedWidth(METRICS.sidebar_width)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 10, 0, 12)
-        layout.setSpacing(0)
-
-        self._top_nav = self._make_list(
-            [
-                (NAV_COLLECT_ICON_PATH, "Collect"),
-                (NAV_HISTORY_ICON_PATH, "History"),
-                (NAV_SETTINGS_ICON_PATH, "Settings"),
-            ]
-        )
-        self._bottom_nav = self._make_list(
-            [(NAV_ABOUT_ICON_PATH, "About")]
-        )
-
-        self._top_nav.currentRowChanged.connect(self._on_top_row_changed)
-        self._bottom_nav.currentRowChanged.connect(self._on_bottom_row_changed)
-
-        layout.addWidget(self._top_nav)
-        layout.addStretch(1)
-        layout.addWidget(self._bottom_nav)
-
-    def _make_list(
-        self,
-        items: list[tuple[Path, str]],
-    ) -> QListWidget:
-        nav = QListWidget(self)
-        nav.setObjectName("SidebarList")
-        nav.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        nav.setSpacing(0)
-        nav.setMouseTracking(True)
-        nav.setUniformItemSizes(True)
-        nav.setFrameShape(QFrame.Shape.NoFrame)
-        nav.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        nav.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        nav.setItemDelegate(SidebarItemDelegate(nav))
-        nav.setFixedHeight(len(items) * SidebarItemDelegate.ITEM_HEIGHT)
-        nav.setAccessibleName(
-            "Primary navigation" if len(items) > 1 else "About navigation"
-        )
-
-        for icon_path, title in items:
-            item = QListWidgetItem(title)
-            item.setData(NAV_ICON_PATH_ROLE, str(icon_path))
-            item.setData(Qt.ItemDataRole.AccessibleTextRole, title)
-            item.setSizeHint(QSize(0, SidebarItemDelegate.ITEM_HEIGHT))
-            nav.addItem(item)
-
-        return nav
-
-    def setCurrentRow(self, row: int) -> None:
-        if row < 0 or row > 3:
-            return
-
-        if row < 3:
-            self._set_list_row(self._top_nav, row)
-            self._clear_list_selection(self._bottom_nav)
-        else:
-            self._clear_list_selection(self._top_nav)
-            self._set_list_row(self._bottom_nav, 0)
-
-        self.currentRowChanged.emit(row)
-
-    def _on_top_row_changed(self, row: int) -> None:
-        if row < 0:
-            return
-
-        self._clear_list_selection(self._bottom_nav)
-        self.currentRowChanged.emit(row)
-
-    def _on_bottom_row_changed(self, row: int) -> None:
-        if row < 0:
-            return
-
-        self._clear_list_selection(self._top_nav)
-        self.currentRowChanged.emit(3)
-
-    @staticmethod
-    def _set_list_row(nav: QListWidget, row: int) -> None:
-        nav.blockSignals(True)
-        nav.setCurrentRow(row)
-        nav.blockSignals(False)
-
-    @staticmethod
-    def _clear_list_selection(nav: QListWidget) -> None:
-        nav.blockSignals(True)
-        nav.setCurrentRow(-1)
-        nav.clearSelection()
-        nav.blockSignals(False)
-
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -826,6 +567,7 @@ class XccMainWindow(QMainWindow):
         if APP_ICON_PATH.exists():
             self.setWindowIcon(QIcon(str(APP_ICON_PATH)))
         self.setMinimumSize(920, 620)
+        self.resize(1480, 840)
 
         self.selected_paths: list[Path] = []
         self.project_root: Path | None = None
@@ -847,8 +589,14 @@ class XccMainWindow(QMainWindow):
         self._close_after_collection = False
         self._quit_after_collection = False
         self._footer_status_revision = 0
+        self._collect_layout_mode: CollectLayoutMode | None = None
+        self._collect_layout_spec: CollectLayoutSpec | None = None
+        self._collect_geometry_spec: CollectGeometrySpec | None = None
+        self._effective_setup_height = 0
+        self._effective_stats_min_height = 0
 
         self._setup_ui()
+        self._apply_collect_layout(force=True)
         self._apply_loaded_settings()
         if settings_result.recovered_from_error:
             self._set_event_status(self._settings_recovery_message)
@@ -890,12 +638,12 @@ class XccMainWindow(QMainWindow):
         status_bar.setFixedHeight(METRICS.footer_height)
 
         status_layout = QHBoxLayout(status_bar)
-        status_layout.setContentsMargins(20, 0, 20, 0)
+        status_layout.setContentsMargins(22, 0, 22, 0)
         status_layout.setSpacing(12)
 
         self.footer_status_dot = QLabel()
         self.footer_status_dot.setObjectName("FooterStatusDot")
-        self.footer_status_dot.setFixedSize(8, 8)
+        self.footer_status_dot.setFixedSize(9, 9)
         set_widget_state(
             self.footer_status_dot,
             RuntimeState.READY.semantic_state,
@@ -1353,12 +1101,318 @@ class XccMainWindow(QMainWindow):
                 self._show_from_tray()
 
     def _build_nav(self) -> SidebarNavigation:
-        return SidebarNavigation(self)
+        return SidebarNavigation(
+            app_icon_path=APP_IMAGE_PATH,
+            items=(
+                (NAV_COLLECT_ICON_PATH, "Collect"),
+                (NAV_HISTORY_ICON_PATH, "History"),
+                (NAV_SETTINGS_ICON_PATH, "Settings"),
+                (NAV_ABOUT_ICON_PATH, "About"),
+            ),
+            parent=self,
+        )
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "collect_page_layout"):
+            QTimer.singleShot(0, self._apply_collect_layout)
+
+    def eventFilter(self, watched, event) -> bool:
+        if (
+            hasattr(self, "collect_page_scroll")
+            and watched is self.collect_page_scroll.viewport()
+            and event.type() == QEvent.Type.Resize
+        ):
+            QTimer.singleShot(0, self._apply_collect_layout)
+        return super().eventFilter(watched, event)
+
+    def _collect_viewport_size(self) -> QSize:
+        if not hasattr(self, "collect_page_scroll"):
+            return QSize(max(0, self.width()), max(0, self.height()))
+
+        viewport = self.collect_page_scroll.viewport()
+        size = viewport.size()
+        if size.width() <= 0:
+            size.setWidth(max(0, self.pages.width()))
+        if size.height() <= 0:
+            size.setHeight(max(0, self.pages.height()))
+        return size
+
+    def _apply_collect_layout(self, *, force: bool = False) -> None:
+        viewport_size = self._collect_viewport_size()
+        spec = collect_layout_spec(
+            viewport_size.width(),
+            current_mode=self._collect_layout_mode,
+        )
+        geometry = collect_geometry_spec(spec, viewport_size.height())
+        width_mode_changed = force or spec.mode is not self._collect_layout_mode
+
+        self._collect_layout_mode = spec.mode
+        self._collect_layout_spec = spec
+        self._collect_geometry_spec = geometry
+        self.nav.set_sidebar_width(spec.sidebar_width)
+
+        if width_mode_changed:
+            self.collect_page_header.subtitle_label.setVisible(spec.show_subtitle)
+            self.source_helper_label.setVisible(spec.show_source_helper)
+            self.options_helper_label.setVisible(spec.show_options_helper)
+            self._arrange_mode_buttons(spec)
+            self._arrange_source_controls(spec)
+            self._arrange_metric_groups(spec)
+
+        self._apply_collect_geometry(spec, geometry)
+        QTimer.singleShot(0, self._sync_collect_scroll_policy)
+
+        if width_mode_changed:
+            QTimer.singleShot(0, self._apply_collect_layout)
+
+    def _apply_collect_geometry(
+        self,
+        spec: CollectLayoutSpec,
+        geometry: CollectGeometrySpec,
+    ) -> None:
+        compact = spec.mode is CollectLayoutMode.COMPACT
+        medium = spec.mode is CollectLayoutMode.MEDIUM
+
+        self.collect_page_layout.setContentsMargins(
+            spec.page_margin,
+            geometry.page_top_margin,
+            spec.page_margin,
+            geometry.page_bottom_margin,
+        )
+        self.collect_page_layout.setSpacing(geometry.page_gap)
+
+        setup_horizontal = 18 if compact else 20 if medium else 22
+        setup_top = 15 if compact else 16 if medium else 18
+        setup_bottom = 15 if compact else 16 if medium else 18
+        self.setup_card_layout.setContentsMargins(
+            setup_horizontal,
+            setup_top,
+            setup_horizontal,
+            setup_bottom,
+        )
+        self.setup_card_layout.setSpacing(10 if compact else 11 if medium else 12)
+        self.setup_grid.setHorizontalSpacing(10 if compact else 12 if medium else 14)
+        self.setup_grid.setVerticalSpacing(6 if compact else 7 if medium else 8)
+        self.setup_card.setMinimumHeight(0)
+        self.setup_card.setMaximumHeight(16_777_215)
+        self.setup_card.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
+
+        stats_horizontal = 18 if compact else 21 if medium else 24
+        stats_vertical = 16 if compact else 18 if medium else 20
+        self.stats_card_layout.setContentsMargins(
+            stats_horizontal,
+            stats_vertical,
+            stats_horizontal,
+            stats_vertical,
+        )
+        self.stats_card_layout.setSpacing(12 if compact else 14 if medium else 16)
+        self.stats_card.setMinimumHeight(0)
+        self.stats_card.setMaximumHeight(16_777_215)
+        self.stats_card.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+
+        self.mode_buttons_layout.setHorizontalSpacing(
+            14 if compact else 18 if medium else 20
+        )
+        self.mode_buttons_layout.setVerticalSpacing(8)
+        self.source_controls_layout.setHorizontalSpacing(
+            10 if compact else 12 if medium else 14
+        )
+        self.source_controls_layout.setVerticalSpacing(8 if compact else 10)
+        self.metrics_layout.setHorizontalSpacing(spec.metric_group_gap)
+        self.metrics_layout.setVerticalSpacing(spec.metric_group_gap)
+
+        for metric in self.metric_capsules:
+            metric.set_density(
+                geometry.metric_preferred_height,
+                minimum_height=geometry.metric_min_height,
+                maximum_height=geometry.metric_max_height,
+                horizontal_padding=spec.metric_horizontal_padding,
+            )
+
+        for group in self.metric_groups:
+            group_layout = group.layout()
+            if group_layout is not None:
+                group_layout.setSpacing(6 if compact else 7 if medium else 8)
+
+        self._effective_setup_height = max(
+            geometry.setup_card_height,
+            self.setup_card.minimumSizeHint().height(),
+        )
+        self.setup_card.setFixedHeight(self._effective_setup_height)
+
+        self._effective_stats_min_height = max(
+            geometry.stats_card_min_height,
+            self.stats_card.minimumSizeHint().height(),
+        )
+        self.stats_card.setMinimumHeight(self._effective_stats_min_height)
+        self.stats_card.setMaximumHeight(
+            max(
+                self._effective_stats_min_height,
+                geometry.stats_card_max_height,
+            )
+        )
+
+        self.collect_button.setFixedHeight(spec.primary_action_height)
+        self.collect_button.setMinimumHeight(spec.primary_action_height)
+
+    def _sync_collect_scroll_policy(self) -> None:
+        """Use vertical scrolling only when natural content cannot fit."""
+
+        if (
+            self._collect_layout_spec is None
+            or self._collect_geometry_spec is None
+            or not hasattr(self, "collect_page_scroll")
+            or not hasattr(self, "collect_page_content")
+        ):
+            return
+
+        spec = self._collect_layout_spec
+        geometry = self._collect_geometry_spec
+        available_height = self.collect_page_scroll.viewport().height()
+        required_height = (
+            collect_content_min_height(spec, geometry)
+            + max(0, self._effective_setup_height - geometry.setup_card_height)
+            + max(
+                0,
+                self._effective_stats_min_height - geometry.stats_card_min_height,
+            )
+        )
+        fits = available_height >= required_height
+
+        if fits:
+            self.collect_page_content.setMinimumHeight(0)
+            policy = Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        else:
+            self.collect_page_content.setMinimumHeight(required_height)
+            policy = Qt.ScrollBarPolicy.ScrollBarAsNeeded
+
+        if self.collect_page_scroll.verticalScrollBarPolicy() != policy:
+            self.collect_page_scroll.setVerticalScrollBarPolicy(policy)
+
+    def _arrange_mode_buttons(self, spec: CollectLayoutSpec) -> None:
+        self._take_layout_items(self.mode_buttons_layout)
+        self._reset_grid_stretches(self.mode_buttons_layout, columns=4, rows=2)
+        columns = max(1, spec.mode_columns)
+
+        for index, button in enumerate(self.mode_buttons_list):
+            row = index // columns
+            column = index % columns
+            self.mode_buttons_layout.addWidget(button, row, column)
+
+        for column in range(4):
+            self.mode_buttons_layout.setColumnStretch(
+                column,
+                1 if column < columns else 0,
+            )
+
+    def _arrange_source_controls(self, spec: CollectLayoutSpec) -> None:
+        self._take_layout_items(self.source_controls_layout)
+        self._reset_grid_stretches(self.source_controls_layout, columns=3, rows=2)
+        selected_files_mode = self._current_mode() == "files"
+
+        if not spec.source_actions_below:
+            self.source_controls_layout.addWidget(self.source_box, 0, 0)
+            self.source_controls_layout.addWidget(self.paste_paths_button, 0, 1)
+            self.source_controls_layout.addWidget(self.select_source_button, 0, 2)
+            self.source_controls_layout.setColumnStretch(0, 1)
+            self.source_controls_layout.setColumnStretch(1, 0)
+            self.source_controls_layout.setColumnStretch(2, 0)
+            return
+
+        self.source_controls_layout.addWidget(self.source_box, 0, 0, 1, 2)
+        if selected_files_mode:
+            self.source_controls_layout.addWidget(self.paste_paths_button, 1, 0)
+            self.source_controls_layout.addWidget(self.select_source_button, 1, 1)
+            self.source_controls_layout.setColumnStretch(0, 1)
+            self.source_controls_layout.setColumnStretch(1, 1)
+        else:
+            self.source_controls_layout.addWidget(
+                self.select_source_button,
+                1,
+                0,
+                1,
+                2,
+            )
+            self.source_controls_layout.setColumnStretch(0, 1)
+            self.source_controls_layout.setColumnStretch(1, 1)
+
+        self.source_controls_layout.setColumnStretch(2, 0)
+
+    def _arrange_metric_groups(self, spec: CollectLayoutSpec) -> None:
+        self._take_layout_items(self.metrics_layout)
+        self._reset_grid_stretches(self.metrics_layout, columns=7, rows=2)
+
+        if spec.metric_columns == 4:
+            self.metrics_layout.setRowStretch(0, 1)
+            for index, group in enumerate(self.metric_groups):
+                column = index * 2
+                self.metrics_layout.addWidget(group, 0, column)
+                self.metrics_layout.setColumnStretch(column, 1)
+                if index < len(self.metric_dividers):
+                    divider = self.metric_dividers[index]
+                    divider.setVisible(True)
+                    self.metrics_layout.addWidget(divider, 0, column + 1)
+            return
+
+        for divider in self.metric_dividers:
+            divider.setVisible(False)
+
+        columns = max(1, spec.metric_columns)
+        for index, group in enumerate(self.metric_groups):
+            row = index // columns
+            column = index % columns
+            self.metrics_layout.addWidget(group, row, column)
+            self.metrics_layout.setColumnStretch(column, 1)
+            self.metrics_layout.setRowStretch(row, 1)
+
+    @staticmethod
+    def _take_layout_items(layout) -> None:
+        while layout.count():
+            layout.takeAt(0)
+
+    @staticmethod
+    def _reset_grid_stretches(
+        layout: QGridLayout,
+        *,
+        columns: int,
+        rows: int,
+    ) -> None:
+        for column in range(columns):
+            layout.setColumnStretch(column, 0)
+        for row in range(rows):
+            layout.setRowStretch(row, 0)
 
     def _build_collect_page(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setObjectName("CollectPageScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+
         page = QWidget()
         page.setObjectName("CollectPage")
+        page.setMinimumWidth(0)
         layout = self._page_layout(page)
+        page.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
+        self.collect_page_scroll = scroll
+        self.collect_page_content = page
+        self.collect_page_layout = layout
+        scroll.viewport().installEventFilter(self)
 
         self.header_status = make_runtime_status_capsule("Ready")
         self.header_status.set_state(RuntimeState.READY.semantic_state)
@@ -1378,10 +1432,12 @@ class XccMainWindow(QMainWindow):
         self.collect_page_header.add_action(self.hotkey_capsule)
         layout.addWidget(self.collect_page_header)
 
-        setup_card = self._card()
-        setup_card.setMinimumHeight(252)
+        self.setup_card = self._card()
+        setup_card = self.setup_card
+        setup_card.setFixedHeight(248)
 
-        setup_layout = self._card_layout(setup_card)
+        self.setup_card_layout = self._card_layout(setup_card)
+        setup_layout = self.setup_card_layout
         setup_layout.setContentsMargins(22, 18, 22, 18)
         setup_layout.setSpacing(15)
         setup_layout.addWidget(
@@ -1395,7 +1451,8 @@ class XccMainWindow(QMainWindow):
             )
         )
 
-        setup_grid = QGridLayout()
+        self.setup_grid = QGridLayout()
+        setup_grid = self.setup_grid
         setup_grid.setContentsMargins(0, 2, 0, 0)
         setup_grid.setHorizontalSpacing(14)
         setup_grid.setVerticalSpacing(12)
@@ -1420,19 +1477,22 @@ class XccMainWindow(QMainWindow):
 
         self.mode_folder.setChecked(True)
 
-        mode_buttons = QWidget()
-        mode_buttons.setObjectName("TransparentWidget")
-        mode_buttons_layout = QHBoxLayout(mode_buttons)
-        mode_buttons_layout.setContentsMargins(0, 0, 0, 0)
-        mode_buttons_layout.setSpacing(20)
+        self.mode_buttons = QWidget()
+        self.mode_buttons.setObjectName("TransparentWidget")
+        self.mode_buttons_layout = QGridLayout(self.mode_buttons)
+        self.mode_buttons_layout.setContentsMargins(0, 0, 0, 0)
+        self.mode_buttons_layout.setHorizontalSpacing(20)
+        self.mode_buttons_layout.setVerticalSpacing(8)
+        self.mode_buttons_list = [
+            self.mode_files,
+            self.mode_folder,
+            self.mode_git,
+            self.mode_tree,
+        ]
 
-        for index, button in enumerate(
-            [self.mode_files, self.mode_folder, self.mode_git, self.mode_tree]
-        ):
+        for index, button in enumerate(self.mode_buttons_list):
             self.mode_group.addButton(button, index)
-            mode_buttons_layout.addWidget(button)
-
-        mode_buttons_layout.addStretch(1)
+            self.mode_buttons_layout.addWidget(button, 0, index)
 
         source_label = QLabel("Source")
         source_label.setObjectName("FieldLabel")
@@ -1513,7 +1573,7 @@ class XccMainWindow(QMainWindow):
         self.options_helper_label.setAccessibleName("Compact mode behavior")
 
         setup_grid.addWidget(mode_label, 0, 0)
-        setup_grid.addWidget(mode_buttons, 0, 1, 1, 3)
+        setup_grid.addWidget(self.mode_buttons, 0, 1, 1, 3)
 
         self.source_box = QFrame()
         self.source_box.setObjectName("SourceInputBox")
@@ -1531,10 +1591,19 @@ class XccMainWindow(QMainWindow):
             Qt.AlignmentFlag.AlignVCenter,
         )
 
+        self.source_controls = QWidget()
+        self.source_controls.setObjectName("TransparentWidget")
+        self.source_controls_layout = QGridLayout(self.source_controls)
+        self.source_controls_layout.setContentsMargins(0, 0, 0, 0)
+        self.source_controls_layout.setHorizontalSpacing(14)
+        self.source_controls_layout.setVerticalSpacing(10)
+        self.source_controls_layout.addWidget(self.source_box, 0, 0)
+        self.source_controls_layout.addWidget(self.paste_paths_button, 0, 1)
+        self.source_controls_layout.addWidget(self.select_source_button, 0, 2)
+        self.source_controls_layout.setColumnStretch(0, 1)
+
         setup_grid.addWidget(source_label, 1, 0)
-        setup_grid.addWidget(self.source_box, 1, 1)
-        setup_grid.addWidget(self.paste_paths_button, 1, 2)
-        setup_grid.addWidget(self.select_source_button, 1, 3)
+        setup_grid.addWidget(self.source_controls, 1, 1, 1, 3)
         setup_grid.addWidget(self.source_helper_label, 2, 1, 1, 3)
 
         setup_grid.addWidget(options_label, 3, 0)
@@ -1563,10 +1632,16 @@ class XccMainWindow(QMainWindow):
 
         layout.addWidget(setup_card)
 
-        stats_card = self._card()
-        stats_card.setMinimumHeight(300)
+        self.stats_card = self._card()
+        stats_card = self.stats_card
+        stats_card.setMinimumHeight(310)
+        stats_card.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
 
-        stats_layout = self._card_layout(stats_card)
+        self.stats_card_layout = self._card_layout(stats_card)
+        stats_layout = self.stats_card_layout
         stats_layout.setContentsMargins(24, 18, 24, 20)
         stats_layout.setSpacing(16)
 
@@ -1620,9 +1695,10 @@ class XccMainWindow(QMainWindow):
         self.duration_metric = self._metric_capsule("Duration", "-")
         self.issues_metric = self._metric_capsule("Warnings / Errors", "-")
 
-        columns_row = QHBoxLayout()
-        columns_row.setSpacing(18)
-        columns_row.setContentsMargins(0, 0, 0, 0)
+        self.metrics_layout = QGridLayout()
+        self.metrics_layout.setContentsMargins(0, 0, 0, 0)
+        self.metrics_layout.setHorizontalSpacing(18)
+        self.metrics_layout.setVerticalSpacing(14)
 
         self.volume_metric_group = self._build_metric_group(
             "Volume",
@@ -1644,20 +1720,46 @@ class XccMainWindow(QMainWindow):
             UI_HEALTH_ICON_PATH,
             [self.outcome_metric, self.duration_metric, self.issues_metric],
         )
+        self.metric_groups = [
+            self.volume_metric_group,
+            self.output_metric_group,
+            self.coverage_metric_group,
+            self.health_metric_group,
+        ]
+        self.metric_capsules = [
+            self.files_metric,
+            self.lines_metric,
+            self.source_chars_metric,
+            self.output_chars_metric,
+            self.tokens_metric,
+            self.truncated_metric,
+            self.included_metric,
+            self.omitted_metric,
+            self.coverage_metric,
+            self.outcome_metric,
+            self.duration_metric,
+            self.issues_metric,
+        ]
+        self.metric_dividers = [
+            self._metric_divider(),
+            self._metric_divider(),
+            self._metric_divider(),
+        ]
 
-        columns_row.addWidget(self.volume_metric_group, 1)
-        columns_row.addWidget(self._metric_divider())
-        columns_row.addWidget(self.output_metric_group, 1)
-        columns_row.addWidget(self._metric_divider())
-        columns_row.addWidget(self.coverage_metric_group, 1)
-        columns_row.addWidget(self._metric_divider())
-        columns_row.addWidget(self.health_metric_group, 1)
+        for index, group in enumerate(self.metric_groups):
+            column = index * 2
+            self.metrics_layout.addWidget(group, 0, column)
+            self.metrics_layout.setColumnStretch(column, 1)
+            if index < len(self.metric_dividers):
+                self.metrics_layout.addWidget(
+                    self.metric_dividers[index],
+                    0,
+                    column + 1,
+                )
 
-        stats_layout.addLayout(columns_row)
+        stats_layout.addLayout(self.metrics_layout, 1)
 
-        layout.addWidget(stats_card)
-
-        layout.addSpacing(18)
+        layout.addWidget(stats_card, 1)
 
         self.collect_button = make_primary_button(
             "Collect && Copy",
@@ -1671,9 +1773,14 @@ class XccMainWindow(QMainWindow):
             QSizePolicy.Policy.Fixed,
         )
 
-        layout.addWidget(self.collect_button)
+        layout.addWidget(self.collect_button, 0)
+        layout.setStretch(0, 0)
+        layout.setStretch(1, 0)
+        layout.setStretch(2, 1)
+        layout.setStretch(3, 0)
 
-        return page
+        scroll.setWidget(page)
+        return scroll
 
     def _current_mode(self) -> str:
         checked_id = self.mode_group.checkedId()
@@ -1858,6 +1965,9 @@ class XccMainWindow(QMainWindow):
         self.clear_source_button.setEnabled(
             has_source and not self._collection_active
         )
+
+        if self._collect_layout_spec is not None:
+            self._arrange_source_controls(self._collect_layout_spec)
 
     def _refresh_selected_files_source(self) -> None:
         if not self.selected_paths:
@@ -3076,8 +3186,12 @@ class XccMainWindow(QMainWindow):
         )
 
         for metric in metrics:
-            layout.addWidget(metric)
+            layout.addWidget(metric, 1)
 
+        group.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Expanding,
+        )
         return group
 
     def _metric_divider(self) -> QFrame:

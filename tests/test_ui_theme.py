@@ -30,11 +30,13 @@ def test_ui_palette_matches_frozen_v130_contract() -> None:
 def test_ui_metrics_keep_supported_geometry_contract() -> None:
     assert METRICS.control_height == 40
     assert METRICS.primary_action_height == 52
-    assert METRICS.footer_height == 36
-    assert METRICS.sidebar_width == 216
+    assert METRICS.footer_height == 40
+    assert METRICS.sidebar_width == 228
     assert METRICS.metric_row_height == 58
     assert METRICS.card_radius == 14
     assert METRICS.control_radius == 10
+    assert METRICS.page_top_margin == 18
+    assert METRICS.standard_gap == 14
 
 
 def test_application_stylesheet_contains_shared_component_selectors() -> None:
@@ -43,7 +45,11 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     for selector in (
         "QMainWindow",
         "#Sidebar",
+        "#SidebarIdentity",
+        "#SidebarNavButton",
+        '#SidebarNavButton[selected="true"]',
         "#CollectPage",
+        "#CollectPageScroll",
         "#PageHeader",
         "#PageHeaderActions",
         "#Card",
@@ -77,8 +83,11 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert PALETTE.success in stylesheet
     assert PALETTE.error in stylesheet
     assert "qlineargradient" in stylesheet
-    assert "#BF9028" in stylesheet
+    assert "min-height: 42px" in stylesheet
+    assert "#BE8E27" in stylesheet
     assert "#DDB342" in stylesheet
+    assert "#E5BC49" in stylesheet
+    assert "stop: 0.48" in stylesheet
     assert "#D8AD42" not in stylesheet
     assert "@accent" not in stylesheet
     assert "@primary" not in stylesheet

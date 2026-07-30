@@ -37,17 +37,17 @@ class UiMetrics:
 
     control_height: int = 40
     primary_action_height: int = 52
-    footer_height: int = 36
-    sidebar_width: int = 216
+    footer_height: int = 40
+    sidebar_width: int = 228
     metric_row_height: int = 58
     card_radius: int = 14
     control_radius: int = 10
     capsule_radius: int = 10
     page_margin: int = 28
-    page_top_margin: int = 24
-    standard_gap: int = 18
+    page_top_margin: int = 18
+    standard_gap: int = 14
     compact_gap: int = 12
-    page_title_size: int = 27
+    page_title_size: int = 28
     card_title_size: int = 14
     body_size: int = 13
     helper_size: int = 12
@@ -64,23 +64,31 @@ METRICS = UiMetrics()
 # token without editing page implementation code.
 _BASE_APPLICATION_STYLESHEET = r"""
 QMainWindow {
-    background: #0F0F10;
+    background: #0D0E10;
 }
 
 QWidget {
-    background: #0F0F10;
+    background: #0D0E10;
     color: #F2F2F2;
     font-family: Segoe UI;
     font-size: 13px;
 }
 
-#CollectPage {
+#CollectPage,
+#CollectPageScroll,
+#CollectPageScroll > QWidget,
+#CollectPageScroll > QWidget > QWidget {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 1, y2: 1,
-        stop: 0 #0F1012,
-        stop: 0.55 #101113,
-        stop: 1 #0D0E10
+        stop: 0 #101216,
+        stop: 0.52 #0F1114,
+        stop: 1 #0C0E11
     );
+    border: none;
+}
+
+#CollectPageScroll QScrollBar:horizontal {
+    height: 0px;
 }
 
 #PageHeaderActions {
@@ -115,39 +123,106 @@ QWidget {
 }
 
 #HotkeyCapsule {
-    background: #171717;
-    border: 1px solid #302A1D;
+    background: #191811;
+    border: 1px solid #57471F;
     border-radius: 10px;
-    padding: 4px 11px;
-    color: #ADB1B7;
+    padding: 4px 12px;
+    color: #D2A533;
     font-size: 11px;
+    font-weight: 600;
+}
+
+#HotkeyCapsule:hover {
+    background: #211E13;
+    border: 1px solid #D2A533;
 }
 
 #Sidebar {
-    background: #121212;
-    border-right: 1px solid #2F2A1C;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 1, y2: 0,
+        stop: 0 #101113,
+        stop: 1 #121316
+    );
+    border-right: 1px solid #343026;
 }
 
-#SidebarList {
-    background: transparent;
-    border: none;
-    outline: none;
-    padding: 0px;
+#SidebarIdentity {
+    background: #151619;
+    border: 1px solid #302D26;
+    border-radius: 12px;
 }
 
-#SidebarList::item {
+#SidebarBrandIcon {
     background: transparent;
+}
+
+#SidebarBrandTitle {
+    color: #F2F3F4;
+    font-size: 15px;
+    font-weight: 800;
+    background: transparent;
+}
+
+#SidebarBrandSubtitle {
+    color: #7F848C;
+    font-size: 10px;
+    background: transparent;
+}
+
+#SidebarSectionLabel {
+    color: #666B73;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    background: transparent;
+    padding-left: 10px;
+}
+
+#SidebarSeparator {
+    background: #302D26;
     border: none;
-    padding: 0px;
-    margin: 0px;
+}
+
+#SidebarNavButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-left: 3px solid transparent;
+    border-radius: 10px;
+    color: #F2F3F4;
+    text-align: left;
+    padding: 0px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#SidebarNavButton:hover,
+#SidebarNavButton:focus {
+    background: #1A1916;
+    border: 1px solid #3B3528;
+    border-left: 3px solid #57471F;
+    color: #F2F3F4;
+}
+
+#SidebarNavButton[selected="true"] {
+    background: #242016;
+    border: 1px solid #57471F;
+    border-left: 3px solid #D2A533;
+    color: #F2F3F4;
+    font-weight: 700;
+}
+
+#SidebarNavButton:pressed {
+    background: #2A2417;
 }
 
 #PageHeader {
     background: transparent;
+    min-height: 42px;
+    max-height: 42px;
 }
 
 #SectionTitle {
-    font-size: 27px;
+    font-size: 28px;
     font-weight: 700;
     color: #F2F2F2;
     background: transparent;
@@ -156,10 +231,11 @@ QWidget {
 #Card {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #191A1D,
-        stop: 1 #161719
+        stop: 0 #1B1D21,
+        stop: 0.42 #181A1E,
+        stop: 1 #15171A
     );
-    border: 1px solid #302A1D;
+    border: 1px solid #3A3428;
     border-radius: 14px;
 }
 
@@ -229,13 +305,14 @@ QPushButton:pressed {
 #PrimaryButton {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #D2A533,
-        stop: 1 #BF9028
+        stop: 0 #DDB23E,
+        stop: 0.48 #D2A533,
+        stop: 1 #BE8E27
     );
     color: #111111;
     font-size: 15px;
     font-weight: 800;
-    border: 1px solid #B98924;
+    border: 1px solid #D6AA36;
     border-radius: 11px;
     padding: 9px 18px;
 }
@@ -243,15 +320,20 @@ QPushButton:pressed {
 #PrimaryButton:hover {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #DDB342,
+        stop: 0 #E5BC49,
+        stop: 0.48 #DDB342,
         stop: 1 #C99A2E
     );
-    border: 1px solid #D2A533;
+    border: 1px solid #E0B440;
     color: #111111;
 }
 
 #PrimaryButton:pressed {
-    background: #B88624;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #C89A2D,
+        stop: 1 #B68322
+    );
     border: 1px solid #B88624;
 }
 
@@ -298,14 +380,22 @@ QCheckBox::indicator:checked {
 }
 
 #MetricCapsule {
-    background: #18191C;
-    border: 1px solid #302A1D;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #1B1D21,
+        stop: 1 #17191C
+    );
+    border: 1px solid #343027;
     border-radius: 10px;
 }
 
 #MetricCapsule:hover {
-    background: #1C1D20;
-    border: 1px solid #443820;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #202228,
+        stop: 1 #1A1C20
+    );
+    border: 1px solid #57471F;
 }
 
 #MetricLabel {
@@ -329,34 +419,34 @@ QCheckBox::indicator:checked {
 }
 
 #LastRunState {
-    color: #9A9A9A;
+    color: #ADB1B7;
     font-size: 12px;
-    background: #111111;
-    border: 1px solid #3A311C;
+    background: #121316;
+    border: 1px solid #3A3428;
     border-radius: 8px;
-    padding: 4px 10px;
-    min-width: 132px;
+    padding: 4px 12px;
+    min-width: 142px;
 }
 
 #StatusBar {
-    background: #151515;
-    border-top: 1px solid #2F2A1C;
+    background: #141517;
+    border-top: 1px solid #343026;
 }
 
 #FooterStatusDot {
     background: #90959D;
-    border: none;
+    border: 1px solid #1F2226;
     border-radius: 4px;
 }
 
 #StatusText {
-    color: #AFAFAF;
+    color: #B8BBC1;
     font-size: 12px;
     background: transparent;
 }
 
 #StatusVersion {
-    color: #858585;
+    color: #90959D;
     font-size: 11px;
     background: transparent;
 }
@@ -462,9 +552,9 @@ QScrollBar::sub-page:vertical {
 }
 #PageSubtitle {
     color: #8F8F8F;
-    font-size: 13px;
+    font-size: 12px;
     background: transparent;
-    padding: 0px;
+    padding: 2px 0px 0px 0px;
     margin: 0px;
 }
 

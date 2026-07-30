@@ -822,60 +822,152 @@ feat: redesign last run metrics
 
 ---
 
-## M15.7 — Responsive Layout
+## M15.7 — Responsive Layout and Premium Visual Polish
 
-**Status: PLANNED — HIGH RISK**
+**Status: IMPLEMENTED — M15.7.2 GEOMETRY ARCHITECTURE RESET, LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
 
 ### Goal
 
-Make the reference-quality design work in the real supported window range instead of only one screenshot size.
+Make the approved interface work across the complete supported window range
+without clipping, permanent scrollbars, delegate-driven sidebar defects, or
+wasted vertical space. The same widgets, collection behavior, tab order,
+accessible names, and domain boundaries remain intact.
 
-### Breakpoints
+### Width policy
 
-#### Large: 1350 px and wider
+Width arrangement is selected from the central **content viewport**, not from
+the complete main-window width:
 
-- [ ] one-row Source controls;
-- [ ] four metric columns;
-- [ ] full page subtitle;
-- [ ] standard page margins and spacing.
+```text
+Large content viewport:   1120 px and wider
+Medium content viewport:   820–1119 px
+Compact content viewport:  below 820 px
+Supported window minimum:  920 × 620
+```
 
-#### Medium: 1050–1349 px
+### Height policy
 
-- [ ] Source actions may wrap;
-- [ ] metrics switch to a 2×2 grid;
-- [ ] reduced card spacing;
-- [ ] full sidebar remains available.
+Height density is calculated independently on every viewport resize:
 
-#### Compact: 920–1049 px
+```text
+Tall:      viewport height ≥ 800 px
+Standard:  viewport height 700–799 px
+Short:     viewport height < 700 px
+```
 
-- [ ] Source actions move below the input;
-- [ ] metrics remain 2×2 or use a compact vertical arrangement;
-- [ ] page margins and gaps reduce safely;
-- [ ] no horizontal clipping or scrollbar;
-- [ ] all primary actions remain visible.
+This prevents a width-only breakpoint from retaining stale geometry after a
+height change.
 
-### Validation Matrix
+### Stable responsive behavior
 
-- [ ] minimum window 920×620;
-- [ ] 1920×1080 at 100%;
-- [ ] 1920×1080 at 125%;
-- [ ] 1920×1080 at 150%;
-- [ ] 2560×1440;
-- [ ] maximized;
-- [ ] resize transitions without layout jitter.
+- [x] large layout keeps one-row Source actions and four metric groups;
+- [x] medium layout moves Source actions below and uses a 2×2 metric grid;
+- [x] compact layout uses 2×2 modes and metrics;
+- [x] horizontal scrolling is always disabled;
+- [x] helper text is removed only from compact density;
+- [x] the same widget instances are moved between layouts;
+- [x] signals are not duplicated.
 
-### Implementation Constraints
+### M15.7.1 — Maximized Geometry and Sidebar Rhythm
 
-- reuse the same widget instances;
-- avoid duplicate signal connections;
-- avoid rebuilding the entire page on every resize event;
-- debounce or guard layout switching;
-- preserve accessibility and tab order.
+**Status: SUPERSEDED BY M15.7.2**
+
+The first corrective patch increased card minimum heights and adjusted list
+delegate geometry. Windows evidence showed that this did not solve the root
+cause:
+
+- maximized Collect still exposed a vertical scrollbar;
+- the CTA could remain partially below the viewport;
+- Setup and Last Run held excessive fixed minimum heights;
+- Settings could still be clipped by `QListWidget` viewport/delegate rounding;
+- sidebar composition remained top-heavy.
+
+The replacement below removes those failure modes rather than adding another
+fixed-height correction.
+
+### M15.7.2 — Geometry Architecture Reset and Sidebar Rebuild
+
+**Status: IMPLEMENTED — LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+
+#### Sidebar rebuild
+
+- [x] remove the two `QListWidget` navigation surfaces;
+- [x] remove delegate painting and manually calculated list heights;
+- [x] add `src/xcc/ui_sidebar.py`;
+- [x] use four real navigation buttons;
+- [x] add a compact product identity anchor;
+- [x] keep Collect, History, and Settings in the workspace zone;
+- [x] keep About anchored below an expanding spacer;
+- [x] use 50 px rows and 8 px inter-item gaps;
+- [x] preserve exclusive selection;
+- [x] preserve visible focus and accessible names;
+- [x] support Up/Down navigation across all four actions;
+- [x] guarantee that Settings cannot be clipped by item-view geometry.
+
+#### Collect geometry reset
+
+- [x] derive width mode from the actual content viewport;
+- [x] derive height density independently;
+- [x] recalculate height geometry inside one width mode;
+- [x] keep the 42 px single-row title/subtitle/actions header;
+- [x] elide the subtitle before runtime actions can be displaced;
+- [x] make Setup a fixed content-driven card;
+- [x] remove oversized 286 px / 332 px large-layout minimums;
+- [x] make Last Run the expanding primary card;
+- [x] preserve an explicit expanding Last Run geometry contract;
+- [x] give Last Run layout stretch instead of static empty space;
+- [x] cap Last Run expansion per density so extra height does not become a large empty lower zone;
+- [x] allow metric rows to expand equally within minimum/preferred/maximum
+  height ranges;
+- [x] keep Collect & Copy fixed and fully visible in every scroll-free layout;
+- [x] remove size-hint feedback from scrollbar decisions;
+- [x] reset Collect content minimum height when the natural page fits;
+- [x] enable vertical scrolling only when natural content exceeds viewport
+  height;
+- [x] continue recalculating after the Qt layout pass.
+
+#### Pure policy and Qt coverage
+
+- [x] test content-viewport breakpoints;
+- [x] test Tall, Standard, and Short geometry;
+- [x] test the maximized large natural height;
+- [x] test compact minimum scrolling policy;
+- [x] test real sidebar buttons and exclusive selection;
+- [x] test keyboard movement from Settings to About;
+- [x] add maximized and 920×620 GUI geometry tests;
+- [x] keep all collection-domain modules unchanged.
+
+### Required Windows evidence
+
+#### 1688×900 or maximized large window
+
+- [ ] no vertical scrollbar;
+- [ ] Collect & Copy is fully visible;
+- [ ] Setup has no clipping and no oversized empty lower zone;
+- [ ] Last Run uses the remaining height;
+- [ ] all twelve metric rows have complete borders;
+- [ ] all four sidebar actions are fully visible;
+- [ ] Settings is not clipped;
+- [ ] About is visually anchored at the bottom.
+
+#### 1200 px width
+
+- [ ] Source actions move below correctly;
+- [ ] Last Run uses 2×2 groups;
+- [ ] no horizontal clipping;
+- [ ] vertical scrolling depends only on available height.
+
+#### 920×620
+
+- [ ] vertical scrolling is available;
+- [ ] horizontal scrolling is absent;
+- [ ] every mode, Source action, metric group, and CTA is reachable;
+- [ ] sidebar remains usable without hiding labels.
 
 ### Intended commit
 
 ```text
-feat: add responsive collect layouts
+fix: reset collect geometry and rebuild sidebar
 ```
 
 ---

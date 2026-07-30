@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -93,8 +94,48 @@ def set_tinted_button_icon(
     button.setIconSize(QSize(size, size))
 
 
+class ElidedLabel(QLabel):
+    """One-line label that gives priority to adjacent controls."""
+
+    def __init__(
+        self,
+        text: str,
+        *,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self._full_text = text
+        self.setText(text)
+        self.setToolTip(text)
+        self.setWordWrap(False)
+        self.setMinimumWidth(0)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
+
+    def set_full_text(self, text: str) -> None:
+        self._full_text = text
+        self.setToolTip(text)
+        self._refresh_elision()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._refresh_elision()
+
+    def _refresh_elision(self) -> None:
+        available = max(0, self.contentsRect().width())
+        self.setText(
+            self.fontMetrics().elidedText(
+                self._full_text,
+                Qt.TextElideMode.ElideRight,
+                available,
+            )
+        )
+
+
 class PageHeader(QWidget):
-    """Page title, subtitle, and low-emphasis page actions."""
+    """Single-row page title, elided subtitle, and low-emphasis actions."""
 
     def __init__(
         self,
@@ -105,34 +146,41 @@ class PageHeader(QWidget):
     ) -> None:
         super().__init__(parent)
         self.setObjectName("PageHeader")
+        self.setFixedHeight(42)
 
-        layout = QVBoxLayout(self)
+        layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(6)
-
-        title_row = QHBoxLayout()
-        title_row.setContentsMargins(0, 0, 0, 0)
-        title_row.setSpacing(12)
+        layout.setSpacing(18)
 
         self.title_label = QLabel(title, self)
         self.title_label.setObjectName("SectionTitle")
+        self.title_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.title_label.setSizePolicy(
+            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Fixed,
+        )
+
+        self.subtitle_label = ElidedLabel(subtitle, parent=self)
+        self.subtitle_label.setObjectName("PageSubtitle")
+        self.subtitle_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
 
         self.actions_widget = QWidget(self)
         self.actions_widget.setObjectName("PageHeaderActions")
+        self.actions_widget.setSizePolicy(
+            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Fixed,
+        )
         self.actions_layout = QHBoxLayout(self.actions_widget)
         self.actions_layout.setContentsMargins(0, 0, 0, 0)
         self.actions_layout.setSpacing(10)
 
-        title_row.addWidget(self.title_label)
-        title_row.addStretch(1)
-        title_row.addWidget(self.actions_widget)
-
-        self.subtitle_label = QLabel(subtitle, self)
-        self.subtitle_label.setObjectName("PageSubtitle")
-        self.subtitle_label.setWordWrap(False)
-
-        layout.addLayout(title_row)
-        layout.addWidget(self.subtitle_label)
+        layout.addWidget(self.title_label, 0)
+        layout.addWidget(self.subtitle_label, 1)
+        layout.addWidget(self.actions_widget, 0)
 
     def add_action(self, widget: QWidget) -> None:
         self.actions_layout.addWidget(widget)
@@ -198,11 +246,14 @@ class MetricCapsule(QFrame):
         super().__init__(parent)
         self.setObjectName("MetricCapsule")
         self.setMinimumWidth(0)
-        self.setFixedHeight(METRICS.metric_row_height)
+        self._layout = QHBoxLayout(self)
+        self._layout.setSpacing(12)
+        self.set_density(
+            METRICS.metric_row_height,
+            horizontal_padding=14,
+        )
 
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(14, 0, 14, 0)
-        layout.setSpacing(12)
+        layout = self._layout
 
         self.label_widget = QLabel(label, self)
         self.label_widget.setObjectName("MetricLabel")
@@ -224,6 +275,52 @@ class MetricCapsule(QFrame):
 
     def set_value(self, value: str) -> None:
         self.value_label.setText(value)
+
+    def set_density(
+        self,
+        height: int,
+        *,
+        horizontal_padding: int,
+        minimum_height: int | None = None,
+        maximum_height: int | None = None,
+    ) -> None:
+        """Set a preferred responsive height while allowing equal expansion."""
+        if height <= 0:
+            raise ValueError("height must be greater than 0")
+        if horizontal_padding < 0:
+            raise ValueError("horizontal_padding must not be negative")
+
+        minimum = height if minimum_height is None else minimum_height
+        maximum = height if maximum_height is None else maximum_height
+        if minimum <= 0:
+            raise ValueError("minimum_height must be greater than 0")
+        if maximum < minimum:
+            raise ValueError("maximum_height must be at least minimum_height")
+        if not minimum <= height <= maximum:
+            raise ValueError("height must be inside the minimum/maximum range")
+
+        self._preferred_height = height
+        self.setMinimumHeight(minimum)
+        self.setMaximumHeight(maximum)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            (
+                QSizePolicy.Policy.Expanding
+                if maximum > minimum
+                else QSizePolicy.Policy.Fixed
+            ),
+        )
+        self._layout.setContentsMargins(
+            horizontal_padding,
+            0,
+            horizontal_padding,
+            0,
+        )
+        self.updateGeometry()
+
+    def sizeHint(self) -> QSize:
+        hint = super().sizeHint()
+        return QSize(hint.width(), getattr(self, "_preferred_height", hint.height()))
 
     def set_state(self, state: str | None) -> None:
         _set_dynamic_state(self.value_label, state)

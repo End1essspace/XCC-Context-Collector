@@ -139,11 +139,10 @@ XCC keeps the native Windows title bar for the application icon, product name,
 and window controls. The content area must not repeat a second app-identity
 header beneath it.
 
-The Collect page header contains:
+The Collect page header uses one horizontal row:
 
 ```text
-Collect Context                              [Runtime state] [Hotkey]
-Page subtitle
+Collect Context  Page subtitle                 [Runtime state] [Hotkey]
 ```
 
 Requirements:
@@ -182,13 +181,20 @@ About
 
 Requirements:
 
-- Collect, History, and Settings remain in the upper navigation zone;
+- a compact sidebar identity block provides one visual anchor without creating
+  a second full-width application header;
+- Collect, History, and Settings remain in the upper workspace zone;
 - About remains anchored in the lower zone;
+- every navigation action is a real button rather than an item-view row with
+  manually calculated height;
 - selected navigation uses a quiet dark-gold surface plus a slim gold indicator;
 - selected text and icon remain light/gold, not black on a large bright block;
 - hover is visible but weaker than selected state;
 - icon size and text baselines remain consistent;
-- keyboard navigation and accessible names remain intact.
+- primary navigation rows use 50 px height and 8 px inter-item spacing;
+- Settings must never be clipped by delegate, viewport, or DPI rounding;
+- Up and Down keyboard navigation includes all four actions;
+- keyboard focus and accessible names remain intact.
 
 The sidebar must never visually overpower the Collect page.
 
@@ -225,7 +231,10 @@ Collect Context
 Configure what to collect and generate an AI-ready context snapshot.
 ```
 
-The subtitle may be hidden only in the compact breakpoint when required to preserve core controls above the fold.
+The title and subtitle share one 42 px row in large and medium layouts.
+The subtitle is elided before it can displace runtime actions and may be hidden
+only in the compact breakpoint when required to
+preserve core controls above the fold.
 
 ### 6.2 Primary structure
 
@@ -418,54 +427,92 @@ Last Run and History must use the same outcome vocabulary.
 
 ## 8. Responsive Layout Contract
 
-Responsive behavior is mandatory. A screenshot-perfect layout that breaks at 920×620 does not satisfy the contract.
+Responsive behavior is mandatory. A screenshot-perfect layout that breaks at
+920×620 does not satisfy the contract.
 
-### 8.1 Large breakpoint: 1350 px and wider
+Width arrangement and height density are independent. Breakpoints are selected
+from the **central content viewport**, not the complete window width including
+the sidebar.
+
+### 8.1 Large content viewport: 1120 px and wider
 
 - standard page margins;
 - Source field and actions remain on one row;
 - four Last Run columns appear in one row;
 - full subtitle and helper text remain visible;
-- sidebar uses standard width.
+- sidebar uses the 228 px standard width;
+- Setup is content-driven and fixed rather than stretched;
+- Last Run receives the remaining vertical space.
 
-### 8.2 Medium breakpoint: 1050–1349 px
+### 8.2 Medium content viewport: 820–1119 px
 
 - page margins and gaps reduce moderately;
-- Source actions may move to a secondary row when needed;
+- Source actions move to a secondary row;
 - Last Run becomes a 2×2 group grid;
 - full navigation labels remain visible;
 - no horizontal scrollbar appears.
 
-### 8.3 Compact breakpoint: 920–1049 px
+### 8.3 Compact content viewport: below 820 px
+
+The supported window minimum remains `920 × 620`; after the sidebar and frame
+are accounted for, its content viewport is compact.
 
 - Source actions move below the Source field;
-- Last Run uses a 2×2 grid or compact vertical group arrangement;
+- Last Run uses a 2×2 grid;
 - page margins and card padding reduce;
-- subtitle or non-critical helper text may be hidden;
+- subtitle and non-critical helper text may be hidden;
 - all modes, Source controls, Max chars, and Collect & Copy remain reachable;
 - no overlap, clipping, or horizontal scrollbar is allowed.
 
-### 8.4 Implementation constraints
+### 8.4 Height density
+
+Height is recalculated on every content-viewport resize, even when the width
+breakpoint does not change:
+
+```text
+Tall:      viewport height ≥ 800 px
+Standard:  viewport height 700–799 px
+Short:     viewport height < 700 px
+```
+
+- Setup remains a fixed content-driven form;
+- Last Run is the only expanding primary card, with a density-specific maximum height;
+- its three metric rows share available group height equally;
+- metric rows stay inside explicit minimum/preferred/maximum ranges;
+- vertical scrolling is disabled when natural content fits;
+- scrolling returns only when natural content is taller than the viewport;
+- Collect & Copy is fully visible in every scroll-free layout.
+
+### 8.5 Implementation constraints
 
 - reuse the same widget instances across breakpoints;
 - do not duplicate signal connections;
 - do not rebuild the complete page on every resize event;
-- switch layouts only when crossing a breakpoint;
+- switch widget arrangements only when crossing a width breakpoint;
+- recalculate geometry and scroll policy on every viewport-height resize;
 - preserve tab order and accessible names;
-- avoid visible resize jitter.
+- avoid visible resize jitter;
+- never hide a required scrollbar through QSS;
+- never use fixed whole-page height as a substitute for correct sizing.
 
-### 8.5 Validation matrix
+### 8.6 Validation matrix
 
 The final implementation must be checked at:
 
 ```text
 920 × 620
+1200 px window width
+1688 × 900
 1920 × 1080 at 100%
 1920 × 1080 at 125%
 1920 × 1080 at 150%
 2560 × 1440
 maximized window
 ```
+
+Maximized large layout must have no vertical scrollbar when the natural page
+fits. The compact minimum may use vertical scrolling, but never horizontal
+scrolling.
 
 ---
 
