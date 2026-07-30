@@ -77,3 +77,53 @@ def test_review_project_root_keeps_preferred_root_when_all_files_are_inside(
 
 def test_review_project_root_returns_none_for_empty_selection(tmp_path: Path) -> None:
     assert review_project_root([], preferred_root=tmp_path) is None
+
+def test_review_project_root_marks_distinct_repositories_as_mixed(
+    tmp_path: Path,
+) -> None:
+    first_root = tmp_path / "first"
+    second_root = tmp_path / "second"
+    (first_root / ".git").mkdir(parents=True)
+    (second_root / ".git").mkdir(parents=True)
+
+    first = first_root / "src" / "app.py"
+    second = second_root / "src" / "app.py"
+    first.parent.mkdir()
+    second.parent.mkdir()
+    first.write_text("first\n", encoding="utf-8")
+    second.write_text("second\n", encoding="utf-8")
+
+    assert review_project_root(
+        [first, second],
+        preferred_root=first_root,
+    ) is None
+
+    items = build_selected_file_review(
+        [first, second],
+        project_root=None,
+    )
+    assert len({item.display_path for item in items}) == 2
+
+
+def test_review_project_root_recovers_remaining_repository_after_removal(
+    tmp_path: Path,
+) -> None:
+    first_root = tmp_path / "first"
+    second_root = tmp_path / "second"
+    (first_root / ".git").mkdir(parents=True)
+    (second_root / ".git").mkdir(parents=True)
+
+    first = first_root / "src" / "app.py"
+    second = second_root / "docs" / "guide.md"
+    first.parent.mkdir()
+    second.parent.mkdir()
+    first.write_text("first\n", encoding="utf-8")
+    second.write_text("second\n", encoding="utf-8")
+
+    remaining = remove_selected_file_indices([first, second], [1])
+
+    assert review_project_root(
+        remaining,
+        preferred_root=None,
+    ) == first_root.resolve()
+

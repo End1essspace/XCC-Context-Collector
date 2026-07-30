@@ -396,6 +396,7 @@ class SelectedFilesReviewDialog(QDialog):
         self.setMinimumSize(700, 480)
         self.resize(780, 540)
 
+        self._original_paths = tuple(paths)
         self._selected_paths = list(paths)
         self.project_root = review_project_root(
             self._selected_paths,
@@ -498,6 +499,13 @@ class SelectedFilesReviewDialog(QDialog):
         self.cancel_button.clicked.connect(self.reject)
         self.apply_button.clicked.connect(self.accept)
 
+        self.delete_shortcut = QShortcut(
+            QKeySequence(Qt.Key.Key_Delete),
+            self.files_list,
+        )
+        self.delete_shortcut.setContext(Qt.ShortcutContext.WidgetShortcut)
+        self.delete_shortcut.activated.connect(self._remove_selected)
+
         self._render_files()
 
     @property
@@ -535,6 +543,9 @@ class SelectedFilesReviewDialog(QDialog):
     def _refresh_action_states(self) -> None:
         self.remove_button.setEnabled(bool(self.files_list.selectedItems()))
         self.clear_button.setEnabled(bool(self._selected_paths))
+        self.apply_button.setEnabled(
+            tuple(self._selected_paths) != self._original_paths
+        )
 
     def _remove_selected(self) -> None:
         rows = [self.files_list.row(item) for item in self.files_list.selectedItems()]
@@ -692,22 +703,27 @@ class PastePathsDialog(QDialog):
         elif result.root_error:
             summary = result.root_error
         else:
+            other_issues = max(
+                0,
+                result.issue_count - len(result.missing),
+            )
             summary = (
                 f"Found {result.added_count} file(s) · "
                 f"Missing {len(result.missing)} · "
-                f"Duplicates {len(result.duplicates)} · "
-                f"Other issues {result.issue_count - len(result.missing)}"
+                f"Duplicates {result.duplicate_count} · "
+                f"External {len(result.external)} · "
+                f"Other issues {other_issues}"
             )
 
         self.summary_label.setText(summary)
-        self.add_button.setEnabled(result.added_count > 0)
+        self.add_button.setEnabled(result.can_apply)
         self.add_button.setText(
             f"Add {result.added_count} File"
             f"{'s' if result.added_count != 1 else ''}"
         )
 
     def _accept_import(self) -> None:
-        if self.import_result.added_count <= 0:
+        if not self.import_result.can_apply:
             return
 
         root_text = self.root_input.text().strip()
@@ -1339,6 +1355,7 @@ class XccMainWindow(QMainWindow):
         self.source_input.setFrame(False)
         self.source_input.setObjectName("SourceInputEmbedded")
         self.source_input.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.source_input.setAccessibleName("Selected source")
 
         self.clear_source_button = QPushButton("×")
         self.clear_source_button.setObjectName("ClearSourceButton")
@@ -1687,9 +1704,17 @@ class XccMainWindow(QMainWindow):
             )
             self.clear_source_button.setToolTip("Clear selected files")
             self._refresh_selected_files_source()
+            has_source = bool(self.selected_paths)
         else:
             self.source_input.setPlaceholderText("No source selected")
             self.clear_source_button.setToolTip("Clear selected source")
+            has_source = self.project_root is not None or bool(
+                self.source_input.text().strip()
+            )
+
+        self.clear_source_button.setEnabled(
+            has_source and not self._collection_active
+        )
 
     def _refresh_selected_files_source(self) -> None:
         if not self.selected_paths:
@@ -1709,14 +1734,17 @@ class XccMainWindow(QMainWindow):
             self.source_input.setText(
                 f"{root_name} · {count} {suffix} selected"
             )
-            self.source_input.setToolTip(f"Project root:\n{root}")
+            self.source_input.setToolTip(
+                f"Project root:\n{root}\n\nClick to review selected files."
+            )
             return
 
         self.source_input.setText(
             f"{count} {suffix} selected · Mixed locations"
         )
         self.source_input.setToolTip(
-            "Selected files do not share one reliable project root."
+            "Selected files do not share one reliable project root.\n\n"
+            "Click to review selected files."
         )
 
     def _all_selected_paths_inside_root(self, root: Path) -> bool:
@@ -1767,7 +1795,7 @@ class XccMainWindow(QMainWindow):
             existing_paths=self.selected_paths,
         )
 
-        if result.root_required:
+        if result.needs_project_root_selection:
             dialog = PastePathsDialog(
                 text,
                 existing_paths=self.selected_paths,
@@ -1804,28 +1832,46 @@ class XccMainWindow(QMainWindow):
         self._save_current_settings()
         self._refresh_settings_page()
 
-        if result.added_count > 0 and result.issue_count == 0:
-            self._set_status(
-                f"Added {result.added_count} file"
-                f"{'s' if result.added_count != 1 else ''}. "
-                f"Total: {len(self.selected_paths)}."
-            )
-            return
-
         if result.added_count > 0:
-            self._set_status(
-                f"Added {result.added_count} file"
-                f"{'s' if result.added_count != 1 else ''}; "
-                f"{result.issue_count} path"
-                f"{'s' if result.issue_count != 1 else ''} need review."
-            )
+            status_parts = [
+                (
+                    f"Added {result.added_count} file"
+                    f"{'s' if result.added_count != 1 else ''}"
+                ),
+                f"Total: {len(self.selected_paths)}",
+            ]
+
+            if result.duplicate_count:
+                status_parts.append(
+                    f"{result.duplicate_count} duplicate"
+                    f"{'s' if result.duplicate_count != 1 else ''} skipped"
+                )
+
+            if result.external:
+                status_parts.append(
+                    f"{len(result.external)} external"
+                )
+
+            if result.issue_count:
+                status_parts.append(
+                    f"{result.issue_count} path"
+                    f"{'s' if result.issue_count != 1 else ''} need review"
+                )
+
+            self._set_status(" · ".join(status_parts) + ".")
         elif result.duplicates and result.issue_count == 0:
             self._set_status("All pasted files are already selected.")
+        elif result.issue_count:
+            self._set_status(
+                f"No files added · {result.issue_count} path"
+                f"{'s' if result.issue_count != 1 else ''} need review."
+            )
         else:
             self._set_status("No files were added from the pasted paths.")
 
         if result.has_reportable_details:
             self._show_selected_files_import_report(result)
+
 
     def _show_selected_files_import_report(
         self,
@@ -2256,6 +2302,9 @@ class XccMainWindow(QMainWindow):
 
         self.collect_button.setEnabled(True)
         self.collect_button.setText("Cancel" if active else "Collect && Copy")
+
+        if not active:
+            self._refresh_source_controls()
 
     def _run_deferred_close_or_quit(self) -> None:
         if self._quit_after_collection:

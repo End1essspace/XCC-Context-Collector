@@ -147,3 +147,108 @@ def test_import_selected_files_merges_with_manual_selection(
 
     assert result.duplicates == ("src/manual.py",)
     assert result.added == (pasted.resolve(),)
+
+def test_import_result_requests_root_selection_for_stale_relative_root(
+    tmp_path: Path,
+) -> None:
+    stale_root = tmp_path / "deleted-project"
+
+    result = import_selected_files(
+        "src/app.py",
+        project_root=stale_root,
+    )
+
+    assert result.root_error is not None
+    assert result.needs_project_root_selection is True
+    assert result.can_apply is False
+    assert result.has_reportable_details is True
+
+
+def test_import_result_ignores_stale_root_for_absolute_only_list(
+    tmp_path: Path,
+) -> None:
+    file_path = tmp_path / "notes.md"
+    file_path.write_text("notes\n", encoding="utf-8")
+    stale_root = tmp_path / "deleted-project"
+
+    result = import_selected_files(
+        str(file_path),
+        project_root=stale_root,
+    )
+
+    assert result.added == (file_path.resolve(),)
+    assert result.root_error is None
+    assert result.needs_project_root_selection is False
+    assert result.can_apply is True
+
+
+def test_duplicate_only_import_uses_non_modal_feedback(
+    tmp_path: Path,
+) -> None:
+    app = tmp_path / "app.py"
+    app.write_text("app\n", encoding="utf-8")
+
+    result = import_selected_files(
+        "app.py",
+        project_root=tmp_path,
+        existing_paths=[app],
+    )
+
+    assert result.duplicate_count == 1
+    assert result.issue_count == 0
+    assert result.has_reportable_details is False
+    assert result.can_apply is False
+
+
+def test_infer_project_root_rejects_distinct_marker_projects(
+    tmp_path: Path,
+) -> None:
+    first_root = tmp_path / "first"
+    second_root = tmp_path / "second"
+    (first_root / ".git").mkdir(parents=True)
+    (second_root / ".git").mkdir(parents=True)
+
+    first = first_root / "src" / "app.py"
+    second = second_root / "src" / "app.py"
+    first.parent.mkdir()
+    second.parent.mkdir()
+    first.write_text("first\n", encoding="utf-8")
+    second.write_text("second\n", encoding="utf-8")
+
+    assert infer_project_root([first, second]) is None
+
+
+def test_infer_project_root_rejects_marker_and_unmarked_location_mix(
+    tmp_path: Path,
+) -> None:
+    project_root = tmp_path / "project"
+    (project_root / ".git").mkdir(parents=True)
+    inside = project_root / "src" / "app.py"
+    inside.parent.mkdir()
+    inside.write_text("inside\n", encoding="utf-8")
+
+    outside = tmp_path / "loose" / "notes.md"
+    outside.parent.mkdir()
+    outside.write_text("outside\n", encoding="utf-8")
+
+    assert infer_project_root([inside, outside]) is None
+
+def test_infer_project_root_prefers_shared_git_root_over_nested_manifests(
+    tmp_path: Path,
+) -> None:
+    project_root = tmp_path / "monorepo"
+    (project_root / ".git").mkdir(parents=True)
+
+    package_root = project_root / "packages" / "app"
+    package_root.mkdir(parents=True)
+    (package_root / "pyproject.toml").write_text("[project]\n", encoding="utf-8")
+
+    app = package_root / "src" / "app.py"
+    docs = project_root / "docs" / "guide.md"
+    app.parent.mkdir()
+    docs.parent.mkdir()
+    app.write_text("app\n", encoding="utf-8")
+    docs.write_text("docs\n", encoding="utf-8")
+
+    assert infer_project_root([app, docs]) == project_root.resolve()
+

@@ -89,3 +89,36 @@ def test_absolute_path_detection_supports_windows_unc_and_posix() -> None:
 def test_contains_relative_paths() -> None:
     assert contains_relative_paths(["src/app.py"]) is True
     assert contains_relative_paths([r"D:\project\src\app.py"]) is False
+
+def test_parse_path_list_handles_grouped_ai_request_from_real_workflow() -> None:
+    text = """
+    Пришли эти файлы из CAGE-X Desktop:
+
+    ```text
+    src/cagex_desktop/ui/pages/flow_page.py
+    src/cagex_desktop/ui/main_window.py
+    src/cagex_desktop/ui/theme.py
+    src/cagex_desktop/ui/icon_catalog.py
+
+    src/cagex_desktop/core_bridge/adapter.py
+    src/cagex_desktop/core_bridge/engine_service.py
+
+    src/cagex_desktop/models/product_state.py
+
+    AI_PROJECT_CONTEXT.md
+    docs/CAGEX_DESKTOP_ROADMAP.md
+    ```
+    """
+
+    assert parse_path_list(text) == [
+        "src/cagex_desktop/ui/pages/flow_page.py",
+        "src/cagex_desktop/ui/main_window.py",
+        "src/cagex_desktop/ui/theme.py",
+        "src/cagex_desktop/ui/icon_catalog.py",
+        "src/cagex_desktop/core_bridge/adapter.py",
+        "src/cagex_desktop/core_bridge/engine_service.py",
+        "src/cagex_desktop/models/product_state.py",
+        "AI_PROJECT_CONTEXT.md",
+        "docs/CAGEX_DESKTOP_ROADMAP.md",
+    ]
+

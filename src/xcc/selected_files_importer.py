@@ -6,7 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .config import is_allowed_context_file
-from .path_list_parser import is_absolute_path_text, parse_path_list
+from .path_list_parser import (
+    contains_relative_paths,
+    is_absolute_path_text,
+    parse_path_list,
+)
 
 _PROJECT_MARKERS = (
     ".git",
@@ -52,8 +56,26 @@ class SelectedFilesImportResult:
         ) + (1 if self.root_error else 0)
 
     @property
+    def duplicate_count(self) -> int:
+        return len(self.duplicates)
+
+    @property
+    def needs_project_root_selection(self) -> bool:
+        return bool(self.root_required or self.root_error)
+
+    @property
+    def can_apply(self) -> bool:
+        return (
+            self.added_count > 0
+            and not self.root_required
+            and self.root_error is None
+        )
+
+    @property
     def has_reportable_details(self) -> bool:
-        return bool(self.duplicates or self.issue_count)
+        # Duplicate-only imports are normal workflow feedback and do not need
+        # a modal report. Missing, invalid, unsupported, or unresolved paths do.
+        return self.issue_count > 0
 
 
 def import_selected_files(
@@ -69,15 +91,18 @@ def import_selected_files(
     root = Path(project_root).expanduser() if project_root is not None else None
     resolved_root: Path | None = None
     root_error: str | None = None
+    relative_paths_present = contains_relative_paths(parsed)
 
     if root is not None:
         try:
             resolved_root = root.resolve(strict=True)
         except (OSError, RuntimeError) as exc:
-            root_error = f"Project root is unavailable: {exc}"
+            if relative_paths_present:
+                root_error = f"Project root is unavailable: {exc}"
         else:
             if not resolved_root.is_dir():
-                root_error = f"Project root is not a folder: {root}"
+                if relative_paths_present:
+                    root_error = f"Project root is not a folder: {root}"
                 resolved_root = None
 
     existing_keys = {
@@ -196,10 +221,21 @@ def infer_project_root(paths: Sequence[str | Path]) -> Path | None:
     marker_roots = [_find_marker_root(path.parent) for path in resolved_paths]
     concrete_marker_roots = [root for root in marker_roots if root is not None]
 
-    if len(concrete_marker_roots) == len(resolved_paths):
+    if concrete_marker_roots:
+        # A marker-backed project root is authoritative. Do not broaden two
+        # separate repositories to their common parent merely because they sit
+        # under the same workspace directory.
+        if len(concrete_marker_roots) != len(resolved_paths):
+            return None
+
         first = concrete_marker_roots[0]
-        if all(_dedupe_key(root) == _dedupe_key(first) for root in concrete_marker_roots):
+        if all(
+            _dedupe_key(root) == _dedupe_key(first)
+            for root in concrete_marker_roots
+        ):
             return first
+
+        return None
 
     try:
         common = Path(os.path.commonpath([str(path.parent) for path in resolved_paths]))
@@ -213,23 +249,38 @@ def infer_project_root(paths: Sequence[str | Path]) -> Path | None:
 
 
 def _find_marker_root(start: Path) -> Path | None:
+    ancestors: list[Path] = []
     current = start
 
     while True:
-        for marker in _PROJECT_MARKERS:
-            if marker == ".sln":
-                try:
-                    if any(current.glob("*.sln")):
-                        return current
-                except OSError:
-                    pass
-            elif (current / marker).exists():
-                return current
+        ancestors.append(current)
+
+        # Prefer the nearest VCS boundary over nested package manifests. A
+        # monorepo can legitimately contain several pyproject.toml or
+        # package.json files while still being one Selected Files project.
+        if (current / ".git").exists():
+            return current
 
         if current.parent == current:
-            return None
+            break
 
         current = current.parent
+
+    for candidate in ancestors:
+        for marker in _PROJECT_MARKERS:
+            if marker == ".git":
+                continue
+
+            if marker == ".sln":
+                try:
+                    if any(candidate.glob("*.sln")):
+                        return candidate
+                except OSError:
+                    pass
+            elif (candidate / marker).exists():
+                return candidate
+
+    return None
 
 
 def _path_from_text(value: str) -> Path | None:
