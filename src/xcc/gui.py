@@ -50,6 +50,10 @@ APP_ICON_PATH = resource_path("assets", "xcc_app.ico")
 APP_IMAGE_PATH = resource_path("assets", "xcc_app.png")
 TRAY_ICON_PATH = resource_path("assets", "xcc_tray.ico")
 TRAY_IMAGE_PATH = resource_path("assets", "xcc_tray.png")
+NAV_COLLECT_ICON_PATH = resource_path("assets", "nav-collect.svg")
+NAV_HISTORY_ICON_PATH = resource_path("assets", "nav-history.svg")
+NAV_SETTINGS_ICON_PATH = resource_path("assets", "nav-settings.svg")
+NAV_ABOUT_ICON_PATH = resource_path("assets", "nav-about.svg")
 INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
 INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
 
@@ -634,20 +638,23 @@ class XccMainWindow(QMainWindow):
     def _build_nav(self) -> QListWidget:
         nav = QListWidget()
         nav.setObjectName("Sidebar")
-        nav.setFixedWidth(176)
+        nav.setFixedWidth(190)
         nav.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         nav.setSpacing(0)
+        nav.setIconSize(QSize(18, 18))
 
         navigation_items = [
-            ("◉", "Collect"),
-            ("▤", "History"),
-            ("⚙", "Settings"),
-            ("ⓘ", "About"),
+            (NAV_COLLECT_ICON_PATH, "Collect"),
+            (NAV_HISTORY_ICON_PATH, "History"),
+            (NAV_SETTINGS_ICON_PATH, "Settings"),
+            (NAV_ABOUT_ICON_PATH, "About"),
         ]
 
-        for symbol, title in navigation_items:
-            item = QListWidgetItem(f"{symbol}   {title}")
-            item.setSizeHint(QSize(0, 46))
+        for icon_path, title in navigation_items:
+            item = QListWidgetItem(title)
+            if icon_path.exists():
+                item.setIcon(QIcon(str(icon_path)))
+            item.setSizeHint(QSize(0, 48))
             nav.addItem(item)
 
         return nav
@@ -659,17 +666,17 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(self._section_title("Collect Context"))
 
         setup_card = self._card()
-        setup_card.setMinimumHeight(202)
+        setup_card.setMinimumHeight(214)
 
         setup_layout = self._card_layout(setup_card)
-        setup_layout.setContentsMargins(22, 16, 22, 16)
-        setup_layout.setSpacing(14)
+        setup_layout.setContentsMargins(22, 18, 22, 18)
+        setup_layout.setSpacing(15)
         setup_layout.addWidget(self._card_title("Setup"))
 
         setup_grid = QGridLayout()
         setup_grid.setContentsMargins(0, 2, 0, 0)
         setup_grid.setHorizontalSpacing(14)
-        setup_grid.setVerticalSpacing(10)
+        setup_grid.setVerticalSpacing(12)
 
         mode_label = QLabel("Mode")
         mode_label.setObjectName("FieldLabel")
@@ -687,7 +694,7 @@ class XccMainWindow(QMainWindow):
         mode_buttons.setObjectName("TransparentWidget")
         mode_buttons_layout = QHBoxLayout(mode_buttons)
         mode_buttons_layout.setContentsMargins(0, 0, 0, 0)
-        mode_buttons_layout.setSpacing(22)
+        mode_buttons_layout.setSpacing(20)
 
         for index, button in enumerate(
             [self.mode_files, self.mode_folder, self.mode_git, self.mode_tree]
@@ -797,8 +804,9 @@ class XccMainWindow(QMainWindow):
 
         self.last_run_state_label = QLabel("No collection yet")
         self.last_run_state_label.setObjectName("LastRunState")
+        self.last_run_state_label.setFixedHeight(28)
         self.last_run_state_label.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+            Qt.AlignmentFlag.AlignCenter
         )
         stats_header_layout.addWidget(self.last_run_state_label)
 
@@ -873,23 +881,18 @@ class XccMainWindow(QMainWindow):
 
         layout.addWidget(stats_card)
 
-        layout.addStretch(1)
+        layout.addSpacing(18)
 
         self.collect_button = QPushButton("Collect && Copy")
         self.collect_button.setObjectName("PrimaryButton")
-        self.collect_button.setFixedHeight(46)
-        self.collect_button.setMinimumWidth(620)
-        self.collect_button.setMaximumWidth(980)
+        self.collect_button.setFixedHeight(48)
+        self.collect_button.setMinimumHeight(48)
         self.collect_button.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
         )
 
-        layout.addWidget(
-            self.collect_button,
-            0,
-            Qt.AlignmentFlag.AlignHCenter,
-        )
+        layout.addWidget(self.collect_button)
 
         return page
 
@@ -1966,21 +1969,21 @@ class XccMainWindow(QMainWindow):
             #Sidebar {
                 background: #121212;
                 border-right: 1px solid #2F2A1C;
-                padding: 8px;
+                padding: 10px 8px;
                 outline: none;
             }
 
             #Sidebar::item {
-                padding: 10px 12px;
-                margin: 3px 0;
+                padding: 11px 14px;
+                margin: 4px 0;
                 border-radius: 9px;
-                color: #BDBDBD;
+                color: #D4D4D4;
                 background: transparent;
             }
 
             #Sidebar::item:hover {
-                background: #241F10;
-                color: #D6A93A;
+                background: #1E1A10;
+                color: #F2F2F2;
             }
 
             #Sidebar::item:selected {
@@ -2003,7 +2006,7 @@ class XccMainWindow(QMainWindow):
 
             #Card {
                 background: #161616;
-                border: 1px solid #302A1D;
+                border: 1px solid #443820;
                 border-radius: 14px;
             }
 
@@ -2064,11 +2067,11 @@ class XccMainWindow(QMainWindow):
             }
 
             #PrimaryButton {
-                background: #C99B32;
+                background: #C79A31;
                 color: #111111;
                 font-size: 14px;
                 font-weight: 800;
-                border: 1px solid #C99B32;
+                border: 1px solid #C79A31;
                 border-radius: 11px;
             }
 
@@ -2125,7 +2128,7 @@ class XccMainWindow(QMainWindow):
 
             #MetricCapsule {
                 background: #181818;
-                border: 1px solid #332B1A;
+                border: 1px solid #40341D;
                 border-radius: 10px;
             }
 
@@ -2148,9 +2151,13 @@ class XccMainWindow(QMainWindow):
             }
 
             #LastRunState {
-                color: #787878;
+                color: #9A9A9A;
                 font-size: 11px;
-                background: transparent;
+                background: #111111;
+                border: 1px solid #3A311C;
+                border-radius: 8px;
+                padding: 4px 10px;
+                min-width: 132px;
             }
 
             #StatusBar {
@@ -2165,7 +2172,7 @@ class XccMainWindow(QMainWindow):
             }
 
             #StatusVersion {
-                color: #6F6F6F;
+                color: #858585;
                 font-size: 11px;
                 background: transparent;
             }
