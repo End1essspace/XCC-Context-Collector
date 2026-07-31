@@ -7,11 +7,9 @@ import pytest
 
 from xcc.git_utils import (
     GitCommandError,
-    get_changed_files,
     get_collectable_changed_files,
     get_git_changes,
     get_git_context,
-    get_git_diff,
     is_git_repository,
     parse_git_status_z,
 )
@@ -66,7 +64,7 @@ def test_clean_repository_is_distinct_from_git_failure(tmp_path: Path) -> None:
     assert context.changes == []
     assert context.staged_diff == ""
     assert context.unstaged_diff == ""
-    assert get_changed_files(repo) == []
+    assert get_collectable_changed_files(repo, context.changes) == []
 
 
 def test_git_failure_is_exposed_instead_of_returning_empty(tmp_path: Path) -> None:
@@ -104,7 +102,7 @@ def test_staged_only_change_is_collected_with_cached_diff(tmp_path: Path) -> Non
 
     assert len(context.changes) == 1
     assert context.changes[0].status_code == "M "
-    assert get_changed_files(repo, changes=context.changes) == [file_path]
+    assert get_collectable_changed_files(repo, context.changes) == [file_path]
     assert "diff --git" in context.staged_diff
     assert "+print('staged')" in context.staged_diff
     assert context.unstaged_diff == ""
@@ -120,7 +118,7 @@ def test_staged_added_file_is_collected_with_a_status(tmp_path: Path) -> None:
 
     assert len(context.changes) == 1
     assert context.changes[0].status_code == "A "
-    assert get_changed_files(repo, changes=context.changes) == [file_path]
+    assert get_collectable_changed_files(repo, context.changes) == [file_path]
     assert "new file mode" in context.staged_diff
 
 
@@ -156,7 +154,7 @@ def test_same_file_can_have_separate_index_and_worktree_changes(tmp_path: Path) 
     assert context.changes[0].status_code == "MM"
     assert context.changes[0].has_staged_change is True
     assert context.changes[0].has_unstaged_change is True
-    assert get_changed_files(repo, changes=context.changes) == [file_path]
+    assert get_collectable_changed_files(repo, context.changes) == [file_path]
     assert "VALUE = 2" in context.staged_diff
     assert "VALUE = 3" in context.unstaged_diff
 
@@ -170,8 +168,7 @@ def test_untracked_file_is_collected_without_diff(tmp_path: Path) -> None:
 
     assert len(context.changes) == 1
     assert context.changes[0].status_code == "??"
-    assert context.changes[0].is_untracked is True
-    assert get_changed_files(repo, changes=context.changes) == [file_path]
+    assert get_collectable_changed_files(repo, context.changes) == [file_path]
     assert context.staged_diff == ""
     assert context.unstaged_diff == ""
 
@@ -189,7 +186,7 @@ def test_staged_rename_keeps_old_and_new_paths(tmp_path: Path) -> None:
     assert change.original_path == "old.py"
     assert change.path == "new.py"
     assert change.display_path == "old.py -> new.py"
-    assert get_changed_files(repo, changes=context.changes) == [repo / "new.py"]
+    assert get_collectable_changed_files(repo, context.changes) == [repo / "new.py"]
     assert "old.py" in context.staged_diff
     assert "new.py" in context.staged_diff
 
@@ -208,7 +205,7 @@ def test_staged_copy_is_refined_from_added_to_copy(tmp_path: Path) -> None:
     assert change.index_status == "C"
     assert change.original_path == "source.py"
     assert change.path == "copy.py"
-    assert get_changed_files(repo, changes=context.changes) == [copy]
+    assert get_collectable_changed_files(repo, context.changes) == [copy]
 
 
 def test_deleted_file_remains_in_context_without_file_read(tmp_path: Path) -> None:
@@ -220,8 +217,7 @@ def test_deleted_file_remains_in_context_without_file_read(tmp_path: Path) -> No
 
     assert len(context.changes) == 1
     assert context.changes[0].status_code == "D "
-    assert context.changes[0].is_deleted is True
-    assert get_changed_files(repo, changes=context.changes) == []
+    assert get_collectable_changed_files(repo, context.changes) == []
     assert "deleted file mode" in context.staged_diff
     assert "obsolete.py" in context.staged_diff
 
@@ -236,7 +232,7 @@ def test_paths_with_spaces_and_unicode_are_not_quoted_or_split(tmp_path: Path) -
 
     assert len(changes) == 1
     assert changes[0].path == "папка/my file.py"
-    assert get_changed_files(repo, changes=changes) == [file_path]
+    assert get_collectable_changed_files(repo, changes) == [file_path]
 
 
 def test_filters_unsupported_files_and_excluded_directories(tmp_path: Path) -> None:
@@ -253,7 +249,7 @@ def test_filters_unsupported_files_and_excluded_directories(tmp_path: Path) -> N
     changes = get_git_changes(repo)
 
     assert [change.path for change in changes] == ["main.py"]
-    assert get_changed_files(repo, changes=changes) == [py_file]
+    assert get_collectable_changed_files(repo, changes) == [py_file]
 
 
 def test_includes_allowed_filename_without_extension(tmp_path: Path) -> None:
@@ -264,7 +260,7 @@ def test_includes_allowed_filename_without_extension(tmp_path: Path) -> None:
     changes = get_git_changes(repo)
 
     assert [change.path for change in changes] == ["Dockerfile"]
-    assert get_changed_files(repo, changes=changes) == [dockerfile]
+    assert get_collectable_changed_files(repo, changes) == [dockerfile]
 
 
 def test_parse_null_delimited_status_supports_rename_copy_and_spaces() -> None:
@@ -287,22 +283,6 @@ def test_parse_null_delimited_status_supports_rename_copy_and_spaces() -> None:
 def test_malformed_null_delimited_status_is_reported() -> None:
     with pytest.raises(GitCommandError, match="incomplete rename/copy"):
         parse_git_status_z(b"R  new.py\0")
-
-
-def test_backward_compatible_git_diff_has_explicit_sections(tmp_path: Path) -> None:
-    repo = _init_repo(tmp_path)
-    staged = _commit_file(repo, "staged.py", "A = 1\n")
-    unstaged = _commit_file(repo, "unstaged.py", "B = 1\n")
-    staged.write_text("A = 2\n", encoding="utf-8")
-    _run(repo, "add", "staged.py")
-    unstaged.write_text("B = 2\n", encoding="utf-8")
-
-    diff = get_git_diff(repo)
-
-    assert "# Git Diff — Staged" in diff
-    assert "# Git Diff — Unstaged" in diff
-    assert "staged.py" in diff
-    assert "unstaged.py" in diff
 
 
 def test_git_context_respects_xccignore_for_tracked_changes(tmp_path: Path) -> None:

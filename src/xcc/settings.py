@@ -75,10 +75,6 @@ def load_settings_result(path: str | Path | None = None) -> SettingsLoadResult:
 
     return SettingsLoadResult(validate_settings(raw_data))
 
-def load_settings(path: str | Path | None = None) -> AppSettings:
-    return load_settings_result(path).settings
-
-
 def save_settings(settings: AppSettings, path: str | Path | None = None) -> None:
     settings_path = Path(path) if path is not None else default_settings_path()
     settings_path.parent.mkdir(parents=True, exist_ok=True)

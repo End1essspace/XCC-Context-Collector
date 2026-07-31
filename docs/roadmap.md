@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-31  
 Current source version: `1.3.0`  
-Current release state: **v1.3.0 RELEASE CANDIDATE — DOCUMENTATION AND SCREENSHOTS FROZEN; AUTOMATED GATE NEXT**  
+Current release state: **v1.3.0 RELEASE CANDIDATE — PRE-RC REPOSITORY CLEANUP IN PROGRESS**  
 Supported product boundary: `gui.py -> xcc.gui -> xcc.pipeline`
 
 ---
@@ -18,7 +18,7 @@ The roadmap follows four product principles:
 3. **Operational transparency** — omissions, warnings, errors, truncation, and runtime state must be explicit.
 4. **Release discipline** — every completed milestone must pass automated and manual validation, then be committed and pushed before the next milestone begins.
 
-The supported release application is the PySide6 desktop GUI. Legacy Tkinter and standalone hotkey entry points remain development-only compatibility paths and do not receive new product features.
+The supported release application is the PySide6 desktop GUI. The unsupported Tkinter and standalone third-party hotkey workflows have been removed.
 
 ---
 
@@ -1157,8 +1157,8 @@ fix: sync sidebar focus with wheel navigation
 
 ### Pre-RC repository cleanup
 
-- [ ] **C1** remove unsupported legacy workflows and dependency surface;
-- [ ] **C2** remove obsolete compatibility APIs and dead symbols;
+- [x] **C1** remove unsupported legacy workflows and dependency surface;
+- [x] **C2** remove obsolete compatibility APIs and dead symbols;
 - [ ] **C3** replace brittle source-text and milestone-history tests;
 - [ ] **C4** consolidate roadmap, validation docs, and unused assets;
 - [ ] **C5** re-freeze documentation, run the complete gate, and resume RC.
@@ -1361,12 +1361,12 @@ Every PowerShell command in project instructions must be written on one physical
 
 # Immediate Next Step
 
-Complete **C1 — Remove Unsupported Legacy Workflows**:
+Complete **C3 — Replace Brittle Repository Tests**:
 
-1. apply the focused archive and delete the six obsolete files;
-2. run the complete source gate;
-3. confirm the supported PySide6 application starts;
-4. commit and push C1;
-5. continue with C2 only after the pushed commit is confirmed.
+1. remove source-text assertions that duplicate behavioral tests;
+2. keep version, package, release-tool, and governance integrity checks;
+3. rename the historical M10 release-evidence test to a release-neutral name;
+4. run the complete source gate;
+5. commit and push C3 before documentation consolidation.
 
 The `v1.3.0` release-candidate gate and tag remain blocked until C1-C5 are complete.

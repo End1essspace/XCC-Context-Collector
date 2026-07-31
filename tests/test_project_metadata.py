@@ -293,7 +293,6 @@ def test_v130_responsive_collect_layout_is_registered() -> None:
     assert "MEDIUM_CONTENT_BREAKPOINT = 820" in responsive
     assert "MINIMUM_SUPPORTED_WINDOW_WIDTH = 920" in responsive
     assert "def collect_geometry_spec" in responsive
-    assert "def collect_page_fits" in responsive
 
     assert "class SidebarNavButton" in sidebar
     assert "class SidebarNavigation" in sidebar

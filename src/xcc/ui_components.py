@@ -115,11 +115,6 @@ class ElidedLabel(QLabel):
             QSizePolicy.Policy.Fixed,
         )
 
-    def set_full_text(self, text: str) -> None:
-        self._full_text = text
-        self.setToolTip(text)
-        self._refresh_elision()
-
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._refresh_elision()
@@ -276,9 +271,6 @@ class MetricCapsule(QFrame):
 
         if value == "-":
             self.set_state("neutral")
-
-    def set_value(self, value: str) -> None:
-        self.value_label.setText(value)
 
     def set_density(
         self,

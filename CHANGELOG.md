@@ -79,10 +79,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Compact mode now affects only XCC-generated structure and never rewrites collected source payloads or Git diff content.
 - Git mode now keeps staged and unstaged diff sections separate and reports Git command failures instead of presenting an empty result.
 - Output budgeting now plans complete sections before rendering and emits a bounded budget summary when content is omitted.
+- Obsolete internal compatibility wrappers and unused helper symbols were removed without changing the supported collection pipeline.
 - Safety confirmation can be disabled without disabling detection, generated warning summaries, counters, outcomes, or history metadata.
 - Runtime history records successful, warning-bearing, cancelled, and failed runs without storing collected payloads.
 - The supported product boundary is the PySide6 GUI on CPython 3.13.x and Windows 10/11 x64.
-- Legacy Tkinter and `keyboard` workflows are retained only as unsupported development compatibility tools.
+- Unsupported Tkinter and third-party `keyboard` workflows were removed; the PySide6 application is now the only runtime path.
 - Release builds read the canonical version from `xcc.__version__`, embed Windows version resources, and write matching `VERSION.txt` metadata.
 - PyInstaller packages now include only required runtime artwork and navigation assets.
 - Successful builds remove intermediate `build` data and generated spec files automatically.

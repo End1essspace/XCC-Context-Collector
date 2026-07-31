@@ -60,10 +60,6 @@ class NativeHotkeyManager(QAbstractNativeEventFilter):
         self._event_filter_installed = False
         self._user32 = None
 
-    @property
-    def is_registered(self) -> bool:
-        return self._registered
-
     def register(self, hotkey: str) -> None:
         if sys.platform != "win32":
             raise NativeHotkeyError("Native restore hotkey is only supported on Windows.")

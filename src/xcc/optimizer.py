@@ -25,7 +25,3 @@ def compact_generated_text(text: str) -> str:
 
     return "\n".join(compacted).strip() + "\n"
 
-
-def compact_text(text: str) -> str:
-    """Backward-compatible alias for generated-text compaction."""
-    return compact_generated_text(text)

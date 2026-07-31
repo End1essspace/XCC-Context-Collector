@@ -104,7 +104,7 @@ def test_page_header_exposes_title_and_subtitle(qapp: QApplication) -> None:
     assert header.actions_layout.count() == 1
 
 
-def test_metric_capsule_preserves_value_label_api(qapp: QApplication) -> None:
+def test_metric_capsule_preserves_value_label_contract(qapp: QApplication) -> None:
     metric = MetricCapsule("Files", "-")
 
     assert metric.objectName() == "MetricCapsule"
@@ -115,9 +115,6 @@ def test_metric_capsule_preserves_value_label_api(qapp: QApplication) -> None:
     assert metric.value_label.accessibleName() == "Files metric value"
     assert isinstance(metric.value_label, QLabel)
     assert metric.value_label.property("state") == "neutral"
-
-    metric.set_value("1,024")
-    assert metric.value_label.text() == "1,024"
 
     set_metric_value(metric, "2,048")
     assert metric.value_label.text() == "2,048"

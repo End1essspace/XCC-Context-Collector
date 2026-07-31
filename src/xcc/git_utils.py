@@ -114,35 +114,6 @@ def get_git_changes(
     ]
 
 
-def get_changed_files(
-    path: str | Path,
-    *,
-    allowed_extensions: set[str] | None = None,
-    excluded_dirs: set[str] | None = None,
-    changes: Sequence[GitChange] | None = None,
-    respect_xccignore: bool = True,
-) -> list[Path]:
-    repo_path = _validate_repository_path(path)
-    extensions = allowed_extensions or ALLOWED_EXTENSIONS
-    excluded = excluded_dirs or EXCLUDED_DIRS
-
-    if changes is None:
-        changes = get_git_changes(
-            repo_path,
-            allowed_extensions=extensions,
-            excluded_dirs=excluded,
-            respect_xccignore=respect_xccignore,
-        )
-
-    return get_collectable_changed_files(
-        repo_path,
-        changes,
-        allowed_extensions=extensions,
-        excluded_dirs=excluded,
-        respect_xccignore=respect_xccignore,
-    )
-
-
 def get_collectable_changed_files(
     path: str | Path,
     changes: Sequence[GitChange],
@@ -197,20 +168,6 @@ def get_collectable_changed_files(
         files.append(full_path)
 
     return files
-
-
-def get_git_diff(path: str | Path) -> str:
-    """Backward-compatible combined diff with explicit staged sections."""
-    context = get_git_context(path)
-    sections: list[str] = []
-
-    if context.staged_diff:
-        sections.append(f"# Git Diff — Staged\n\n{context.staged_diff}")
-
-    if context.unstaged_diff:
-        sections.append(f"# Git Diff — Unstaged\n\n{context.unstaged_diff}")
-
-    return "\n\n".join(sections)
 
 
 def parse_git_status_z(data: bytes) -> list[GitChange]:

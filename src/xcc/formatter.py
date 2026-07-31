@@ -44,7 +44,6 @@ def format_collection(
     mode_name: str = "Compact",
     max_output_chars: int | None = MAX_OUTPUT_CHARS,
     git_context: GitContext | None = None,
-    git_diff: str | None = None,
     warnings: list[SafetyWarning] | None = None,
     include_project_tree: bool = True,
 ) -> CollectionResult:
@@ -83,15 +82,11 @@ def format_collection(
         project_root=project_root,
     )
 
-    if git_context is not None:
-        git_section = _format_git_context(git_context, compact=compact)
-    else:
-        # Backward-compatible support for callers that still pass one raw diff.
-        git_section = (
-            _format_preserved_block("# Git Diff", git_diff)
-            if git_diff
-            else ""
-        )
+    git_section = (
+        _format_git_context(git_context, compact=compact)
+        if git_context is not None
+        else ""
+    )
 
     safety_section = _format_safety_warnings(warnings, compact=compact)
 

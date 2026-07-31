@@ -68,14 +68,6 @@ class GitChange:
         return self.worktree_status not in {" ", "?", "!"}
 
     @property
-    def is_untracked(self) -> bool:
-        return self.status_code == "??"
-
-    @property
-    def is_deleted(self) -> bool:
-        return "D" in self.status_code
-
-    @property
     def is_rename_or_copy(self) -> bool:
         return (
             self.index_status in {"R", "C"}
@@ -99,10 +91,6 @@ class GitContext:
     @property
     def has_changes(self) -> bool:
         return bool(self.changes)
-
-    @property
-    def has_diff(self) -> bool:
-        return bool(self.staged_diff or self.unstaged_diff)
 
 
 @dataclass(slots=True)

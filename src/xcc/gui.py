@@ -40,7 +40,6 @@ from PySide6.QtGui import (
     QShortcut,
 )
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
-from PySide6.QtSvg import QSvgRenderer
 from . import __version__
 from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS, qt_context_file_filter
 from pathlib import Path
@@ -3075,16 +3074,6 @@ class XccMainWindow(QMainWindow):
         label.setObjectName("SettingsSectionTitle")
         label.setFixedHeight(16)
         return label
-    
-    def _current_source_label(self, mode: str, project_root: Path | None) -> str:
-        if mode == "files":
-            count = len(self.selected_paths)
-            return f"{count} selected file{'s' if count != 1 else ''}"
-
-        if project_root is not None:
-            return str(project_root)
-
-        return "Unknown source"
     
     def _page_layout(self, page: QWidget) -> QVBoxLayout:
         layout = QVBoxLayout(page)

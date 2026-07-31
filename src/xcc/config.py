@@ -2,9 +2,6 @@ from __future__ import annotations
 from pathlib import Path
 
 
-APP_NAME = "XCC"
-APP_FULL_NAME = "XCC Context Collector"
-
 ALLOWED_EXTENSIONS = {
     # Python
     ".py",

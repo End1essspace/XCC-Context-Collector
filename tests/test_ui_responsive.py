@@ -14,7 +14,6 @@ from xcc.ui_responsive import (
     collect_height_mode,
     collect_layout_mode,
     collect_layout_spec,
-    collect_page_fits,
 )
 
 
@@ -92,7 +91,7 @@ def test_large_tall_layout_fits_a_normal_maximized_viewport() -> None:
     assert geometry.metric_max_height == 60
     assert INLINE_PAGE_HEADER_HEIGHT == 42
     assert collect_content_min_height(spec, geometry) == 742
-    assert collect_page_fits(spec, geometry, viewport_height=835)
+    assert collect_content_min_height(spec, geometry) <= 835
 
 
 def test_medium_layout_wraps_source_and_uses_two_by_two_metrics() -> None:
@@ -111,7 +110,7 @@ def test_medium_layout_wraps_source_and_uses_two_by_two_metrics() -> None:
     assert geometry.setup_card_height == 296
     assert geometry.stats_card_min_height == 466
     assert geometry.stats_card_max_height == 520
-    assert not collect_page_fits(spec, geometry, viewport_height=760)
+    assert collect_content_min_height(spec, geometry) > 760
 
 
 def test_compact_layout_keeps_every_control_reachable_by_vertical_scroll() -> None:
@@ -135,7 +134,7 @@ def test_compact_layout_keeps_every_control_reachable_by_vertical_scroll() -> No
     assert geometry.stats_card_min_height == 430
     assert geometry.stats_card_max_height == 480
     assert collect_content_min_height(spec, geometry) == 824
-    assert not collect_page_fits(spec, geometry, viewport_height=555)
+    assert collect_content_min_height(spec, geometry) > 555
 
 
 def test_height_changes_recalculate_geometry_inside_one_width_mode() -> None:

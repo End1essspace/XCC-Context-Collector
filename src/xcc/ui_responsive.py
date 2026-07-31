@@ -307,15 +307,3 @@ def collect_content_min_height(
         + layout_spec.primary_action_height
         + (geometry_spec.page_gap * COLLECT_PAGE_WIDGET_GAPS)
     )
-
-
-def collect_page_fits(
-    layout_spec: CollectLayoutSpec,
-    geometry_spec: CollectGeometrySpec,
-    *,
-    viewport_height: int,
-) -> bool:
-    return viewport_height >= collect_content_min_height(
-        layout_spec,
-        geometry_spec,
-    )

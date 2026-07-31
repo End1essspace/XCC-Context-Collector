@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from xcc.config import MAX_OUTPUT_CHARS
-from xcc.settings import AppSettings, load_settings, save_settings, validate_settings, load_settings_result
+from xcc.settings import AppSettings, load_settings_result, save_settings, validate_settings
 
 def test_load_settings_result_reports_invalid_json(tmp_path: Path) -> None:
     path = tmp_path / "config.json"
@@ -26,15 +26,15 @@ def test_load_settings_result_reports_invalid_format(tmp_path: Path) -> None:
     assert result.recovered_from_error is True
     assert "format is invalid" in result.message
     
-def test_load_settings_returns_defaults_when_file_missing(tmp_path: Path) -> None:
+def test_load_settings_result_returns_defaults_when_file_missing(tmp_path: Path) -> None:
     path = tmp_path / "missing.json"
 
-    settings = load_settings(path)
+    settings = load_settings_result(path).settings
 
     assert settings == AppSettings()
 
 
-def test_save_and_load_settings_roundtrip(tmp_path: Path) -> None:
+def test_save_and_load_settings_result_roundtrip(tmp_path: Path) -> None:
     path = tmp_path / "config.json"
 
     original = AppSettings(
@@ -51,16 +51,16 @@ def test_save_and_load_settings_roundtrip(tmp_path: Path) -> None:
     )
 
     save_settings(original, path)
-    loaded = load_settings(path)
+    loaded = load_settings_result(path).settings
 
     assert loaded == original
 
 
-def test_load_settings_falls_back_on_invalid_json(tmp_path: Path) -> None:
+def test_load_settings_result_falls_back_on_invalid_json(tmp_path: Path) -> None:
     path = tmp_path / "config.json"
     path.write_text("{ invalid json", encoding="utf-8")
 
-    settings = load_settings(path)
+    settings = load_settings_result(path).settings
 
     assert settings == AppSettings()
 

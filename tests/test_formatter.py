@@ -220,19 +220,6 @@ def test_compact_and_non_compact_modes_preserve_identical_source_payload() -> No
     assert expected_section in expanded_result.text
 
 
-def test_git_diff_is_not_compacted() -> None:
-    git_diff = "diff --git a/a.py b/a.py\n+line with spaces   \n\n\n"
-    result = format_collection(
-        [],
-        compact=True,
-        max_output_chars=None,
-        git_diff=git_diff,
-        include_project_tree=False,
-    )
-
-    assert f"# Git Diff\n\n{git_diff}" in result.text
-
-
 def test_selected_files_preserve_paths_relative_to_common_root(tmp_path: Path) -> None:
     root = tmp_path / "project"
     backend = root / "backend" / "app.py"
@@ -461,26 +448,6 @@ def test_budget_stats_distinguish_large_file_summaries() -> None:
     assert result.stats.included_files == 2
     assert result.stats.summarized_files == 1
     assert result.stats.omitted_files == 0
-
-
-def test_large_git_diff_is_omitted_instead_of_cut_mid_line() -> None:
-    git_diff = "".join(
-        f"+complete diff line {index:03d}\\n"
-        for index in range(100)
-    )
-    file = _file("src/main.py", "print('ok')\n")
-
-    result = format_collection(
-        [file],
-        git_diff=git_diff,
-        include_project_tree=False,
-        max_output_chars=430,
-    )
-
-    assert len(result.text) <= 430
-    assert "Git diff: omitted" in result.text
-    assert "+complete diff line" not in result.text
-    assert "===== file: main.py =====" in result.text
 
 
 def test_project_tree_budget_keeps_complete_tree_lines(tmp_path: Path) -> None:

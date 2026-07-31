@@ -168,34 +168,6 @@ def scan_files_for_warnings(
     return merge_warnings(warnings)
 
 
-def scan_paths_for_filename_warnings(
-    paths: Sequence[str | Path],
-    *,
-    project_root: str | Path | None = None,
-) -> list[SafetyWarning]:
-    warnings: list[SafetyWarning] = []
-    seen: set[tuple[str, str, int | None]] = set()
-    root = Path(project_root).resolve() if project_root is not None else None
-
-    for raw_path in paths:
-        path = Path(raw_path)
-        if root is not None:
-            try:
-                display_path = path.resolve().relative_to(root).as_posix()
-            except (OSError, ValueError):
-                display_path = path.name
-        else:
-            display_path = path.name
-
-        _append_unique(
-            warnings,
-            seen,
-            scan_filename_for_warnings(path, display_path=display_path),
-        )
-
-    return warnings
-
-
 def scan_project_filename_warnings(
     project_root: str | Path,
     *,

@@ -1,4 +1,4 @@
-from xcc.optimizer import compact_generated_text, compact_text
+from xcc.optimizer import compact_generated_text
 
 
 def test_compact_generated_text_removes_repeated_empty_lines() -> None:
@@ -22,8 +22,3 @@ def test_compact_generated_text_keeps_single_final_newline() -> None:
 
     assert result == "a\n"
 
-
-def test_compact_text_remains_backward_compatible() -> None:
-    text = "a\n\n\nb\n"
-
-    assert compact_text(text) == compact_generated_text(text)

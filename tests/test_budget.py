@@ -2,59 +2,27 @@ import pytest
 
 from xcc.budget import (
     TRUNCATION_MARKER,
-    apply_char_budget,
+    join_sections,
     minimal_budget_notice,
-    take_complete_lines,
+    validate_char_budget,
 )
 
 
-def test_returns_text_when_under_budget() -> None:
-    text = "hello"
+def test_join_sections_omits_empty_sections_and_adds_one_final_newline() -> None:
+    result = join_sections(["# Header", "", "Body\n"])
 
-    result = apply_char_budget(text, 10)
-
-    assert result == text
+    assert result == "# Header\n\nBody\n"
 
 
-def test_line_aware_truncation_stays_within_budget() -> None:
-    text = ("complete line\n" * 40) + "unfinished tail"
-
-    result = apply_char_budget(text, 180)
-
-    assert len(result) <= 180
-    assert TRUNCATION_MARKER in result
+@pytest.mark.parametrize("value", [1, 120_000, None])
+def test_validate_char_budget_accepts_supported_values(value: int | None) -> None:
+    validate_char_budget(value)
 
 
-def test_line_aware_truncation_never_keeps_partial_source_line() -> None:
-    text = ("alpha   \n" * 40) + "tail-without-newline"
-
-    result = apply_char_budget(text, 180)
-    prefix = result.split(TRUNCATION_MARKER, 1)[0].rstrip("\n")
-
-    if prefix:
-        assert all(line == "alpha   " for line in prefix.splitlines())
-        assert "tail-without-newline" not in prefix
-
-
-def test_take_complete_lines_preserves_whitespace() -> None:
-    text = "first   \nsecond\t \nthird\n"
-
-    result = take_complete_lines(text, len("first   \nsecond\t \n"))
-
-    assert result == "first   \nsecond\t \n"
-
-
-def test_none_budget_disables_truncation() -> None:
-    text = "a" * 100
-
-    result = apply_char_budget(text, None)
-
-    assert result == text
-
-
-def test_rejects_invalid_budget() -> None:
+@pytest.mark.parametrize("value", [0, -1])
+def test_validate_char_budget_rejects_non_positive_limits(value: int) -> None:
     with pytest.raises(ValueError):
-        apply_char_budget("hello", 0)
+        validate_char_budget(value)
 
 
 def test_minimal_notice_respects_very_small_budget() -> None:
@@ -62,3 +30,11 @@ def test_minimal_notice_respects_very_small_budget() -> None:
 
     assert len(result) == 25
     assert result.startswith("# XCC Context")
+
+
+def test_minimal_notice_includes_explicit_marker_when_budget_allows() -> None:
+    result = minimal_budget_notice(220)
+
+    assert TRUNCATION_MARKER in result
+    assert "# XCC Budget Too Small" in result
+    assert len(result) <= 220
