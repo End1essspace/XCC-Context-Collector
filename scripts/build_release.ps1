@@ -78,6 +78,10 @@ try {
         --add-data "assets\ui-health.svg;assets" `
         --add-data "assets\ui-paste-paths.svg;assets" `
         --add-data "assets\ui-collect-copy.svg;assets" `
+        --add-data "assets\window-minimize.svg;assets" `
+        --add-data "assets\window-maximize.svg;assets" `
+        --add-data "assets\window-restore.svg;assets" `
+        --add-data "assets\window-close.svg;assets" `
         --version-file $VersionInfoPath `
         --exclude-module PyQt5 `
         --exclude-module PyQt6 `

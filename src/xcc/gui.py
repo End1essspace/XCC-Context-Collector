@@ -1,10 +1,20 @@
-
 from __future__ import annotations
 
 import sys
 import tempfile
 from datetime import datetime
-from PySide6.QtCore import QEvent, QObject, QLockFile, QSize, QThread, Qt, QTimer, Signal
+from PySide6.QtCore import (
+    QEvent,
+    QObject,
+    QLockFile,
+    QPoint,
+    QRect,
+    QSize,
+    QThread,
+    Qt,
+    QTimer,
+    Signal,
+)
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QApplication,
@@ -35,6 +45,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import (
     QAction,
+    QCursor,
     QIcon,
     QIntValidator,
     QKeySequence,
@@ -140,9 +151,24 @@ UI_COVERAGE_ICON_PATH = resource_path("assets", "ui-coverage.svg")
 UI_HEALTH_ICON_PATH = resource_path("assets", "ui-health.svg")
 UI_PASTE_PATHS_ICON_PATH = resource_path("assets", "ui-paste-paths.svg")
 UI_COLLECT_COPY_ICON_PATH = resource_path("assets", "ui-collect-copy.svg")
+WINDOW_MINIMIZE_ICON_PATH = resource_path("assets", "window-minimize.svg")
+WINDOW_MAXIMIZE_ICON_PATH = resource_path("assets", "window-maximize.svg")
+WINDOW_RESTORE_ICON_PATH = resource_path("assets", "window-restore.svg")
+WINDOW_CLOSE_ICON_PATH = resource_path("assets", "window-close.svg")
 INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
 INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
 DISPLAY_HOTKEY = format_hotkey_for_display(DEFAULT_HOTKEY)
+WM_NCHITTEST = 0x0084
+HTLEFT = 10
+HTRIGHT = 11
+HTTOP = 12
+HTTOPLEFT = 13
+HTTOPRIGHT = 14
+HTBOTTOM = 15
+HTBOTTOMLEFT = 16
+HTBOTTOMRIGHT = 17
+HTCAPTION = 2
+FRAME_RESIZE_MARGIN = 6
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -202,13 +228,71 @@ class ClickableSourceLineEdit(QLineEdit):
         super().keyPressEvent(event)
 
 
+class WindowControlButton(QToolButton):
+    """Window-control button backed by packaged Lucide SVG assets."""
+
+    def __init__(
+        self,
+        role: str,
+        icon_path: Path,
+        *,
+        alternate_icon_path: Path | None = None,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        if role not in {"minimize", "maximize", "close"}:
+            raise ValueError(f"Unsupported window control role: {role}")
+
+        self.control_role = role
+        self._icon_path = icon_path
+        self._alternate_icon_path = alternate_icon_path
+        self._restore_state = False
+
+        self.setObjectName("WindowControlButton")
+        self.setProperty("role", role)
+        self.setProperty("maximized", False)
+        self.setText("")
+        self.setFixedSize(METRICS.window_control_width, METRICS.window_titlebar_height)
+        self.setIconSize(QSize(16, 16))
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setAutoRaise(False)
+        self._refresh_icon()
+
+    def set_restore_state(self, restore: bool) -> None:
+        if self._restore_state == restore:
+            return
+
+        self._restore_state = restore
+        self._refresh_icon()
+
+    def _refresh_icon(self) -> None:
+        icon_path = (
+            self._alternate_icon_path
+            if self._restore_state and self._alternate_icon_path is not None
+            else self._icon_path
+        )
+        self.setIcon(
+            make_tinted_svg_icon(
+                icon_path,
+                16,
+                "#D5D9DF",
+            )
+        )
+
+
 class WindowTitleBar(QFrame):
     """Compact custom title bar that keeps the dark product shell stable."""
 
-    def __init__(self, window: "XccMainWindow") -> None:
+    def __init__(
+        self,
+        window: "XccMainWindow",
+        *,
+        object_name: str = "WindowTitleBar",
+    ) -> None:
         super().__init__(window)
         self._window = window
-        self.setObjectName("WindowTitleBar")
+        self.setObjectName(object_name)
         self.setFixedHeight(METRICS.window_titlebar_height)
 
     def mousePressEvent(self, event) -> None:
@@ -794,22 +878,42 @@ class XccMainWindow(QMainWindow):
 
     def _setup_ui(self) -> None:
         root = QFrame()
+        self.window_frame = root
         root.setObjectName("WindowFrame")
+
         root_layout = QVBoxLayout(root)
+        self.window_shell_layout = root_layout
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
 
-        self.window_title_bar = self._build_title_bar()
-        root_layout.addWidget(self.window_title_bar)
+        shell_body = QWidget()
+        self.shell_body = shell_body
+        shell_body.setObjectName("ShellBody")
+        shell_body_layout = QHBoxLayout(shell_body)
+        self.shell_body_layout = shell_body_layout
+        shell_body_layout.setContentsMargins(0, 0, 0, 0)
+        shell_body_layout.setSpacing(0)
 
-        body = QWidget()
-        body.setObjectName("WindowBody")
-        body_layout = QHBoxLayout(body)
-        body_layout.setContentsMargins(0, 0, 0, 0)
-        body_layout.setSpacing(0)
+        self.sidebar_shell = QWidget()
+        self.sidebar_shell.setObjectName("SidebarShell")
+        sidebar_shell_layout = QVBoxLayout(self.sidebar_shell)
+        self.sidebar_shell_layout = sidebar_shell_layout
+        sidebar_shell_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_shell_layout.setSpacing(0)
+
+        self.content_shell = QWidget()
+        self.content_shell.setObjectName("ContentShell")
+        content_shell_layout = QVBoxLayout(self.content_shell)
+        self.content_shell_layout = content_shell_layout
+        content_shell_layout.setContentsMargins(0, 0, 0, 0)
+        content_shell_layout.setSpacing(0)
+
+        self.sidebar_brand_header = self._build_sidebar_brand_header()
+        self.window_title_bar = self._build_title_bar()
 
         self.nav = self._build_nav()
         self.pages = QStackedWidget()
+        self.pages.setObjectName("PageStack")
 
         self.collect_page = self._build_collect_page()
         self.history_page = self._build_history_page()
@@ -821,19 +925,30 @@ class XccMainWindow(QMainWindow):
         self.pages.addWidget(self.settings_page)
         self.pages.addWidget(self.about_page)
 
-        body_layout.addWidget(self.nav)
+        body = QWidget()
+        body.setObjectName("WindowBody")
+        body_layout = QVBoxLayout(body)
+        body_layout.setContentsMargins(0, 0, 0, 0)
+        body_layout.setSpacing(0)
         body_layout.addWidget(self.pages, 1)
-
-        root_layout.addWidget(body, 1)
 
         status_bar = QFrame()
         self.status_bar = status_bar
         status_bar.setObjectName("StatusBar")
         status_bar.setFixedHeight(METRICS.footer_height)
+        status_bar.setAccessibleName("Application footer")
 
-        status_layout = QHBoxLayout(status_bar)
-        status_layout.setContentsMargins(20, 0, 20, 0)
-        status_layout.setSpacing(10)
+        status_bar_layout = QHBoxLayout(status_bar)
+        self.status_bar_layout = status_bar_layout
+        status_bar_layout.setContentsMargins(20, 0, 20, 0)
+        status_bar_layout.setSpacing(0)
+
+        self.sidebar_status_group = QWidget(status_bar)
+        self.sidebar_status_group.setObjectName("SidebarStatusGroup")
+        sidebar_status_layout = QHBoxLayout(self.sidebar_status_group)
+        self.sidebar_status_layout = sidebar_status_layout
+        sidebar_status_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_status_layout.setSpacing(8)
 
         self.footer_status_dot = QLabel()
         self.footer_status_dot.setObjectName("FooterStatusDot")
@@ -843,28 +958,47 @@ class XccMainWindow(QMainWindow):
             RuntimeState.READY.semantic_state,
         )
 
-        self.status_label = QLabel("Ready · Select a source to begin")
+        self.status_label = QLabel("Ready · Select a source")
         self.status_label.setObjectName("StatusText")
+        self.status_label.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         self.status_label.setAccessibleName("Current event status")
-
-        self.status_version_label = QLabel(f"v{__version__}")
-        self.status_version_label.setObjectName("StatusVersion")
-        self.status_version_label.setAccessibleName("Application version")
-        self.status_version_label.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        self.status_label.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Fixed,
         )
 
-        status_layout.addWidget(
+        sidebar_status_layout.addWidget(
             self.footer_status_dot,
             0,
             Qt.AlignmentFlag.AlignVCenter,
         )
-        status_layout.addWidget(self.status_label, 1)
-        status_layout.addWidget(self.status_version_label)
+        sidebar_status_layout.addWidget(
+            self.status_label,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        status_bar_layout.addWidget(
+            self.sidebar_status_group,
+            0,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+        )
+        status_bar_layout.addStretch(1)
 
-        root_layout.addWidget(status_bar)
+        sidebar_shell_layout.addWidget(self.sidebar_brand_header, 0)
+        sidebar_shell_layout.addWidget(self.nav, 1)
+
+        content_shell_layout.addWidget(self.window_title_bar, 0)
+        content_shell_layout.addWidget(body, 1)
+
+        shell_body_layout.addWidget(self.sidebar_shell, 0)
+        shell_body_layout.addWidget(self.content_shell, 1)
+        root_layout.addWidget(shell_body, 1)
+        root_layout.addWidget(status_bar, 0)
 
         self.setCentralWidget(root)
+        self._set_shell_sidebar_width(METRICS.sidebar_width)
         self._sync_title_bar_state()
 
         self.nav.currentRowChanged.connect(self._change_page)
@@ -893,95 +1027,126 @@ class XccMainWindow(QMainWindow):
         self.paste_paths_shortcut.activated.connect(self._on_paste_paths_shortcut)
         self._refresh_source_controls()
 
+    def _build_sidebar_brand_header(self) -> WindowTitleBar:
+        header = WindowTitleBar(self, object_name="SidebarBrandHeader")
+        header.setFixedHeight(METRICS.sidebar_brand_header_height)
+        header.setAccessibleName("XCC Context Collector")
+
+        layout = QHBoxLayout(header)
+        layout.setContentsMargins(14, 5, 8, 5)
+        layout.setSpacing(8)
+
+        self.sidebar_brand_icon = QLabel(header)
+        self.sidebar_brand_icon.setObjectName("SidebarBrandIcon")
+        self.sidebar_brand_icon.setFixedSize(36, 36)
+        self.sidebar_brand_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.sidebar_brand_icon.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+        if APP_IMAGE_PATH.exists():
+            pixmap = QPixmap(str(APP_IMAGE_PATH))
+            if not pixmap.isNull():
+                self.sidebar_brand_icon.setPixmap(
+                    pixmap.scaled(
+                        36,
+                        36,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation,
+                    )
+                )
+
+        brand_text = QWidget(header)
+        self.sidebar_brand_text = brand_text
+        brand_text.setObjectName("SidebarBrandText")
+        brand_text.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+        text_layout = QHBoxLayout(brand_text)
+        self.sidebar_brand_text_layout = text_layout
+        text_layout.setContentsMargins(0, 0, 0, 0)
+        text_layout.setSpacing(6)
+        text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
+
+        self.sidebar_brand_title = QLabel("XCC", brand_text)
+        self.sidebar_brand_title.setObjectName("SidebarBrandTitle")
+        self.sidebar_brand_title.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+        self.sidebar_brand_subtitle = QLabel("Context Collector", brand_text)
+        self.sidebar_brand_subtitle.setObjectName("SidebarBrandSubtitle")
+        self.sidebar_brand_subtitle.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+
+        text_layout.addWidget(
+            self.sidebar_brand_title,
+            0,
+            Qt.AlignmentFlag.AlignBaseline,
+        )
+        text_layout.addWidget(
+            self.sidebar_brand_subtitle,
+            0,
+            Qt.AlignmentFlag.AlignBaseline,
+        )
+        text_layout.addStretch(1)
+        layout.addWidget(
+            self.sidebar_brand_icon,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        layout.addWidget(brand_text, 1, Qt.AlignmentFlag.AlignVCenter)
+        return header
+
     def _build_title_bar(self) -> WindowTitleBar:
         title_bar = WindowTitleBar(self)
         title_bar.setAccessibleName("Window title bar")
 
         layout = QHBoxLayout(title_bar)
-        layout.setContentsMargins(12, 0, 8, 0)
-        layout.setSpacing(10)
-
-        brand = QWidget()
-        brand.setObjectName("WindowBrand")
-        brand.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        brand_layout = QHBoxLayout(brand)
-        brand_layout.setContentsMargins(0, 0, 0, 0)
-        brand_layout.setSpacing(10)
-
-        brand_icon = QLabel()
-        brand_icon.setObjectName("WindowBrandIcon")
-        brand_icon.setFixedSize(18, 18)
-        brand_icon.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        if APP_IMAGE_PATH.exists():
-            pixmap = QPixmap(str(APP_IMAGE_PATH))
-            brand_icon.setPixmap(
-                pixmap.scaled(
-                    18,
-                    18,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
-
-        brand_text = QWidget()
-        brand_text.setObjectName("WindowBrandText")
-        brand_text.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
-        brand_text_layout = QVBoxLayout(brand_text)
-        brand_text_layout.setContentsMargins(0, 0, 0, 0)
-        brand_text_layout.setSpacing(0)
-
-        self.window_brand_title = QLabel("XCC Context Collector")
-        self.window_brand_title.setObjectName("WindowBrandTitle")
-        self.window_brand_title.setAttribute(
-            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
-            True,
-        )
-
-        self.window_brand_subtitle = QLabel("Local-first Windows utility")
-        self.window_brand_subtitle.setObjectName("WindowBrandSubtitle")
-        self.window_brand_subtitle.setAttribute(
-            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
-            True,
-        )
-
-        brand_text_layout.addWidget(self.window_brand_title)
-        brand_text_layout.addWidget(self.window_brand_subtitle)
-        brand_layout.addWidget(brand_icon, 0, Qt.AlignmentFlag.AlignVCenter)
-        brand_layout.addWidget(brand_text, 0, Qt.AlignmentFlag.AlignVCenter)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         self.window_version_capsule = QLabel(f"v{__version__}")
         self.window_version_capsule.setObjectName("WindowVersionCapsule")
         self.window_version_capsule.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.window_version_capsule.setAccessibleName("Application version")
         self.window_version_capsule.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
             True,
         )
 
         controls = QWidget()
+        self.window_controls = controls
         controls.setObjectName("WindowControls")
         controls_layout = QHBoxLayout(controls)
-        controls_layout.setContentsMargins(0, 0, 0, 0)
+        self.window_controls_layout = controls_layout
+        controls_layout.setContentsMargins(0, 0, 6, 0)
         controls_layout.setSpacing(4)
 
-        self.window_minimize_button = QToolButton()
-        self.window_minimize_button.setObjectName("WindowControlButton")
-        self.window_minimize_button.setProperty("role", "minimize")
-        self.window_minimize_button.setText("–")
-        self.window_minimize_button.setFixedSize(42, 28)
+        self.window_minimize_button = WindowControlButton(
+            "minimize",
+            WINDOW_MINIMIZE_ICON_PATH,
+        )
+        self.window_minimize_button.setAccessibleName("Minimize window")
         self.window_minimize_button.setToolTip("Minimize")
         self.window_minimize_button.clicked.connect(self.showMinimized)
 
-        self.window_maximize_button = QToolButton()
-        self.window_maximize_button.setObjectName("WindowControlButton")
-        self.window_maximize_button.setProperty("role", "maximize")
-        self.window_maximize_button.setFixedSize(42, 28)
+        self.window_maximize_button = WindowControlButton(
+            "maximize",
+            WINDOW_MAXIMIZE_ICON_PATH,
+            alternate_icon_path=WINDOW_RESTORE_ICON_PATH,
+        )
+        self.window_maximize_button.setAccessibleName("Maximize window")
         self.window_maximize_button.clicked.connect(self._toggle_maximize_restore)
 
-        self.window_close_button = QToolButton()
-        self.window_close_button.setObjectName("WindowControlButton")
-        self.window_close_button.setProperty("role", "close")
-        self.window_close_button.setText("✕")
-        self.window_close_button.setFixedSize(42, 28)
+        self.window_close_button = WindowControlButton(
+            "close",
+            WINDOW_CLOSE_ICON_PATH,
+        )
+        self.window_close_button.setAccessibleName("Close window")
         self.window_close_button.setToolTip("Close")
         self.window_close_button.clicked.connect(self.close)
 
@@ -990,13 +1155,16 @@ class XccMainWindow(QMainWindow):
             self.window_maximize_button,
             self.window_close_button,
         ):
-            button.setCursor(Qt.CursorShape.PointingHandCursor)
             controls_layout.addWidget(button)
 
-        layout.addWidget(brand, 0, Qt.AlignmentFlag.AlignVCenter)
         layout.addStretch(1)
-        layout.addWidget(self.window_version_capsule, 0, Qt.AlignmentFlag.AlignVCenter)
-        layout.addWidget(controls, 0, Qt.AlignmentFlag.AlignVCenter)
+        layout.addWidget(
+            self.window_version_capsule,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        layout.addSpacing(16)
+        layout.addWidget(controls)
         return title_bar
 
     def _toggle_maximize_restore(self) -> None:
@@ -1010,12 +1178,103 @@ class XccMainWindow(QMainWindow):
         if not hasattr(self, "window_maximize_button"):
             return
 
-        if self.isMaximized():
-            self.window_maximize_button.setText("❐")
-            self.window_maximize_button.setToolTip("Restore")
-        else:
-            self.window_maximize_button.setText("□")
-            self.window_maximize_button.setToolTip("Maximize")
+        maximized = self.isMaximized()
+        self.window_maximize_button.set_restore_state(maximized)
+        self.window_maximize_button.setToolTip(
+            "Restore" if maximized else "Maximize"
+        )
+        self.window_maximize_button.setAccessibleName(
+            "Restore window" if maximized else "Maximize window"
+        )
+
+        for widget_name in (
+            "window_frame",
+            "sidebar_brand_header",
+            "window_title_bar",
+            "status_bar",
+            "sidebar_shell",
+            "content_shell",
+        ):
+            widget = getattr(self, widget_name, None)
+            if widget is not None:
+                set_widget_property(widget, "maximized", maximized)
+
+        for button in (
+            getattr(self, "window_minimize_button", None),
+            getattr(self, "window_maximize_button", None),
+            getattr(self, "window_close_button", None),
+        ):
+            if button is not None:
+                set_widget_property(button, "maximized", maximized)
+
+    def _window_hit_test(self, global_position: QPoint) -> int | None:
+        """Return a native Windows non-client hit-test code for one point."""
+
+        # Caption controls occupy the complete title-bar height. They must win
+        # over the top resize strip so their upper pixels remain clickable.
+        controls = getattr(self, "window_controls", None)
+        if controls is not None and controls.isVisible():
+            controls_origin = controls.mapToGlobal(QPoint(0, 0))
+            controls_rect = QRect(controls_origin, controls.size())
+            if controls_rect.contains(global_position):
+                return None
+
+        window_origin = self.mapToGlobal(QPoint(0, 0))
+        local_x = global_position.x() - window_origin.x()
+        local_y = global_position.y() - window_origin.y()
+        width = self.width()
+        height = self.height()
+
+        if not self.isMaximized():
+            margin = FRAME_RESIZE_MARGIN
+            on_left = 0 <= local_x < margin
+            on_right = width - margin <= local_x < width
+            on_top = 0 <= local_y < margin
+            on_bottom = height - margin <= local_y < height
+
+            if on_top and on_left:
+                return HTTOPLEFT
+            if on_top and on_right:
+                return HTTOPRIGHT
+            if on_bottom and on_left:
+                return HTBOTTOMLEFT
+            if on_bottom and on_right:
+                return HTBOTTOMRIGHT
+            if on_left:
+                return HTLEFT
+            if on_right:
+                return HTRIGHT
+            if on_top:
+                return HTTOP
+            if on_bottom:
+                return HTBOTTOM
+
+        for widget_name in ("sidebar_brand_header", "window_title_bar"):
+            caption_widget = getattr(self, widget_name, None)
+            if caption_widget is None or not caption_widget.isVisible():
+                continue
+            caption_origin = caption_widget.mapToGlobal(QPoint(0, 0))
+            caption_rect = QRect(caption_origin, caption_widget.size())
+            if caption_rect.contains(global_position):
+                return HTCAPTION
+
+        return None
+
+    def nativeEvent(self, event_type, message):
+        if sys.platform == "win32":
+            try:
+                from ctypes import wintypes
+
+                native_message = wintypes.MSG.from_address(int(message))
+            except Exception:
+                native_message = None
+
+            if native_message is not None and native_message.message == WM_NCHITTEST:
+                hit = self._window_hit_test(QCursor.pos())
+                if hit is not None:
+                    return True, hit
+
+        return super().nativeEvent(event_type, message)
 
     def _setup_global_hotkey(self) -> None:
         self._cleanup_global_hotkey()
@@ -1181,6 +1440,7 @@ class XccMainWindow(QMainWindow):
 
     def _build_history_page(self) -> QWidget:
         page = QWidget()
+        page.setObjectName("HistoryPage")
         layout = self._page_layout(page)
 
         layout.addWidget(self._section_title("History"))
@@ -1423,7 +1683,6 @@ class XccMainWindow(QMainWindow):
 
     def _build_nav(self) -> SidebarNavigation:
         return SidebarNavigation(
-            app_icon_path=APP_IMAGE_PATH,
             items=(
                 (NAV_COLLECT_ICON_PATH, "Collect"),
                 (NAV_HISTORY_ICON_PATH, "History"),
@@ -1464,6 +1723,12 @@ class XccMainWindow(QMainWindow):
             size.setHeight(max(0, self.pages.height()))
         return size
 
+    def _set_shell_sidebar_width(self, width: int) -> None:
+        shell_width = max(190, width)
+        self.sidebar_shell.setFixedWidth(shell_width)
+        self.nav.set_sidebar_width(shell_width)
+        self.sidebar_brand_header.setFixedWidth(shell_width)
+
     def _apply_collect_layout(self, *, force: bool = False) -> None:
         viewport_size = self._collect_viewport_size()
         spec = collect_layout_spec(
@@ -1476,7 +1741,7 @@ class XccMainWindow(QMainWindow):
         self._collect_layout_mode = spec.mode
         self._collect_layout_spec = spec
         self._collect_geometry_spec = geometry
-        self.nav.set_sidebar_width(spec.sidebar_width)
+        self._set_shell_sidebar_width(spec.sidebar_width)
 
         if width_mode_changed:
             self.collect_page_header.subtitle_label.setVisible(spec.show_subtitle)
@@ -3105,6 +3370,7 @@ class XccMainWindow(QMainWindow):
 
     def _build_settings_page(self) -> QWidget:
         page = QWidget()
+        page.setObjectName("SettingsPage")
         layout = self._page_layout(page)
 
         layout.addWidget(self._settings_header())
@@ -3253,6 +3519,7 @@ class XccMainWindow(QMainWindow):
 
     def _build_about_page(self) -> QWidget:
         page = QWidget()
+        page.setObjectName("AboutPage")
         layout = self._page_layout(page)
 
         layout.addWidget(self._section_title("About"))
@@ -3601,3 +3868,4 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
+

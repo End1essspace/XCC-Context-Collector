@@ -24,6 +24,10 @@ RUNTIME_ASSETS = (
     "ui-health.svg",
     "ui-paste-paths.svg",
     "ui-collect-copy.svg",
+    "window-minimize.svg",
+    "window-maximize.svg",
+    "window-restore.svg",
+    "window-close.svg",
 )
 
 
@@ -139,9 +143,14 @@ def test_release_build_includes_every_runtime_asset() -> None:
     assert "Test-Path $SpecPath" in build
     assert '--add-data "assets;assets"' not in build
 
+    smoke = (
+        PROJECT_ROOT / "scripts" / "smoke_packaged_app.ps1"
+    ).read_text(encoding="utf-8-sig")
+
     for asset_name in RUNTIME_ASSETS:
         assert (PROJECT_ROOT / "assets" / asset_name).is_file()
         assert asset_name in build
+        assert asset_name in smoke
 
 def test_historical_material_is_release_scoped_and_active_tree_is_clean() -> None:
     assert (
@@ -149,4 +158,3 @@ def test_historical_material_is_release_scoped_and_active_tree_is_clean() -> Non
     ).is_file()
     assert not (PROJECT_ROOT / "docs" / "M10_VALIDATION.md").exists()
     assert not (PROJECT_ROOT / "assets" / "original_icons").exists()
-

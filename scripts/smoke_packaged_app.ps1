@@ -35,7 +35,11 @@ $RequiredAssets = @(
     "ui-coverage.svg",
     "ui-health.svg",
     "ui-paste-paths.svg",
-    "ui-collect-copy.svg"
+    "ui-collect-copy.svg",
+    "window-minimize.svg",
+    "window-maximize.svg",
+    "window-restore.svg",
+    "window-close.svg"
 )
 $MissingAssets = @(
     $RequiredAssets | Where-Object { -not (Test-Path (Join-Path $AssetRoot $_)) }

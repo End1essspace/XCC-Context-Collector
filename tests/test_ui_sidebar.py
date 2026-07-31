@@ -25,7 +25,6 @@ def qapp() -> QApplication:
 
 def _sidebar() -> SidebarNavigation:
     return SidebarNavigation(
-        app_icon_path=resource_path("assets", "xcc_app.png"),
         items=(
             (resource_path("assets", "nav-collect.svg"), "Collect"),
             (resource_path("assets", "nav-history.svg"), "History"),
@@ -98,25 +97,17 @@ def test_sidebar_arrow_navigation_includes_about(
     assert sidebar.button(3).text() == "About"
 
 
-def test_sidebar_identity_uses_product_scale_artwork_without_logo_card(
+def test_sidebar_body_starts_with_navigation_without_duplicate_brand(
     qapp: QApplication,
 ) -> None:
     sidebar = _sidebar()
 
-    identity = sidebar.identity_widget
-    icon = sidebar.identity_icon
-
-    assert identity.objectName() == "SidebarIdentity"
-    assert identity.height() == 64
-    assert identity.accessibleName() == "XCC Context Collector"
-    assert icon.objectName() == "SidebarBrandIcon"
-    assert icon.size().width() == 44
-    assert icon.size().height() == 44
-    assert identity.height() - icon.height() == 20
-    assert not hasattr(sidebar, "identity_mark")
-    assert sidebar.brand_title.text() == "XCC"
-    assert sidebar.brand_subtitle.text() == "Context Collector"
-
+    assert sidebar.section_label.text() == "WORKSPACE"
+    assert sidebar.section_label.objectName() == "SidebarSectionLabel"
+    assert not hasattr(sidebar, "identity_widget")
+    assert not hasattr(sidebar, "identity_icon")
+    assert not hasattr(sidebar, "brand_title")
+    assert not hasattr(sidebar, "brand_subtitle")
 
 def test_sidebar_wheel_switches_pages_from_the_complete_sidebar_surface(
     qapp: QApplication,
@@ -124,7 +115,7 @@ def test_sidebar_wheel_switches_pages_from_the_complete_sidebar_surface(
     sidebar = _sidebar()
     sidebar.setCurrentRow(0)
 
-    QApplication.sendEvent(sidebar.identity_icon, _wheel_event(-120))
+    QApplication.sendEvent(sidebar.section_label, _wheel_event(-120))
     assert sidebar.currentRow == 1
 
     QApplication.sendEvent(sidebar.button(1), _wheel_event(-120))
@@ -141,9 +132,9 @@ def test_sidebar_wheel_accumulates_partial_trackpad_deltas(
     sidebar.setCurrentRow(0)
 
     for target in (
-        sidebar.identity_icon,
-        sidebar.brand_title,
+        sidebar.section_label,
         sidebar.button(0),
+        sidebar.button(1),
     ):
         QApplication.sendEvent(target, _wheel_event(-30))
         assert sidebar.currentRow == 0
@@ -173,7 +164,7 @@ def test_sidebar_wheel_stops_at_first_and_last_page(
     assert sidebar.currentRow == 0
 
     sidebar.setCurrentRow(3)
-    QApplication.sendEvent(sidebar.identity_widget, _wheel_event(-120))
+    QApplication.sendEvent(sidebar.section_label, _wheel_event(-120))
     assert sidebar.currentRow == 3
 
 
@@ -203,4 +194,3 @@ def test_sidebar_wheel_moves_focus_to_the_new_active_button(
     assert sidebar.button(2).hasFocus()
 
     sidebar.close()
-

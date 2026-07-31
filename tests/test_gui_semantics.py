@@ -8,6 +8,7 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QDialog
 
 import xcc.gui as gui_module
@@ -178,9 +179,30 @@ def test_shell_roles_versions_hotkey_and_accessible_names(
     assert window.status_label.text().startswith("Ready ·")
     assert window.header_status.text() != window.status_label.text()
 
-    assert window.status_version_label.text() == f"v{__version__}"
-    assert window.status_version_label.accessibleName() == "Application version"
+    assert window.window_version_capsule.text() == f"v{__version__}"
+    assert window.window_version_capsule.accessibleName() == "Application version"
+    assert window.window_minimize_button.accessibleName() == "Minimize window"
+    assert window.window_maximize_button.accessibleName() == "Maximize window"
+    assert window.window_close_button.accessibleName() == "Close window"
+    assert all(
+        button.focusPolicy() == Qt.FocusPolicy.NoFocus
+        for button in (
+            window.window_minimize_button,
+            window.window_maximize_button,
+            window.window_close_button,
+        )
+    )
+    assert window.sidebar_brand_header.accessibleName() == "XCC Context Collector"
+    assert window.sidebar_brand_title.text() == "XCC"
+    assert window.sidebar_brand_subtitle.text() == "Context Collector"
+    assert not hasattr(window, "window_brand_icon")
+    assert not hasattr(window, "window_brand_title")
+    assert not hasattr(window, "status_version_label")
     assert window.status_label.accessibleName() == "Current event status"
+    assert window.status_label.alignment() & Qt.AlignmentFlag.AlignLeft
+    assert not hasattr(window, "sidebar_footer")
+    assert window.status_bar.accessibleName() == "Application footer"
+    assert window.sidebar_status_group.parent() is window.status_bar
 
     assert window.hotkey_capsule.text() == "Hotkey: Ctrl+Alt+X"
     assert window.hotkey_capsule.accessibleName() == "Restore hotkey"

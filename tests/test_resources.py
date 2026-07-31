@@ -42,4 +42,8 @@ def test_gui_uses_separate_window_embedded_and_tray_assets() -> None:
     assert 'UI_SETUP_ICON_PATH = resource_path("assets", "ui-setup.svg")' in gui_source
     assert 'UI_LAST_RUN_ICON_PATH = resource_path("assets", "ui-last-run.svg")' in gui_source
     assert 'UI_COLLECT_COPY_ICON_PATH = resource_path("assets", "ui-collect-copy.svg")' in gui_source
+    assert 'WINDOW_MINIMIZE_ICON_PATH = resource_path("assets", "window-minimize.svg")' in gui_source
+    assert 'WINDOW_MAXIMIZE_ICON_PATH = resource_path("assets", "window-maximize.svg")' in gui_source
+    assert 'WINDOW_RESTORE_ICON_PATH = resource_path("assets", "window-restore.svg")' in gui_source
+    assert 'WINDOW_CLOSE_ICON_PATH = resource_path("assets", "window-close.svg")' in gui_source
     assert "app.setWindowIcon" in gui_source

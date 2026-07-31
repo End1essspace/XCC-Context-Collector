@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -18,6 +17,10 @@ class UiPalette:
     selected_surface: str = "#242016"
     hover_surface: str = "#1A1916"
     quiet_border: str = "#302D26"
+    frame_border: str = "#35393E"
+    shell_divider: str = "#25282C"
+    control_border: str = "#3A3D42"
+    metric_divider: str = "#25272A"
     accent_border: str = "#57471F"
     accent: str = "#D2A533"
     accent_hover: str = "#E0B440"
@@ -39,7 +42,9 @@ class UiMetrics:
     control_height: int = 40
     primary_action_height: int = 52
     footer_height: int = 36
-    window_titlebar_height: int = 42
+    window_titlebar_height: int = 48
+    sidebar_brand_header_height: int = 48
+    window_control_width: int = 52
     sidebar_width: int = 228
     metric_row_height: int = 58
     card_radius: int = 14
@@ -64,6 +69,10 @@ METRICS = UiMetrics()
 # owned by this module rather than by XccMainWindow. Legacy literal colors are
 # translated to the semantic palette so later UI milestones can calibrate one
 # token without editing page implementation code.
+#
+# Font sizes intentionally use point units. Pixel-sized QFonts report a
+# pointSize of -1, which can make Qt emit repeated setPointSize(-1) warnings
+# while style-sheet rules are polished and re-polished.
 _BASE_APPLICATION_STYLESHEET = r"""
 QMainWindow {
     background: #0D0E10;
@@ -73,45 +82,54 @@ QWidget {
     background: #0D0E10;
     color: #F2F2F2;
     font-family: Segoe UI;
-    font-size: 13px;
+    font-size: 9.75pt;
 }
 
 #WindowFrame {
     background: #0D0E10;
-    border: 1px solid #343026;
+    border: 1px solid #484238;
     border-radius: 12px;
 }
 
+#WindowFrame[maximized="true"] {
+    border: none;
+    border-radius: 0px;
+}
+
 #WindowBody,
-#WindowBrand,
-#WindowBrandIcon,
-#WindowBrandText,
-#WindowControls {
+#WindowControls,
+#ShellBody,
+#SidebarBrandText,
+#SidebarStatusGroup,
+#PageStack,
+#PageStack > QWidget {
     background: transparent;
+}
+
+#SidebarShell {
+    background: #111214;
+    border-right: 1px solid #25282C;
+}
+
+#ContentShell {
+    background: #0E0F11;
+}
+
+#SidebarBrandHeader {
+    background: #141517;
+    border: none;
+    border-bottom: 1px solid #25282C;
+    border-top-left-radius: 11px;
 }
 
 #WindowTitleBar {
-    background: qlineargradient(
-        x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #15171A,
-        stop: 1 #121417
-    );
+    background: #141517;
     border: none;
-    border-bottom: 1px solid #343026;
+    border-bottom: 1px solid #25282C;
 }
 
-#WindowBrandTitle {
-    color: #F2F3F4;
-    font-size: 14px;
-    font-weight: 800;
-    background: transparent;
-}
-
-#WindowBrandSubtitle {
-    color: #959AA2;
-    font-size: 10px;
-    font-weight: 500;
-    background: transparent;
+#SidebarBrandHeader[maximized="true"] {
+    border-top-left-radius: 0px;
 }
 
 #WindowVersionCapsule {
@@ -120,52 +138,41 @@ QWidget {
     border-radius: 9px;
     padding: 3px 10px;
     color: #D2A533;
-    font-size: 11px;
+    font-size: 8.25pt;
     font-weight: 700;
 }
 
 #WindowControlButton {
     background: transparent;
-    border: 1px solid transparent;
-    border-radius: 8px;
-    color: #C6CAD0;
+    border: none;
+    border-radius: 7px;
     padding: 0px;
-    font-size: 13px;
-    font-weight: 700;
 }
 
-#WindowControlButton:hover,
-#WindowControlButton:focus {
-    background: #1A1916;
-    border: 1px solid #3B3528;
-    color: #F2F3F4;
+#WindowControlButton:hover {
+    background: #24262A;
 }
 
 #WindowControlButton:pressed {
-    background: #262116;
+    background: #303238;
 }
 
-#WindowControlButton[role="close"]:hover,
-#WindowControlButton[role="close"]:focus {
-    background: #532126;
-    border: 1px solid #D86C6C;
-    color: #F2F3F4;
+#WindowControlButton[role="close"]:hover {
+    background: #A8323E;
 }
 
 #WindowControlButton[role="close"]:pressed {
-    background: #6A282F;
+    background: #C13B49;
 }
 
 #CollectPage,
+#HistoryPage,
+#SettingsPage,
+#AboutPage,
 #CollectPageScroll,
 #CollectPageScroll > QWidget,
 #CollectPageScroll > QWidget > QWidget {
-    background: qlineargradient(
-        x1: 0, y1: 0, x2: 1, y2: 1,
-        stop: 0 #101216,
-        stop: 0.52 #0F1114,
-        stop: 1 #0C0E11
-    );
+    background: transparent;
     border: none;
 }
 
@@ -194,7 +201,7 @@ QWidget {
 #RuntimeStatusText {
     color: #F2F2F2;
     background: transparent;
-    font-size: 12px;
+    font-size: 9pt;
     font-weight: 700;
 }
 
@@ -210,7 +217,7 @@ QWidget {
     border-radius: 10px;
     padding: 4px 12px;
     color: #D2A533;
-    font-size: 11px;
+    font-size: 8.25pt;
     font-weight: 600;
 }
 
@@ -220,41 +227,31 @@ QWidget {
 }
 
 #Sidebar {
-    background: qlineargradient(
-        x1: 0, y1: 0, x2: 1, y2: 0,
-        stop: 0 #101113,
-        stop: 1 #121316
-    );
-    border-right: 1px solid #343026;
-}
-
-#SidebarIdentity {
-    background: transparent;
+    background: #111214;
     border: none;
 }
 
-#SidebarBrandIcon,
-#SidebarBrandText {
+#SidebarBrandIcon {
     background: transparent;
 }
 
 #SidebarBrandTitle {
     color: #F2F3F4;
-    font-size: 18px;
+    font-size: 12.75pt;
     font-weight: 800;
     background: transparent;
 }
 
 #SidebarBrandSubtitle {
     color: #959AA2;
-    font-size: 11px;
+    font-size: 8.25pt;
     font-weight: 500;
     background: transparent;
 }
 
 #SidebarSectionLabel {
     color: #666B73;
-    font-size: 9px;
+    font-size: 6.75pt;
     font-weight: 800;
     letter-spacing: 1px;
     background: transparent;
@@ -274,7 +271,7 @@ QWidget {
     color: #F2F3F4;
     text-align: left;
     padding: 0px 14px;
-    font-size: 13px;
+    font-size: 9.75pt;
     font-weight: 500;
 }
 
@@ -305,7 +302,7 @@ QWidget {
 }
 
 #SectionTitle {
-    font-size: 28px;
+    font-size: 21pt;
     font-weight: 700;
     color: #F2F2F2;
     background: transparent;
@@ -324,7 +321,7 @@ QWidget {
 
 #CardTitle {
     color: #D6A93A;
-    font-size: 14px;
+    font-size: 10.5pt;
     font-weight: 800;
     background: transparent;
     padding: 0px;
@@ -339,7 +336,7 @@ QWidget {
 
 #FieldLabel {
     color: #D6D6D6;
-    font-size: 13px;
+    font-size: 9.75pt;
     font-weight: 700;
     background: transparent;
 }
@@ -351,7 +348,7 @@ QWidget {
 
 QLineEdit {
     background: #101010;
-    border: 1px solid #5A4820;
+    border: 1px solid #3B3E43;
     border-radius: 10px;
     padding: 8px 10px;
     color: #F2F2F2;
@@ -369,7 +366,7 @@ QLineEdit:focus {
 
 QPushButton {
     background: #1A1A1A;
-    border: 1px solid #5A4820;
+    border: 1px solid #3B3E43;
     border-radius: 10px;
     padding: 9px 14px;
     color: #F2F2F2;
@@ -405,7 +402,7 @@ QCheckBox:disabled {
         stop: 1 #BE8E27
     );
     color: #111111;
-    font-size: 15px;
+    font-size: 11.25pt;
     font-weight: 800;
     border: 1px solid #D6AA36;
     border-radius: 11px;
@@ -448,7 +445,7 @@ QCheckBox {
     spacing: 8px;
     padding: 2px 0;
     background: transparent;
-    font-size: 13px;
+    font-size: 9.75pt;
 }
 
 QRadioButton:hover,
@@ -463,7 +460,7 @@ QCheckBox::indicator {
     width: 16px;
     height: 16px;
     background: #101010;
-    border: 1px solid #5A4820;
+    border: 1px solid #3B3E43;
 }
 
 QRadioButton::indicator {
@@ -506,19 +503,19 @@ QCheckBox::indicator:checked {
 
 #MetricLabel {
     color: #AFAFAF;
-    font-size: 12px;
+    font-size: 9pt;
     background: transparent;
 }
 
 #MetricValue {
     color: #F2F2F2;
-    font-size: 15px;
+    font-size: 11.25pt;
     font-weight: 800;
     background: transparent;
 }
 
 #MetricDivider {
-    background: #302A1D;
+    background: #25272A;
     border: none;
     min-width: 1px;
     max-width: 1px;
@@ -526,7 +523,7 @@ QCheckBox::indicator:checked {
 
 #LastRunState {
     color: #ADB1B7;
-    font-size: 12px;
+    font-size: 9pt;
     background: #121316;
     border: 1px solid #3A3428;
     border-radius: 8px;
@@ -536,7 +533,15 @@ QCheckBox::indicator:checked {
 
 #StatusBar {
     background: #141517;
-    border-top: 1px solid #343026;
+    border: none;
+    border-top: 1px solid #25282C;
+    border-bottom-left-radius: 11px;
+    border-bottom-right-radius: 11px;
+}
+
+#StatusBar[maximized="true"] {
+    border-bottom-left-radius: 0px;
+    border-bottom-right-radius: 0px;
 }
 
 #FooterStatusDot {
@@ -547,18 +552,13 @@ QCheckBox::indicator:checked {
 
 #StatusText {
     color: #B8BBC1;
-    font-size: 11px;
+    font-size: 7.5pt;
     background: transparent;
 }
 
-#StatusVersion {
-    color: #90959D;
-    font-size: 10px;
-    background: transparent;
-}
 #MetricGroupTitle {
     color: #E0E0E0;
-    font-size: 14px;
+    font-size: 10.5pt;
     font-weight: 700;
     background: transparent;
 }
@@ -578,7 +578,7 @@ QCheckBox::indicator:checked {
 
 #HistoryTime {
     color: #D6A93A;
-    font-size: 12px;
+    font-size: 9pt;
     font-weight: 800;
     background: transparent;
 }
@@ -590,7 +590,7 @@ QCheckBox::indicator:checked {
     border-radius: 8px;
     padding: 3px 10px;
     color: #F2F2F2;
-    font-size: 11px;
+    font-size: 8.25pt;
     font-weight: 700;
 }
 
@@ -600,25 +600,25 @@ QCheckBox::indicator:checked {
 
 #HistorySource {
     color: #D6D6D6;
-    font-size: 12px;
+    font-size: 9pt;
     background: transparent;
 }
 
 #HistoryStats {
     color: #AFAFAF;
-    font-size: 11px;
+    font-size: 8.25pt;
     background: transparent;
 }
 
 #HistoryHealth {
     color: #8F8F8F;
-    font-size: 11px;
+    font-size: 8.25pt;
     background: transparent;
 }
 
 #HistoryEmpty {
     color: #8F8F8F;
-    font-size: 13px;
+    font-size: 9.75pt;
     background: transparent;
 }
 #HistoryScrollArea {
@@ -658,7 +658,7 @@ QScrollBar::sub-page:vertical {
 }
 #PageSubtitle {
     color: #8F8F8F;
-    font-size: 12px;
+    font-size: 9pt;
     background: transparent;
     padding: 2px 0px 0px 0px;
     margin: 0px;
@@ -666,7 +666,7 @@ QScrollBar::sub-page:vertical {
 
 #SettingsSectionTitle {
     color: #D6A93A;
-    font-size: 12px;
+    font-size: 9pt;
     font-weight: 800;
     background: transparent;
     margin-top: 0px;
@@ -675,7 +675,7 @@ QScrollBar::sub-page:vertical {
     background: transparent;
     border: none;
     color: #D6D6D6;
-    font-size: 11px;
+    font-size: 8.25pt;
     font-weight: 700;
 }
 
@@ -705,20 +705,20 @@ QScrollBar::sub-page:vertical {
 
 #SettingsRowTitle {
     color: #F2F2F2;
-    font-size: 12px;
+    font-size: 9pt;
     font-weight: 800;
     background: transparent;
 }
 
 #SettingsRowDescription {
     color: #8F8F8F;
-    font-size: 11px;
+    font-size: 8.25pt;
     background: transparent;
 }
 
 #SettingsRowValue {
     color: #D6A93A;
-    font-size: 13px;
+    font-size: 9.75pt;
     font-weight: 800;
     background: transparent;
     min-width: 110px;
@@ -735,27 +735,27 @@ QScrollBar::sub-page:vertical {
 
 #AboutTitle {
     color: #F2F2F2;
-    font-size: 22px;
+    font-size: 16.5pt;
     font-weight: 800;
     background: transparent;
 }
 
 #AboutSubtitle {
     color: #D6A93A;
-    font-size: 14px;
+    font-size: 10.5pt;
     font-weight: 700;
     background: transparent;
 }
 
 #AboutVersion {
     color: #8F8F8F;
-    font-size: 12px;
+    font-size: 9pt;
     background: transparent;
 }
 
 #AboutDescription {
     color: #C9C9C9;
-    font-size: 13px;
+    font-size: 9.75pt;
     background: transparent;
 }
 
@@ -765,7 +765,7 @@ QScrollBar::sub-page:vertical {
     border-radius: 10px;
     padding: 4px 12px;
     color: #D6A93A;
-    font-size: 11px;
+    font-size: 8.25pt;
     font-weight: 800;
 }
 
@@ -776,7 +776,7 @@ QScrollBar::sub-page:vertical {
 
 #AboutSectionTitle {
     color: #D6A93A;
-    font-size: 13px;
+    font-size: 9.75pt;
     font-weight: 800;
     background: transparent;
 }
@@ -789,27 +789,27 @@ QScrollBar::sub-page:vertical {
 
 #AboutInfoLabel {
     color: #AFAFAF;
-    font-size: 11px;
+    font-size: 8.25pt;
     font-weight: 700;
     background: transparent;
 }
 
 #AboutInfoValue {
     color: #D6A93A;
-    font-size: 12px;
+    font-size: 9pt;
     font-weight: 800;
     background: transparent;
 }
 
 #AboutFooter {
     color: #8F8F8F;
-    font-size: 12px;
+    font-size: 9pt;
     background: transparent;
     padding-top: 4px;
 }
 #SourceInputBox {
     background: #101010;
-    border: 1px solid #5A4820;
+    border: 1px solid #3B3E43;
     border-radius: 10px;
 }
 
@@ -818,7 +818,7 @@ QScrollBar::sub-page:vertical {
 }
 
 #SourceInputBox[reviewable="true"] {
-    border: 1px solid #5A4820;
+    border: 1px solid #3B3E43;
     background: #141414;
 }
 
@@ -830,7 +830,7 @@ QScrollBar::sub-page:vertical {
 #SourceHelperText,
 #OptionsHelperText {
     color: #8F8F8F;
-    font-size: 11px;
+    font-size: 8.25pt;
     background: transparent;
 }
 
@@ -850,7 +850,7 @@ QScrollBar::sub-page:vertical {
 
 #SelectSourceButton {
     background: #101010;
-    border: 1px solid #5A4820;
+    border: 1px solid #3B3E43;
     color: #F2F2F2;
     font-weight: 700;
 }
@@ -885,10 +885,10 @@ QScrollBar::sub-page:vertical {
 
 #ClearSourceButton {
     background: transparent;
-    border: 1px solid #5A4820;
+    border: 1px solid #3B3E43;
     border-radius: 12px;
-    color: #D6A93A;
-    font-size: 14px;
+    color: #ADB1B7;
+    font-size: 10.5pt;
     font-weight: 800;
     padding: 0px;
     margin: 0px;
@@ -926,14 +926,14 @@ QScrollBar::sub-page:vertical {
 
 #DialogTitle {
     color: #F2F2F2;
-    font-size: 21px;
+    font-size: 15.75pt;
     font-weight: 800;
     background: transparent;
 }
 
 #DialogDescription {
     color: #AFAFAF;
-    font-size: 12px;
+    font-size: 9pt;
     line-height: 1.35;
     background: transparent;
 }
@@ -950,14 +950,14 @@ QScrollBar::sub-page:vertical {
 
 #DialogSectionTitle {
     color: #F2F2F2;
-    font-size: 13px;
+    font-size: 9.75pt;
     font-weight: 700;
     background: transparent;
 }
 
 #DialogSectionMeta {
     color: #7F848C;
-    font-size: 11px;
+    font-size: 8.25pt;
     background: transparent;
 }
 
@@ -995,7 +995,7 @@ QScrollBar::sub-page:vertical {
 
 #DialogSummary {
     color: #90959D;
-    font-size: 12px;
+    font-size: 9pt;
     font-weight: 700;
     background: #171717;
     border: 1px solid #302D26;
@@ -1034,7 +1034,7 @@ QScrollBar::sub-page:vertical {
     selection-background-color: #D6A93A;
     selection-color: #111111;
     font-family: Consolas;
-    font-size: 12px;
+    font-size: 9pt;
 }
 
 #PathListInput:hover,
@@ -1111,7 +1111,7 @@ QScrollBar::sub-page:vertical {
 
 #SelectedFilesCount {
     color: #D6A93A;
-    font-size: 12px;
+    font-size: 9pt;
     font-weight: 800;
     background: #191811;
     border: 1px solid #57471F;
@@ -1127,7 +1127,7 @@ QScrollBar::sub-page:vertical {
     outline: none;
     color: #E7E7E7;
     font-family: Consolas;
-    font-size: 12px;
+    font-size: 9pt;
 }
 
 #SelectedFilesReviewList:focus {
@@ -1173,6 +1173,10 @@ _COLOR_REPLACEMENTS = {
     "#40341D": PALETTE.accent_border,
     "#443820": PALETTE.accent_border,
     "#463817": PALETTE.accent_border,
+    "#484238": PALETTE.frame_border,
+    "#2A2D32": PALETTE.shell_divider,
+    "#3B3E43": PALETTE.control_border,
+    "#25272A": PALETTE.metric_divider,
     "#5A4820": PALETTE.accent_border,
     "#D6A93A": PALETTE.accent,
     "#C79A31": PALETTE.accent,
@@ -1215,7 +1219,7 @@ def build_tray_menu_stylesheet() -> str:
         padding: 6px;
         color: @primary;
         font-family: Segoe UI;
-        font-size: 12px;
+        font-size: 9pt;
     }
 
     QMenu::item {
@@ -1308,7 +1312,7 @@ def _semantic_state_stylesheet() -> str:
 
     #HelperText {
         color: @muted;
-        font-size: 12px;
+        font-size: 9pt;
         background: transparent;
     }
     """
@@ -1327,3 +1331,4 @@ def _semantic_state_stylesheet() -> str:
         .replace("@muted", PALETTE.muted_text)
         .strip()
     )
+

@@ -4,11 +4,10 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from PySide6.QtCore import QEvent, QSize, Qt, Signal
-from PySide6.QtGui import QIcon, QKeyEvent, QPixmap, QWheelEvent
+from PySide6.QtGui import QIcon, QKeyEvent, QWheelEvent
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
-    QHBoxLayout,
     QLabel,
     QPushButton,
     QSizePolicy,
@@ -109,7 +108,6 @@ class SidebarNavigation(QFrame):
     def __init__(
         self,
         *,
-        app_icon_path: str | Path,
         items: Sequence[tuple[str | Path, str]],
         parent: QWidget | None = None,
     ) -> None:
@@ -124,19 +122,13 @@ class SidebarNavigation(QFrame):
         self._wheel_delta = 0
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(14, 14, 14, 16)
+        layout.setContentsMargins(14, 16, 14, 16)
         layout.setSpacing(0)
 
-        self.identity_widget = self._build_identity(app_icon_path)
-        layout.addWidget(self.identity_widget)
-        layout.addSpacing(12)
-        layout.addWidget(self._separator())
-        layout.addSpacing(14)
-
-        section_label = QLabel("WORKSPACE", self)
-        section_label.setObjectName("SidebarSectionLabel")
-        section_label.setFixedHeight(18)
-        layout.addWidget(section_label)
+        self.section_label = QLabel("WORKSPACE", self)
+        self.section_label.setObjectName("SidebarSectionLabel")
+        self.section_label.setFixedHeight(18)
+        layout.addWidget(self.section_label)
         layout.addSpacing(8)
 
         group = QButtonGroup(self)
@@ -159,8 +151,8 @@ class SidebarNavigation(QFrame):
         group.addButton(about_button, 3)
         layout.addWidget(about_button)
 
-        # Treat the complete visual sidebar as one wheel-navigation surface,
-        # including its labels, brand lockup, buttons, and empty space.
+        # Treat the complete navigation column as one wheel-navigation surface,
+        # including its label, buttons, separators, and empty space.
         for child in self.findChildren(QWidget):
             child.installEventFilter(self)
 
@@ -264,65 +256,6 @@ class SidebarNavigation(QFrame):
             # selected page. Otherwise the previously focused button keeps
             # the QSS :focus treatment and looks like a second active item.
             self._buttons[target].setFocus(Qt.FocusReason.MouseFocusReason)
-
-    def _build_identity(self, app_icon_path: str | Path) -> QWidget:
-        """Build one product-scale brand lockup aligned with navigation."""
-
-        identity = QFrame(self)
-        identity.setObjectName("SidebarIdentity")
-        # Keep the product lockup compact so navigation starts sooner without
-        # shrinking the approved logo or typography.
-        identity.setFixedHeight(64)
-        identity.setAccessibleName("XCC Context Collector")
-
-        layout = QHBoxLayout(identity)
-        layout.setContentsMargins(0, 3, 4, 3)
-        layout.setSpacing(11)
-
-        self.identity_icon = QLabel(identity)
-        self.identity_icon.setObjectName("SidebarBrandIcon")
-        self.identity_icon.setFixedSize(44, 44)
-        self.identity_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.identity_icon.setSizePolicy(
-            QSizePolicy.Policy.Fixed,
-            QSizePolicy.Policy.Fixed,
-        )
-
-        icon_path = Path(app_icon_path)
-        if icon_path.is_file():
-            pixmap = QPixmap(str(icon_path))
-            if not pixmap.isNull():
-                self.identity_icon.setPixmap(
-                    pixmap.scaled(
-                        42,
-                        42,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                )
-
-        text_box = QWidget(identity)
-        text_box.setObjectName("SidebarBrandText")
-        text_layout = QVBoxLayout(text_box)
-        text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(3)
-        text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
-        self.brand_title = QLabel("XCC", text_box)
-        self.brand_title.setObjectName("SidebarBrandTitle")
-        self.brand_subtitle = QLabel("Context Collector", text_box)
-        self.brand_subtitle.setObjectName("SidebarBrandSubtitle")
-
-        text_layout.addWidget(self.brand_title)
-        text_layout.addWidget(self.brand_subtitle)
-
-        layout.addWidget(
-            self.identity_icon,
-            0,
-            Qt.AlignmentFlag.AlignVCenter,
-        )
-        layout.addWidget(text_box, 1, Qt.AlignmentFlag.AlignVCenter)
-        return identity
 
     def _separator(self) -> QFrame:
         separator = QFrame(self)
