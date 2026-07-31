@@ -68,7 +68,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
 For a complete release-candidate validation:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0
 ```
 
 ## Change guidelines
@@ -93,6 +93,19 @@ Do not log or persist detected secret values. Safety output may contain only san
 
 Collection work belongs outside the Qt main thread. Clipboard access, dialogs, and widget mutation remain on the GUI thread. Cancellation must be cooperative and must not publish partial output.
 
+Sidebar changes must preserve the final navigation contract:
+
+- real buttons rather than item-view rows;
+- exclusive selection;
+- Up/Down access to all four pages;
+- wheel input across the complete sidebar surface;
+- no sidebar scrollbar or `QScrollArea`;
+- one page change per wheel event;
+- accumulated partial touchpad deltas;
+- bounded first/last-page behavior;
+- focus transfer to the active page;
+- independent page-content scrolling.
+
 ## Documentation and screenshots
 
 Keep terminology aligned across README, architecture, release notes, validation docs, and the UI:
@@ -106,7 +119,7 @@ Keep terminology aligned across README, architecture, release notes, validation 
 - Last Run
 - Runtime History
 
-Update `docs/screenshots/xcc-collect.png` and `docs/screenshots/xcc-history.png` only when they represent the current release UI. Screenshots must not expose private paths, credentials, or proprietary project content.
+Update `docs/screenshots/xcc-collect.png` and `docs/screenshots/xcc-history.png` only when they represent the current release UI. Screenshots must not expose credentials, user-profile names, private repositories, client data, or proprietary content. A deliberate path to a public demonstration repository is acceptable.
 
 ## Workspace cleanup
 
@@ -125,10 +138,7 @@ powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1
 The default command preserves `.venv`, `artifacts`, and the legacy local `release` directory. Remove those only through explicit switches:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1 `
-    -IncludeArtifacts `
-    -IncludeLegacyReleaseArchives `
-    -IncludeVirtualEnvironment
+powershell -ExecutionPolicy Bypass -File scripts\clean_workspace.ps1 -IncludeArtifacts -IncludeLegacyReleaseArchives -IncludeVirtualEnvironment
 ```
 
 Do not substitute `git clean -xfd`; it cannot distinguish disposable build outputs from release-candidate evidence or local environments.

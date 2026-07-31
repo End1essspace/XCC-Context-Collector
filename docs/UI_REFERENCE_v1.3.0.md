@@ -3,6 +3,7 @@
 Version: 1.0  
 Target release: `v1.3.0`  
 Status: **FROZEN FOR IMPLEMENTATION**  
+Implementation status: **COMPLETE — FINAL v1.3.0 RELEASE-CANDIDATE BASELINE**  
 Applies to: supported PySide6 application (`gui.py -> xcc.gui -> xcc.pipeline`)  
 Minimum supported window: `920 × 620`
 
@@ -185,7 +186,7 @@ Requirements:
   second full-width application header or a competing card;
 - the brand lockup uses the transparent application artwork directly, without
   a square logo-card or decorative frame;
-- the identity zone is 72 px high, with a 44 px logo area, a 42 px rendered
+- the final identity zone is 64 px high, with a 44 px logo area, a 42 px rendered
   artwork target, and an 18 px `XCC` title so the brand remains visible without
   overpowering navigation or the Collect page;
 - logo, title, and subtitle share one vertical center and align with the
@@ -201,6 +202,16 @@ Requirements:
 - primary navigation rows use 50 px height and 8 px inter-item spacing;
 - Settings must never be clipped by delegate, viewport, or DPI rounding;
 - Up and Down keyboard navigation includes all four actions;
+- the complete sidebar surface accepts wheel input, including the identity,
+  labels, buttons, separators, and empty space;
+- wheel navigation does not create a scrollbar or `QScrollArea`;
+- one wheel event changes at most one page;
+- partial high-resolution wheel and touchpad deltas accumulate until one
+  standard step is reached;
+- wheel navigation stops at Collect and About rather than wrapping;
+- focus moves to the newly selected button so the previous action cannot keep
+  a stale secondary highlight;
+- wheel input outside the sidebar remains available to page content;
 - keyboard focus and accessible names remain intact.
 
 The sidebar must never visually overpower the Collect page.
@@ -589,6 +600,10 @@ Transactional behavior is non-negotiable: Cancel must leave the original selecti
 - keyboard focus is visible;
 - tab order follows visual order;
 - radio controls support standard arrow-key behavior;
+- Up and Down move through all four sidebar pages;
+- wheel input over the complete sidebar changes one page per standard step;
+- partial high-resolution deltas accumulate and bounded navigation never wraps;
+- wheel selection transfers focus to the new active sidebar button;
 - Source review supports keyboard activation;
 - `Delete` removes selected review rows;
 - `Esc` keeps its existing application hide-to-tray behavior outside modal dialogs;
@@ -650,6 +665,10 @@ The UI reference contract is satisfied only when:
 - [ ] primary action and active sidebar emphasis remain restrained;
 - [ ] dialogs match the final visual system;
 - [ ] keyboard and accessibility behavior passes;
+- [ ] wheel navigation works across the complete sidebar without a scrollbar;
+- [ ] one wheel event changes at most one page and partial deltas accumulate;
+- [ ] wheel navigation stops at the first and last page;
+- [ ] focus follows the active page without a stale secondary highlight;
 - [ ] 920×620 has no clipping or horizontal scrolling;
 - [ ] 100%, 125%, and 150% Windows scaling passes;
 - [ ] all existing automated tests pass;
@@ -659,7 +678,7 @@ The UI reference contract is satisfied only when:
 
 ## 14. Approval and Change Control
 
-This contract is frozen for the v1.3.0 implementation cycle.
+This contract is frozen for the v1.3.0 release candidate. The implementation is complete; only release-blocking corrections may change it.
 
 Changes are allowed only when:
 

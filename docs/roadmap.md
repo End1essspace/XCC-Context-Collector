@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-31  
 Current source version: `1.3.0`  
-Current release state: **v1.3.0 RELEASE CANDIDATE PREPARATION — M15.10 IN PROGRESS**  
+Current release state: **v1.3.0 RELEASE CANDIDATE — DOCUMENTATION AND SCREENSHOTS FROZEN; AUTOMATED GATE NEXT**  
 Supported product boundary: `gui.py -> xcc.gui -> xcc.pipeline`
 
 ---
@@ -34,7 +34,7 @@ The supported release application is the PySide6 desktop GUI. Legacy Tkinter and
 | M12 Selected Files Review | DONE | Selected files can be reviewed and edited transactionally |
 | M13 Workflow Regression & UX Polish | DONE | Edge cases and end-to-end workflow coverage completed |
 | M14 Documentation & Version Integration | DONE | Source and release documentation moved to v1.3.0 |
-| M15 v1.3.0 Validation and Release | IN PROGRESS | Release hardening, final interface redesign, packaged validation, publication |
+| M15 v1.3.0 Validation and Release | IN PROGRESS — M15.10 | UI and documentation frozen; automated RC gate, packaged evidence, and publication remain |
 | v1.4.0 Windows Workflow & Distribution | PLANNED | Installer, editable hotkeys, persistent history, update availability |
 | v1.5.0 Advanced Context Rules | PLANNED | Profiles, rule editor, preview, advanced output controls |
 
@@ -1033,7 +1033,8 @@ restoring a restrained product hierarchy.
 #### Final sidebar brand scale
 
 - [x] keep the transparent logo treatment without a square container;
-- [x] reduce the identity zone from 82 px to 72 px;
+- [x] reduce the identity zone from the 82 px product-scale pass to 72 px, then
+  complete the final validated polish at 64 px;
 - [x] reduce the logo area from 56 px to 44 px;
 - [x] render the application artwork at 42 px with smooth scaling;
 - [x] reduce the `XCC` title from 20 px to 18 px;
@@ -1125,23 +1126,56 @@ Completed:
 fix: complete v1.3.0 interface polish
 ```
 
+### M15.9.1 — Sidebar Wheel Navigation and Focus Synchronization
+
+**Status: DONE**
+
+- [x] make the complete sidebar surface accept wheel input;
+- [x] switch exactly one page per standard wheel step;
+- [x] accumulate partial high-resolution wheel and touchpad deltas;
+- [x] stop at Collect and About instead of wrapping;
+- [x] keep page-content scrolling independent;
+- [x] avoid adding a sidebar `QScrollArea` or visible scrollbar;
+- [x] move focus to the newly active page;
+- [x] remove the stale secondary focus treatment from the previous button;
+- [x] add Qt regression coverage for wheel direction, boundaries, accumulation,
+  one-page movement, absence of scroll containers, and focus transfer;
+- [x] validate, commit, and push both focused changes.
+
+### Commits
+
+```text
+feat: add sidebar wheel navigation
+fix: sync sidebar focus with wheel navigation
+```
+
 ---
 
 ## M15.10 — Documentation Freeze and Release Candidate
 
-**Status: IN PROGRESS — DOCUMENTATION FREEZE**
+**Status: IN PROGRESS — DOCUMENTATION AND SCREENSHOTS FROZEN; RC GATE NEXT**
 
-### Documentation freeze
+### Documentation and screenshot freeze
 
-- [x] README aligned with the final Selected Files workflow and interface;
-- [x] changelog aligned with final v1.3.0 behavior;
-- [x] architecture expanded to include presentation, responsive, accessibility, threading, fidelity, security, and packaging boundaries;
-- [x] M15 validation procedure aligned with the final UI and release gate;
-- [x] release checklist aligned with the final release-candidate process;
-- [x] v1.3.0 release notes aligned with the final interface;
-- [x] roadmap statuses updated through M15.9;
-- [ ] replace `docs/screenshots/xcc-collect.png` with the final Collect screenshot;
-- [ ] replace `docs/screenshots/xcc-history.png` with the final History screenshot;
+- [x] rebuild README around the final product interface with concise bilingual
+  user guidance and full-width screenshots;
+- [x] align changelog and v1.3.0 release notes with the complete implemented
+  feature set;
+- [x] align architecture with Selected Files import, responsive UI, sidebar
+  wheel navigation, focus synchronization, threading, fidelity, safety, and
+  release boundaries;
+- [x] align UI reference with the final 64 px identity zone and complete
+  sidebar interaction contract;
+- [x] align validation, release checklist, portable guide, bug-reporting, and
+  contribution guidance with the release candidate;
+- [x] replace `docs/screenshots/xcc-collect.png` with the final Collect image;
+- [x] replace `docs/screenshots/xcc-history.png` with the final History image;
+- [x] allow deliberate public-repository paths in product demonstrations while
+  continuing to prohibit user-profile names, credentials, private repositories,
+  client data, and unrelated clipboard content;
+- [x] add documentation-regression assertions for the final wheel-navigation
+  and 64 px sidebar identity contract;
+- [ ] run the complete source gate;
 - [ ] commit and push the documentation-and-screenshot freeze.
 
 ### Automated gate
@@ -1160,12 +1194,17 @@ artifacts\XCC-v1.3.0-automated-gate.json
 
 ### Packaged validation
 
-- [ ] final application shell, sidebar, Setup, Last Run, dialogs, and responsive behavior;
+- [ ] final application shell, sidebar, Setup, Last Run, dialogs, and responsive
+  behavior;
+- [ ] complete-sidebar wheel navigation without a scrollbar;
+- [ ] focus synchronization after mouse, keyboard, and wheel page changes;
 - [ ] correct v1.3.0 labels and complete packaged assets;
 - [ ] Paste Paths, guarded `Ctrl+V`, and Selected Files Review;
 - [ ] all four collection modes;
-- [ ] source fidelity, Git separation, ignore rules, safety, budget, and cancellation;
-- [ ] Last Run, History, tray, native hotkey, autostart, config recovery, and single instance;
+- [ ] source fidelity, Git separation, ignore rules, safety, budget, and
+  cancellation;
+- [ ] Last Run, History, tray, native hotkey, autostart, config recovery, and
+  single instance;
 - [ ] minimum, normal, maximized, 100%, 125%, and 150% interface checks.
 
 ### Release evidence
@@ -1173,7 +1212,7 @@ artifacts\XCC-v1.3.0-automated-gate.json
 - [ ] automated report declares version `1.3.0`;
 - [ ] automated report declares `passed: true`;
 - [ ] clean-install validation passed;
-- [ ] manual evidence references the exact final ZIP SHA-256;
+- [ ] Windows 10 and Windows 11 evidence reference the exact final ZIP SHA-256;
 - [ ] final readiness validation passes;
 - [ ] repository is clean;
 - [ ] local `main` equals `origin/main`;
@@ -1312,17 +1351,19 @@ Every PowerShell command in project instructions must be written on one physical
 
 # Immediate Next Step
 
-Complete **M15.10 — Documentation Freeze and Release Candidate** in this order:
+Complete **M15.10 — Documentation Freeze and Release Candidate**:
 
-1. apply the documentation-freeze archive;
-2. capture and replace the final Collect and History screenshots;
-3. run the complete source gate;
-4. commit and push the frozen documentation and screenshots;
-5. run `scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0`;
-6. perform packaged validation and collect matching Windows evidence;
-7. run final readiness.
+1. apply the final documentation-and-screenshot archive;
+2. run the complete source gate;
+3. commit and push the frozen documentation;
+4. run `scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0`;
+5. validate the packaged interface and all four workflows;
+6. collect matching Windows 10 and Windows 11 evidence for the final ZIP;
+7. run final readiness;
+8. confirm clean synchronized `main` and green CI.
 
-After M15.10 passes for the final archive and release commit, continue with:
+After M15.10 passes for the exact final archive and release commit, continue
+with:
 
 > **M15.11 — Tag, Publish, and Verify v1.3.0**
 

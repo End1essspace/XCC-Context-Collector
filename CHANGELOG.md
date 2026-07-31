@@ -16,6 +16,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Selected Files Review dialog with relative paths, root visibility, multi-select removal, `Delete`, `Clear All`, `Cancel`, and transactional `Apply Changes`.
 - End-to-end regression coverage for AI path list import, review, removal, and final collection output.
 - Final reusable PySide6 interface system with shared theme tokens, reusable components, semantic capsules, responsive geometry policy, and real sidebar navigation buttons.
+- Wheel-based page navigation across the complete sidebar surface without a visible scrollbar or scroll container.
 - GUI semantic and accessibility regression coverage for dialogs, long paths, large selections, collection-active states, status roles, and version surfaces.
 
 ### Changed
@@ -29,6 +30,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - The Collect page now uses a compact product sidebar, responsive Setup composition, four semantic Last Run groups, and distinct header runtime and footer event-status roles.
 - Paste Paths and Selected Files Review now share the final application typography, spacing, button hierarchy, validation states, focus treatment, and disabled-state clarity.
 - The interface adapts from `920×620` through maximized 2K layouts while reusing the same widget instances and preserving tab order and collection behavior.
+- Sidebar wheel input changes at most one page per event, accumulates high-resolution touchpad deltas, stops at the first and last page, and moves keyboard focus with the active tab.
+- Public documentation and final Collect/History screenshots were rebuilt around the release-candidate interface.
 
 ### Fixed
 
@@ -40,6 +43,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Sidebar brand scale and vertical spacing no longer overpower the navigation or waste the top workspace area.
 - Restore-hotkey labels now display `Ctrl+Alt+X` consistently instead of exposing the lowercase configuration form.
 - Long project roots, `Mixed locations`, 100+ file selections, and disabled collection controls retain readable, accessible UI states.
+- Wheel navigation no longer leaves a stale focus treatment on the previously active sidebar button.
 
 ### Security
 
@@ -132,5 +136,3 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 [1.1.2]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.2
 [1.1.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.0
 [1.0.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.0.0
-
-

@@ -2,73 +2,75 @@
 
 ## Product boundary
 
-XCC Context Collector is a Windows-first PySide6 desktop application. The supported release path is:
+XCC Context Collector is a Windows-first PySide6 desktop application.
+
+Supported release path:
 
 ```text
 gui.py -> xcc.gui:run_gui -> xcc.pipeline
 ```
 
-After installation, the supported GUI entry point is:
+Installed entry point:
 
 ```text
 xcc-context-collector
 ```
 
-The package uses the standard `src` layout and is imported as `xcc`. Root launchers insert `src` into `sys.path` only for direct execution from a repository checkout.
+The package uses a standard `src` layout and is imported as `xcc`. Root launchers add `src` to `sys.path` only for direct execution from a repository checkout.
 
-The legacy Tkinter picker and standalone `keyboard` listener remain unsupported development-compatibility tools. New product behavior must target the PySide6 path.
+`run.py`, root `hotkey.py`, `xcc.main`, `xcc.picker`, and `xcc.hotkey` are unsupported legacy development-compatibility paths. New product behavior must target the PySide6 application.
 
 ## Runtime layers
 
 ```text
 Root launchers
-├── gui.py       supported PySide6 desktop application
+├── gui.py       supported PySide6 application
 ├── run.py       unsupported legacy Tkinter picker
 └── hotkey.py    unsupported legacy keyboard listener
 
 src/xcc
 ├── config.py
-│   └── application constants, supported files, and built-in exclusions
+│   └── supported files, built-in exclusions, defaults
 ├── models.py
-│   └── typed Git changes, collection results, outcomes, statistics, and history records
+│   └── typed Git changes, results, outcomes, statistics, history records
 ├── scanner.py / collector.py / tree.py
-│   └── project discovery, file acquisition, and project-tree construction
+│   └── project discovery, file acquisition, project-tree construction
 ├── git_utils.py
-│   └── repository validation, typed status parsing, changed-file selection, and staged/unstaged diff extraction
+│   └── repository validation, typed status, changed files, staged/unstaged diffs
 ├── ignore.py / safety.py
 │   └── project ignore rules and warning-only sensitive-context detection
 ├── formatter.py / optimizer.py / budget.py
-│   └── fidelity-preserving output construction and structure-aware budgeting
+│   └── fidelity-preserving output and structure-aware character budgeting
 ├── path_list_parser.py
 │   └── ordered extraction of path-like lines from plain text and Markdown
 ├── selected_files_importer.py / selected_files_review.py
-│   └── project-root resolution, validation, deduplication, and review models
+│   └── root resolution, validation, deduplication, display, transactional review
 ├── pipeline.py
 │   └── GUI-independent collection orchestration
 ├── qt_worker.py
-│   └── QThread bridge, progress signals, and cooperative cancellation
+│   └── QThread bridge, progress, cooperative cancellation
 ├── clipboard.py
 │   └── clipboard write boundary
 ├── settings.py
-│   └── local configuration loading, validation, persistence, and recovery
+│   └── local configuration, validation, persistence, recovery
 ├── autostart.py / native_hotkey.py
-│   └── Windows Startup shortcut and native restore-hotkey integration
+│   └── Windows Startup shortcut and native restore hotkey
 ├── resources.py
-│   └── source and PyInstaller runtime asset resolution
+│   └── source and PyInstaller asset resolution
 ├── ui_theme.py
-│   └── palette, geometry tokens, application QSS, and tray-menu QSS
+│   └── palette, geometry tokens, application QSS, tray-menu QSS
 ├── ui_components.py
-│   └── reusable headers, icons, capsules, metric rows, buttons, and helper text
-├── ui_shell.py / ui_sidebar.py
-│   └── runtime-state vocabulary, footer policy, hotkey display, and keyboard-accessible navigation
+│   └── reusable headers, icons, capsules, metric rows, buttons, helper text
+├── ui_shell.py
+│   └── runtime-state vocabulary, footer guidance, hotkey display
+├── ui_sidebar.py
+│   └── real navigation buttons, exclusive selection, keyboard and wheel navigation
 ├── ui_collect.py / ui_metrics.py
-│   └── mode-specific presentation policy and Last Run formatting/state policy
+│   └── mode presentation and Last Run formatting/state policy
 ├── ui_responsive.py
-│   └── content-viewport breakpoints and height-aware Collect geometry
-├── gui.py
-│   └── supported desktop shell, dialogs, tray, pages, settings, history, and single-instance behavior
-└── main.py / picker.py / hotkey.py
-    └── unsupported legacy development compatibility tools
+│   └── viewport breakpoints and height-aware Collect geometry
+└── gui.py
+    └── shell, pages, dialogs, tray, settings, history, single-instance behavior
 ```
 
 ## Collection data flow
@@ -84,7 +86,7 @@ scanner / git_utils / collector / safety
           ↓
 formatter + structure-aware budget planner
           ↓
-CollectionJobResult with typed CollectionResult
+typed CollectionResult
           ↓
 GUI thread performs optional safety confirmation
           ↓
@@ -93,11 +95,9 @@ GUI thread copies complete output to clipboard
 Last Run and metadata-only Runtime History update
 ```
 
-`pipeline.execute_collection()` has no GUI or clipboard dependency. Collection behavior is therefore testable independently of Qt widgets.
+`pipeline.execute_collection()` has no GUI or clipboard dependency. Collection behavior remains testable without Qt widgets.
 
 ## Selected Files import boundary
-
-Pasted path import occurs before collection and does not bypass the normal pipeline:
 
 ```text
 Clipboard text
@@ -106,9 +106,9 @@ path_list_parser.parse_path_list()
       ↓
 selected_files_importer.import_selected_files()
       ↓
-visible project-root resolution when relative paths require it
+visible project-root resolution when required
       ↓
-canonical validation, supported-type checks, and Windows-aware deduplication
+canonical validation + supported-type checks + Windows-aware deduplication
       ↓
 transactional merge into XccMainWindow.selected_paths
       ↓
@@ -117,42 +117,79 @@ optional Selected Files Review
 normal CollectionRequest and execute_collection() flow
 ```
 
-The parser and importer do not execute pasted content, expand environment variables, interpret globs, or search arbitrary filesystem locations. Relative paths are resolved only under the explicit project root. Canonically resolved paths that escape that root are rejected. Absolute files may remain external selections and produce `Mixed locations` when no reliable common root exists.
+The parser and importer do not execute pasted content, expand environment variables, interpret globs, or search arbitrary filesystem locations.
 
-Selected Files Review operates on a temporary ordered copy. `Cancel` leaves the active selection unchanged; `Apply Changes` commits the reviewed list.
+Relative paths are resolved only under the explicit project root. Canonically resolved paths that escape the root are rejected. Absolute files may remain external selections and produce `Mixed locations` when no reliable common root exists.
+
+Selected Files Review operates on a temporary ordered copy. **Cancel** leaves the active selection unchanged; **Apply Changes** commits the reviewed list.
 
 ## Presentation architecture
 
-The final v1.3.0 interface separates product policy from widget orchestration:
+The final v1.3.0 interface separates policy from orchestration:
 
 - `ui_theme.py` owns shared visual tokens and selectors;
 - `ui_components.py` owns reusable presentation primitives;
-- `ui_shell.py` owns the short runtime-state vocabulary and footer guidance policy;
-- `ui_sidebar.py` owns navigation buttons, exclusive selection, and Up/Down keyboard movement;
-- `ui_collect.py` owns mode labels, action labels, helper text, and Selected Files summaries;
+- `ui_shell.py` owns short runtime states and footer guidance;
+- `ui_sidebar.py` owns navigation interaction;
+- `ui_collect.py` owns mode labels, source actions, helper text, and source summaries;
 - `ui_metrics.py` owns number formatting and semantic metric states;
 - `ui_responsive.py` owns responsive width and height policy;
-- `gui.py` composes these layers and owns runtime interaction.
+- `gui.py` composes the layers and owns runtime interaction.
 
-The header reports short runtime state such as Ready, Working, Cancelling, Copied, Warnings, Failed, or Cancelled. The footer reports detailed progress, event results, and next-action guidance. These roles must remain distinct.
+The header reports short runtime state: Ready, Working, Cancelling, Copied, Warnings, Failed, or Cancelled.
+
+The footer reports progress, event results, and next-action guidance. Header and footer roles must remain distinct.
+
+## Sidebar interaction boundary
+
+The sidebar is a navigation surface, not a scrollable content area.
+
+Interaction contract:
+
+- Collect, History, Settings, and About are real `QPushButton` actions;
+- selection is exclusive;
+- Up/Down keyboard navigation includes all four pages;
+- the complete visual sidebar accepts wheel input, including brand, labels, buttons, separators, and empty space;
+- no sidebar `QScrollArea` or visible scrollbar is created;
+- one wheel event changes at most one page;
+- partial high-resolution wheel or touchpad deltas accumulate until one standard step is reached;
+- direction changes reset the partial accumulator;
+- wheel navigation stops at the first and last page;
+- keyboard focus moves to the newly active button so the previous page cannot retain a stale focus treatment;
+- wheel input outside the sidebar remains available to the active page.
 
 ## Responsive-layout boundary
 
-Width policy is derived from the Collect content viewport rather than the complete window width. Height density is calculated independently. The same widgets are moved between layouts; they are not duplicated and signal connections are not recreated.
+Width policy is derived from the Collect content viewport, not the full window width. Height density is calculated independently.
 
-The supported range begins at `920×620` and extends through maximized 2K displays. Horizontal scrolling is disabled. Vertical scrolling is enabled only when the natural content height exceeds the viewport.
+The same widgets are moved between layouts; widgets and signal connections are not duplicated.
+
+Supported range:
+
+```text
+minimum window: 920×620
+normal desktop window
+maximized 2K
+Windows scaling: 100%, 125%, 150%
+```
+
+Horizontal scrolling is disabled. Vertical scrolling appears only when natural Collect content cannot fit.
 
 ## Accessibility boundary
 
-Primary actions, status surfaces, metrics, dialogs, Source review, and navigation expose meaningful accessible names. Standard radio and checkbox behavior is preserved. Selected Files Review retains ExtendedSelection and `Delete`. Focus, hover, pressed, and disabled states are part of the frozen UI contract.
+Primary actions, status surfaces, metrics, dialogs, Source review, and navigation expose meaningful accessible names.
 
-The stored hotkey remains `ctrl+alt+x` for native registration, while product surfaces display `Ctrl+Alt+X`.
+Standard radio and checkbox behavior is preserved. Selected Files Review retains ExtendedSelection and `Delete`.
+
+Focus, hover, pressed, selected, and disabled states are part of the frozen UI contract. Mouse-wheel navigation must not create a second visual active state.
+
+The stored hotkey remains `ctrl+alt+x` for native registration; product surfaces display `Ctrl+Alt+X`.
 
 ## Threading boundary
 
 ### Worker thread
 
-The worker thread may perform:
+The worker may perform:
 
 - folder and project-tree scanning;
 - Git status and diff commands;
@@ -165,14 +202,14 @@ The worker thread may perform:
 
 The GUI thread owns:
 
-- all widget mutation;
+- widget mutation;
 - modal dialogs;
 - clipboard writes;
 - tray and window state;
 - run-history rendering;
 - final success/failure feedback.
 
-Cancellation is cooperative. Scanner, collector, safety, and tree operations check the cancellation state between units of work. A cancelled task emits no partial clipboard output.
+Cancellation is cooperative. Scanner, collector, safety, and tree operations check cancellation between units of work. A cancelled task emits no partial clipboard output.
 
 ## Source-fidelity contract
 
@@ -182,20 +219,56 @@ The formatter may add framing:
 
 ```text
 ===== file: relative/path.py =====
-
-<verbatim file payload>
 ```
 
-Compact mode applies only to XCC-generated headings, metadata, summaries, and tree text. Structure-aware budgeting includes complete source and diff sections or omits them with an explicit budget summary.
+It must append the file payload verbatim after that framing.
 
-## Security and privacy boundary
+Compact mode may change only XCC-generated metadata, headings, trees, summaries, and spacing.
 
-XCC is local-first and has no upload path. Sensitive-context detection is heuristic and warning-only. Warning summaries contain paths, line numbers, and categories, not detected secret values. Disabling the modal safety confirmation does not disable detection, counters, outcomes, or warning summaries.
+Character-budget planning operates on complete structural sections. Normal source files and Git diffs are never silently cut in the middle. Large-file summaries are explicit and typed.
 
-Runtime History stores metadata only. It does not store collected source, Git diff payloads, detected values, or failure-message bodies.
+## Git boundary
 
-## Packaging and release boundary
+Git mode uses null-delimited porcelain status and a typed change model.
 
-The portable release is built with PyInstaller and contains one application root with the executable, `_internal`, packaged assets, and `VERSION.txt`. The release process generates a ZIP, a SHA-256 checksum, and a machine-readable automated-gate report.
+Supported states include:
 
-Publication is blocked until source tests, clean-install validation, packaged smoke, archive validation, matching Windows 10/11 evidence, repository synchronization, and final readiness all pass for the same archive.
+- staged;
+- unstaged;
+- untracked;
+- renamed;
+- copied;
+- deleted;
+- paths with spaces;
+- Unicode paths.
+
+Staged and unstaged diffs remain separate. Deleted changes remain visible in Git context even when no current file payload exists.
+
+## Ignore and safety boundary
+
+Built-in excluded directories cannot be re-enabled by project rules.
+
+- Full Folder and Project Tree use root `.gitignore` and `.xccignore`.
+- Git Changed Files uses Git status and applies `.xccignore` as an additional layer.
+- Selected Files treats explicit selection as intentional.
+
+Safety detection is heuristic and warning-only. Reports contain sanitized metadata—path, line number, and category—not detected values. Disabling **Safety confirmation** affects only the modal prompt.
+
+## Local-data and release boundary
+
+Persistent settings:
+
+```text
+%USERPROFILE%\.xcc\config.json
+```
+
+Runtime History is in-memory and metadata-only.
+
+Official package:
+
+```text
+XCC-Context-Collector-v1.3.0-win64.zip
+XCC-Context-Collector-v1.3.0-win64.zip.sha256
+```
+
+The release gate binds the canonical version, archive filename, SHA-256, automated report, Windows 10/11 evidence, clean `main`, synchronization with `origin/main`, and green CI to the same release candidate.

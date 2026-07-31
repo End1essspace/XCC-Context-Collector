@@ -18,11 +18,7 @@ Do not download executables or repackaged archives from third-party mirrors.
 Place the ZIP and checksum file in the same folder, then run:
 
 ```powershell
-$Zip = "XCC-Context-Collector-v1.3.0-win64.zip"
-$Expected = ((Get-Content "$Zip.sha256" -Raw).Trim() -split "\s+")[0]
-$Actual = (Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($Actual -ne $Expected.ToLowerInvariant()) { throw "Checksum mismatch" }
-"Checksum verified: $Actual"
+$Zip="XCC-Context-Collector-v1.3.0-win64.zip"; $Expected=((Get-Content "$Zip.sha256" -Raw).Trim() -split "\s+")[0]; $Actual=(Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant(); if ($Actual -ne $Expected.ToLowerInvariant()) { throw "Checksum mismatch" }; "Checksum verified: $Actual"
 ```
 
 A checksum mismatch means the archive must not be used.

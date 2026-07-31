@@ -311,7 +311,7 @@ def test_v130_responsive_collect_layout_is_registered() -> None:
     assert "expanding Last Run" in m157
     assert "real navigation buttons" in m157
     assert "compact left-aligned radio group" in m157
-    assert "reduce the identity zone from 82 px to 72 px" in m157
+    assert "complete the final validated polish at 64 px" in m157
     assert "balanced Setup and Last Run density" in m157
     assert "mode_group_max_width" in responsive
     assert "ModeSelectorGroup" in gui
@@ -319,4 +319,26 @@ def test_v130_responsive_collect_layout_is_registered() -> None:
     assert "identity_mark" not in sidebar
     assert "#SidebarBrandMark" not in theme
 
+def test_v130_sidebar_wheel_navigation_is_documented() -> None:
+    sidebar = (PROJECT_ROOT / "src" / "xcc" / "ui_sidebar.py").read_text(
+        encoding="utf-8"
+    )
+    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
+    architecture = (
+        PROJECT_ROOT / "docs" / "ARCHITECTURE.md"
+    ).read_text(encoding="utf-8")
+    reference = (
+        PROJECT_ROOT / "docs" / "UI_REFERENCE_v1.3.0.md"
+    ).read_text(encoding="utf-8")
+    roadmap = (PROJECT_ROOT / "docs" / "roadmap.md").read_text(
+        encoding="utf-8"
+    )
+
+    assert "def _handle_wheel_event" in sidebar
+    assert "setFocus(Qt.FocusReason.MouseFocusReason)" in sidebar
+    assert "wheel navigation across the complete sidebar" in readme
+    assert "## Sidebar interaction boundary" in architecture
+    assert "no sidebar `QScrollArea` or visible scrollbar is created" in architecture
+    assert "wheel navigation does not create a scrollbar or `QScrollArea`" in reference
+    assert "M15.9.1 — Sidebar Wheel Navigation and Focus Synchronization" in roadmap
 

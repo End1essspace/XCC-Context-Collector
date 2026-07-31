@@ -57,7 +57,8 @@ Include:
 - whether **Start minimized to tray**, **Close to tray**, or **Start with Windows** was enabled;
 - whether `Ctrl+Alt+X` was already used by another process;
 - display scale and monitor arrangement for DPI or icon-rendering issues;
-- a cropped screenshot or short recording with private paths removed.
+- a cropped screenshot or short recording with credentials, user-profile names, private repository names, client data, and unrelated clipboard content removed;
+- for sidebar wheel defects, whether the input came from a wheel or touchpad, the starting page, direction, cursor location inside the sidebar, resulting page, and whether a second focus highlight remained.
 
 For single-instance problems, confirm whether an XCC process remains in Task Manager and whether the tray icon is present.
 
@@ -77,7 +78,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
 For release-candidate failures:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0
 ```
 
 Report whether a packaged XCC process was still running when build cleanup failed. Quit it from the tray before repeating a build.
@@ -99,10 +100,12 @@ Remove or replace:
 - credentials, tokens, keys, and connection strings;
 - private or proprietary source;
 - confidential Git diffs;
-- usernames and absolute profile paths;
+- usernames and absolute user-profile paths;
 - internal repository URLs;
 - clipboard content unrelated to the defect;
 - computer names and other personal identifiers.
+
+A deliberate path to a public demonstration repository is acceptable when it contains no personal profile segment or private project information.
 
 Usually sufficient:
 
