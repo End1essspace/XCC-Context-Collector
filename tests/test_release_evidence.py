@@ -137,7 +137,7 @@ def test_release_evidence_rejects_different_archive_hashes(tmp_path: Path) -> No
         )
 
 
-def test_v130_release_evidence_requires_selected_files_workflow_gates(
+def test_v130_evidence_requires_selected_files_workflow_gates(
     tmp_path: Path,
 ) -> None:
     windows_10 = tmp_path / "windows-10.json"
@@ -158,12 +158,13 @@ def test_v130_release_evidence_requires_selected_files_workflow_gates(
         )
 
 
-def test_v120_release_evidence_keeps_historical_base_gate_compatibility(
+def test_v120_evidence_keeps_historical_base_gate_compatibility(
     tmp_path: Path,
 ) -> None:
     archive_hash = "9" * 64
     windows_10 = tmp_path / "windows-10.json"
     windows_11 = tmp_path / "windows-11.json"
+
     for path, release in (
         (windows_10, "Windows 10"),
         (windows_11, "Windows 11"),
@@ -185,43 +186,25 @@ def test_v120_release_evidence_keeps_historical_base_gate_compatibility(
     assert summary.version == "1.2.0"
 
 
-def test_v130_gate_set_contains_explicit_selected_files_release_checks() -> None:
+def test_v130_gate_set_contains_selected_files_release_checks() -> None:
     assert set(V130_REQUIRED_GATES).issubset(REQUIRED_GATES)
     assert "selected_files_review_transactionality" in V130_REQUIRED_GATES
     assert "selected_files_relative_output" in V130_REQUIRED_GATES
+    assert "safety_confirmation_setting" in REQUIRED_GATES
 
 
-def test_v130_release_documents_are_complete() -> None:
+def test_current_release_documents_pass_the_readiness_validator() -> None:
     assert __version__ == "1.3.0"
     validate_release_documents(PROJECT_ROOT, version=__version__)
-
-    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
-    roadmap = (PROJECT_ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
-    validation = (PROJECT_ROOT / "docs" / "M15_VALIDATION.md").read_text(
-        encoding="utf-8"
-    )
-
-    assert "Current version: **v1.3.0**" in readme
-    assert "Текущая версия: **v1.3.0**" in readme
-    assert "Status: IMPLEMENTED — M15 RELEASE VALIDATION PENDING" in roadmap
-    assert "validate_release_candidate.ps1" in validation
-    assert "Windows 10" in validation
-    assert "Windows 11" in validation
 
 
 def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
     automated = (
         PROJECT_ROOT / "scripts" / "validate_release_candidate.ps1"
-    ).read_text(encoding="utf-8")
+    ).read_text(encoding="utf-8-sig")
     manual = (
         PROJECT_ROOT / "scripts" / "record_manual_validation.ps1"
-    ).read_text(encoding="utf-8")
-    build = (PROJECT_ROOT / "scripts" / "build_release.ps1").read_text(
-        encoding="utf-8"
-    )
-    smoke = (
-        PROJECT_ROOT / "scripts" / "smoke_packaged_app.ps1"
-    ).read_text(encoding="utf-8")
+    ).read_text(encoding="utf-8-sig")
 
     for marker in (
         "compileall",
@@ -239,28 +222,3 @@ def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
 
     for gate in REQUIRED_GATES:
         assert gate in manual
-
-    assert 'Get-Process -Name "XCC Context Collector"' in build
-    assert "Remove-DirectoryWithRetry" in build
-    assert "_internal\\assets" in smoke
-    assert "xcc_app.ico" in smoke
-    assert "xcc_tray.png" in smoke
-    assert "ui-setup.svg" in smoke
-    assert "ui-last-run.svg" in smoke
-    assert "ui-collect-copy.svg" in smoke
-
-
-def test_gui_exposes_persistent_optional_safety_confirmation() -> None:
-    gui_source = (PROJECT_ROOT / "src" / "xcc" / "gui.py").read_text(
-        encoding="utf-8"
-    )
-    settings_source = (
-        PROJECT_ROOT / "src" / "xcc" / "settings.py"
-    ).read_text(encoding="utf-8")
-
-    assert '"Safety confirmation"' in gui_source
-    assert "self.safety_confirmation_checkbox" in gui_source
-    assert "enabled=self.app_settings.confirm_safety_warnings" in gui_source
-    assert "confirm_safety_warnings: bool" in settings_source
-    assert "DEFAULT_CONFIRM_SAFETY_WARNINGS = True" in settings_source
-    assert "safety_confirmation_setting" in REQUIRED_GATES

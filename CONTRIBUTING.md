@@ -57,6 +57,8 @@ python -m pytest -q
 
 Behavior changes require regression tests. Documentation changes must preserve version markers, release-note markers, internal links, and the current screenshot paths.
 
+Repository tests must validate behavior or stable product, package, governance, and release contracts. Do not pin exact roadmap prose, milestone-history wording, QSS fragments, or internal symbol names when an existing behavioral test already covers the requirement.
+
 For packaging, runtime assets, tray, startup, or release automation changes, also run:
 
 ```powershell

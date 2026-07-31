@@ -1159,7 +1159,13 @@ fix: sync sidebar focus with wheel navigation
 
 - [x] **C1** remove unsupported legacy workflows and dependency surface;
 - [x] **C2** remove obsolete compatibility APIs and dead symbols;
-- [ ] **C3** replace brittle source-text and milestone-history tests;
+- [x] **C3** replace brittle source-text and milestone-history tests;
+  - keep package, dependency, entry-point, governance, CI, packaging, workspace,
+    release-document, and evidence contracts;
+  - remove exact roadmap prose, implementation-snippet, QSS-fragment, and
+    milestone-history assertions already covered by behavioral tests;
+  - rename `tests/test_m10_release_candidate.py` to the release-neutral
+    `tests/test_release_evidence.py`;
 - [ ] **C4** consolidate roadmap, validation docs, and unused assets;
 - [ ] **C5** re-freeze documentation, run the complete gate, and resume RC.
 
@@ -1183,8 +1189,8 @@ The release-candidate gate remains blocked until C1-C5 are validated, committed,
 - [x] allow deliberate public-repository paths in product demonstrations while
   continuing to prohibit user-profile names, credentials, private repositories,
   client data, and unrelated clipboard content;
-- [x] add documentation-regression assertions for the final wheel-navigation
-  and 64 px sidebar identity contract;
+- [x] preserve behavioral regression coverage for final wheel navigation and
+  the 64 px sidebar identity geometry without pinning roadmap wording;
 - [ ] run the complete source gate;
 - [ ] commit and push the documentation-and-screenshot freeze.
 
@@ -1361,12 +1367,12 @@ Every PowerShell command in project instructions must be written on one physical
 
 # Immediate Next Step
 
-Complete **C3 — Replace Brittle Repository Tests**:
+Complete **C4 — Documentation and Asset Consolidation**:
 
-1. remove source-text assertions that duplicate behavioral tests;
-2. keep version, package, release-tool, and governance integrity checks;
-3. rename the historical M10 release-evidence test to a release-neutral name;
-4. run the complete source gate;
-5. commit and push C3 before documentation consolidation.
+1. compress the implementation diary in `docs/roadmap.md` into release-level summaries;
+2. separate historical v1.2.0 validation from the current v1.3.0 release gate;
+3. remove duplication between validation procedure and release checklist;
+4. verify and remove unreferenced archival icon copies;
+5. run the complete source gate and commit/push C4 before the final re-freeze.
 
 The `v1.3.0` release-candidate gate and tag remain blocked until C1-C5 are complete.

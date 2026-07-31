@@ -7,17 +7,36 @@ from xcc import __version__
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
+RUNTIME_ASSETS = (
+    "xcc_app.ico",
+    "xcc_app.png",
+    "xcc_tray.ico",
+    "xcc_tray.png",
+    "nav-collect.svg",
+    "nav-history.svg",
+    "nav-settings.svg",
+    "nav-about.svg",
+    "ui-setup.svg",
+    "ui-last-run.svg",
+    "ui-volume.svg",
+    "ui-output.svg",
+    "ui-coverage.svg",
+    "ui-health.svg",
+    "ui-paste-paths.svg",
+    "ui-collect-copy.svg",
+)
+
 
 def test_repository_governance_files_exist() -> None:
-    required = [
+    required = (
         "LICENSE",
         "CHANGELOG.md",
         "CONTRIBUTING.md",
         "SECURITY.md",
+        "docs/ARCHITECTURE.md",
         "docs/BUG_REPORTING.md",
         "docs/PORTABLE_ZIP.md",
         "docs/RELEASE_CHECKLIST.md",
-        "docs/M10_VALIDATION.md",
         "docs/M15_VALIDATION.md",
         "docs/releases/v1.2.0.md",
         "docs/releases/v1.3.0.md",
@@ -30,62 +49,62 @@ def test_repository_governance_files_exist() -> None:
         ".github/ISSUE_TEMPLATE/bug_report.yml",
         ".github/ISSUE_TEMPLATE/feature_request.yml",
         ".github/ISSUE_TEMPLATE/config.yml",
-    ]
+    )
 
-    missing = [
-        path
-        for path in required
-        if not (PROJECT_ROOT / path).exists()
-    ]
+    missing = [path for path in required if not (PROJECT_ROOT / path).exists()]
     assert missing == []
 
 
-def test_windows_ci_contains_minimum_gate() -> None:
+def test_windows_ci_contains_the_minimum_release_gate() -> None:
     workflow = (
         PROJECT_ROOT / ".github" / "workflows" / "ci.yml"
     ).read_text(encoding="utf-8")
 
-    assert "runs-on: windows-latest" in workflow
-    assert '"3.13"' in workflow
-    assert "cache: pip" in workflow
-    assert "compileall" in workflow
-    assert "pytest -q" in workflow
-    assert "build_release.ps1" in workflow
-    assert "smoke_packaged_app.ps1" in workflow
-    assert "package_release.ps1" in workflow
-    assert "upload-artifact@v4" in workflow
+    for marker in (
+        "runs-on: windows-latest",
+        '"3.13"',
+        "cache: pip",
+        "compileall",
+        "pytest -q",
+        "build_release.ps1",
+        "smoke_packaged_app.ps1",
+        "package_release.ps1",
+        "upload-artifact@v4",
+    ):
+        assert marker in workflow
 
 
-def test_readme_contains_ci_release_and_screenshot_links() -> None:
+def test_readme_exposes_public_release_and_screenshot_links() -> None:
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
 
-    assert "actions/workflows/ci.yml/badge.svg" in readme
-    assert "xcc-context-collector/releases" in readme
-    assert "docs/screenshots/xcc-collect.png" in readme
-    assert "docs/screenshots/xcc-history.png" in readme
-    assert "docs/PORTABLE_ZIP.md" in readme
+    for marker in (
+        "actions/workflows/ci.yml/badge.svg",
+        "xcc-context-collector/releases",
+        "docs/screenshots/xcc-collect.png",
+        "docs/screenshots/xcc-history.png",
+        "docs/PORTABLE_ZIP.md",
+    ):
+        assert marker in readme
 
 
 def test_repository_version_consistency() -> None:
     assert validate_version_consistency(PROJECT_ROOT) == __version__
 
 
-def test_release_packaging_defaults_to_non_public_artifacts_directory() -> None:
+def test_release_packaging_uses_private_artifacts_and_checksum_validation() -> None:
     script = (
         PROJECT_ROOT / "scripts" / "package_release.ps1"
-    ).read_text(encoding="utf-8")
+    ).read_text(encoding="utf-8-sig")
 
     assert '[string]$OutputDirectory = "artifacts"' in script
     assert "Get-FileHash" in script
     assert "validate_release_archive.py" in script
 
+
 def test_workspace_hygiene_covers_generated_outputs() -> None:
     gitignore = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8")
     cleanup = (
         PROJECT_ROOT / "scripts" / "clean_workspace.ps1"
-    ).read_text(encoding="utf-8-sig")
-    build = (
-        PROJECT_ROOT / "scripts" / "build_release.ps1"
     ).read_text(encoding="utf-8-sig")
 
     for pattern in (
@@ -106,43 +125,20 @@ def test_workspace_hygiene_covers_generated_outputs() -> None:
         "build",
         "dist",
         "XCC Context Collector.spec",
-        "src\\xcc_context_collector.egg-info",
+        r"src\xcc_context_collector.egg-info",
     ):
         assert generated_path in cleanup
+
+
+def test_release_build_includes_every_runtime_asset() -> None:
+    build = (
+        PROJECT_ROOT / "scripts" / "build_release.ps1"
+    ).read_text(encoding="utf-8-sig")
 
     assert 'Remove-DirectoryWithRetry "build"' in build
     assert "Test-Path $SpecPath" in build
     assert '--add-data "assets;assets"' not in build
-    for asset_name in (
-        "xcc_app.ico",
-        "xcc_app.png",
-        "xcc_tray.ico",
-        "xcc_tray.png",
-        "nav-collect.svg",
-        "nav-history.svg",
-        "nav-settings.svg",
-        "nav-about.svg",
-        "ui-setup.svg",
-        "ui-last-run.svg",
-        "ui-volume.svg",
-        "ui-output.svg",
-        "ui-coverage.svg",
-        "ui-health.svg",
-        "ui-paste-paths.svg",
-        "ui-collect-copy.svg",
-    ):
+
+    for asset_name in RUNTIME_ASSETS:
+        assert (PROJECT_ROOT / "assets" / asset_name).is_file()
         assert asset_name in build
-
-def test_v130_selected_files_release_documentation_is_aligned() -> None:
-    readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
-    architecture = (PROJECT_ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
-    roadmap = (PROJECT_ROOT / "docs" / "roadmap.md").read_text(encoding="utf-8")
-    notes = (PROJECT_ROOT / "docs" / "releases" / "v1.3.0.md").read_text(encoding="utf-8")
-
-    assert "Selected Files AI workflow" in readme
-    assert "AI-workflow для Selected Files" in readme
-    assert "path_list_parser.py" in architecture
-    assert "selected_files_importer.py" in architecture
-    assert "M15 — v1.3.0 Validation and Release" in roadmap
-    assert "Version: 1.3.0" in notes
-    assert "## Validation" in notes

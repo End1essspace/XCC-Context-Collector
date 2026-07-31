@@ -32,6 +32,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - The interface adapts from `920×620` through maximized 2K layouts while reusing the same widget instances and preserving tab order and collection behavior.
 - Sidebar wheel input changes at most one page per event, accumulates high-resolution touchpad deltas, stops at the first and last page, and moves keyboard focus with the active tab.
 - Public documentation and final Collect/History screenshots were rebuilt around the release-candidate interface.
+- Repository regression tests now enforce stable package, governance, release-tool, and runtime boundaries instead of exact implementation text or milestone-history wording.
 
 ### Fixed
 
@@ -48,6 +49,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Removed
 
 - Unsupported Tkinter launchers, the standalone third-party `keyboard` listener, their optional dependency group, and their dedicated compatibility tests.
+- Brittle source-snippet, QSS-fragment, and roadmap-narrative assertions that duplicated behavioral regression coverage.
 
 ### Security
 
