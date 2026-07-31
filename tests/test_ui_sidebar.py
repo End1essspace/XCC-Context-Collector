@@ -7,9 +7,9 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QKeyEvent
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QPoint, QPointF, Qt
+from PySide6.QtGui import QKeyEvent, QWheelEvent
+from PySide6.QtWidgets import QApplication, QScrollArea
 
 from xcc.resources import resource_path
 from xcc.ui_sidebar import SidebarNavButton, SidebarNavigation
@@ -32,6 +32,19 @@ def _sidebar() -> SidebarNavigation:
             (resource_path("assets", "nav-settings.svg"), "Settings"),
             (resource_path("assets", "nav-about.svg"), "About"),
         ),
+    )
+
+
+def _wheel_event(delta: int) -> QWheelEvent:
+    return QWheelEvent(
+        QPointF(10, 10),
+        QPointF(10, 10),
+        QPoint(),
+        QPoint(0, delta),
+        Qt.MouseButton.NoButton,
+        Qt.KeyboardModifier.NoModifier,
+        Qt.ScrollPhase.ScrollUpdate,
+        False,
     )
 
 
@@ -103,3 +116,91 @@ def test_sidebar_identity_uses_product_scale_artwork_without_logo_card(
     assert not hasattr(sidebar, "identity_mark")
     assert sidebar.brand_title.text() == "XCC"
     assert sidebar.brand_subtitle.text() == "Context Collector"
+
+
+def test_sidebar_wheel_switches_pages_from_the_complete_sidebar_surface(
+    qapp: QApplication,
+) -> None:
+    sidebar = _sidebar()
+    sidebar.setCurrentRow(0)
+
+    QApplication.sendEvent(sidebar.identity_icon, _wheel_event(-120))
+    assert sidebar.currentRow == 1
+
+    QApplication.sendEvent(sidebar.button(1), _wheel_event(-120))
+    assert sidebar.currentRow == 2
+
+    QApplication.sendEvent(sidebar, _wheel_event(120))
+    assert sidebar.currentRow == 1
+
+
+def test_sidebar_wheel_accumulates_partial_trackpad_deltas(
+    qapp: QApplication,
+) -> None:
+    sidebar = _sidebar()
+    sidebar.setCurrentRow(0)
+
+    for target in (
+        sidebar.identity_icon,
+        sidebar.brand_title,
+        sidebar.button(0),
+    ):
+        QApplication.sendEvent(target, _wheel_event(-30))
+        assert sidebar.currentRow == 0
+
+    QApplication.sendEvent(sidebar, _wheel_event(-30))
+    assert sidebar.currentRow == 1
+
+
+def test_sidebar_wheel_changes_at_most_one_page_per_event(
+    qapp: QApplication,
+) -> None:
+    sidebar = _sidebar()
+    sidebar.setCurrentRow(0)
+
+    QApplication.sendEvent(sidebar, _wheel_event(-360))
+
+    assert sidebar.currentRow == 1
+
+
+def test_sidebar_wheel_stops_at_first_and_last_page(
+    qapp: QApplication,
+) -> None:
+    sidebar = _sidebar()
+
+    sidebar.setCurrentRow(0)
+    QApplication.sendEvent(sidebar, _wheel_event(120))
+    assert sidebar.currentRow == 0
+
+    sidebar.setCurrentRow(3)
+    QApplication.sendEvent(sidebar.identity_widget, _wheel_event(-120))
+    assert sidebar.currentRow == 3
+
+
+def test_sidebar_wheel_navigation_does_not_add_scroll_areas(
+    qapp: QApplication,
+) -> None:
+    sidebar = _sidebar()
+
+    assert sidebar.findChildren(QScrollArea) == []
+
+def test_sidebar_wheel_moves_focus_to_the_new_active_button(
+    qapp: QApplication,
+) -> None:
+    sidebar = _sidebar()
+    sidebar.show()
+    sidebar.setCurrentRow(1)
+    sidebar.button(1).setFocus(Qt.FocusReason.MouseFocusReason)
+    qapp.processEvents()
+
+    assert sidebar.button(1).hasFocus()
+
+    QApplication.sendEvent(sidebar, _wheel_event(-120))
+    qapp.processEvents()
+
+    assert sidebar.currentRow == 2
+    assert not sidebar.button(1).hasFocus()
+    assert sidebar.button(2).hasFocus()
+
+    sidebar.close()
+

@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
-from PySide6.QtCore import QSize, Qt, Signal
-from PySide6.QtGui import QIcon, QKeyEvent, QPixmap
+from PySide6.QtCore import QEvent, QSize, Qt, Signal
+from PySide6.QtGui import QIcon, QKeyEvent, QPixmap, QWheelEvent
 from PySide6.QtWidgets import (
     QButtonGroup,
     QFrame,
@@ -121,6 +121,7 @@ class SidebarNavigation(QFrame):
         self.setFixedWidth(228)
         self._current_row = -1
         self._buttons: list[SidebarNavButton] = []
+        self._wheel_delta = 0
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(14, 14, 14, 16)
@@ -158,6 +159,11 @@ class SidebarNavigation(QFrame):
         group.addButton(about_button, 3)
         layout.addWidget(about_button)
 
+        # Treat the complete visual sidebar as one wheel-navigation surface,
+        # including its labels, brand lockup, buttons, and empty space.
+        for child in self.findChildren(QWidget):
+            child.installEventFilter(self)
+
     @property
     def buttons(self) -> tuple[SidebarNavButton, ...]:
         return tuple(self._buttons)
@@ -171,6 +177,16 @@ class SidebarNavigation(QFrame):
 
     def set_sidebar_width(self, width: int) -> None:
         self.setFixedWidth(max(190, width))
+
+    def eventFilter(self, watched, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Wheel:
+            return self._handle_wheel_event(event)
+        return super().eventFilter(watched, event)
+
+    def wheelEvent(self, event: QWheelEvent) -> None:
+        if self._handle_wheel_event(event):
+            return
+        super().wheelEvent(event)
 
     def setCurrentRow(self, row: int) -> None:
         if row < 0 or row >= len(self._buttons):
@@ -198,6 +214,7 @@ class SidebarNavigation(QFrame):
             return
 
         changed = row != self._current_row
+        self._wheel_delta = 0
         self._current_row = row
         for index, button in enumerate(self._buttons):
             button.set_selected(index == row)
@@ -211,6 +228,42 @@ class SidebarNavigation(QFrame):
         target = (row + delta) % len(self._buttons)
         self._activate(target, emit=True)
         self._buttons[target].setFocus(Qt.FocusReason.TabFocusReason)
+
+    def _handle_wheel_event(self, event: QWheelEvent) -> bool:
+        delta = event.angleDelta().y()
+        if delta == 0:
+            delta = event.pixelDelta().y()
+        if delta == 0:
+            return False
+
+        # High-resolution wheels and touchpads can deliver partial deltas.
+        # Accumulate them, but change at most one page for each input event.
+        if self._wheel_delta and (self._wheel_delta > 0) != (delta > 0):
+            self._wheel_delta = 0
+        self._wheel_delta += delta
+
+        if abs(self._wheel_delta) < 120:
+            event.accept()
+            return True
+
+        direction = -1 if self._wheel_delta > 0 else 1
+        self._wheel_delta = 0
+        self._move_by_wheel(direction)
+        event.accept()
+        return True
+
+    def _move_by_wheel(self, direction: int) -> None:
+        if not self._buttons:
+            return
+
+        current = self._current_row if self._current_row >= 0 else 0
+        target = max(0, min(len(self._buttons) - 1, current + direction))
+        if target != self._current_row:
+            self._activate(target, emit=True)
+            # Wheel navigation must move keyboard focus together with the
+            # selected page. Otherwise the previously focused button keeps
+            # the QSS :focus treatment and looks like a second active item.
+            self._buttons[target].setFocus(Qt.FocusReason.MouseFocusReason)
 
     def _build_identity(self, app_icon_path: str | Path) -> QWidget:
         """Build one product-scale brand lockup aligned with navigation."""
