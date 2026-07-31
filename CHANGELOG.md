@@ -33,6 +33,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Sidebar wheel input changes at most one page per event, accumulates high-resolution touchpad deltas, stops at the first and last page, and moves keyboard focus with the active tab.
 - Public documentation and final Collect/History screenshots were rebuilt around the release-candidate interface.
 - Repository regression tests now enforce stable package, governance, release-tool, and runtime boundaries instead of exact implementation text or milestone-history wording.
+- Release documentation was consolidated into one canonical v1.3.0 procedure, a non-duplicating operational checklist, and a release-scoped historical v1.2.0 validation record.
+- The roadmap now records release-level outcomes and the active path instead of duplicating Git history as an implementation diary.
 
 ### Fixed
 
@@ -50,6 +52,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Unsupported Tkinter launchers, the standalone third-party `keyboard` listener, their optional dependency group, and their dedicated compatibility tests.
 - Brittle source-snippet, QSS-fragment, and roadmap-narrative assertions that duplicated behavioral regression coverage.
+- The active-path `docs/M10_VALIDATION.md` copy and unreferenced `assets/original_icons/` archival duplicates.
 
 ### Security
 

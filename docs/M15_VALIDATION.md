@@ -1,16 +1,16 @@
-# M15 — v1.3.0 Validation and Release Procedure
+# XCC v1.3.0 Release Validation
 
-Status: **ACTIVE — DOCUMENTATION AND SCREENSHOTS FROZEN; RELEASE-CANDIDATE GATE NEXT**
+Status: **ACTIVE — RUN AFTER PRE-RC CLEANUP**
 
-This procedure applies to the exact commit and archive that will become XCC v1.3.0.
+This is the canonical procedure for the exact commit and archive that will become XCC v1.3.0. The compact operational checklist is [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md).
 
-## Release rule
+## Release invariant
 
-Do not tag or publish v1.3.0 until the source gate, packaged gate, Windows evidence, final readiness, repository synchronization, and CI all pass for the same release candidate.
+Do not tag or publish until every automated gate, packaged check, Windows evidence record, repository check, and CI run refers to the same release commit and final archive SHA-256.
 
-## 1. Documentation and repository preflight
+## 1. Source and documentation preflight
 
-Required public files:
+Required public release surfaces:
 
 ```text
 README.md
@@ -29,25 +29,22 @@ docs/screenshots/xcc-history.png
 
 Confirm:
 
-- version markers are `1.3.0`;
+- canonical version markers are `1.3.0`;
 - release notes contain `## Summary` and `## Validation`;
-- screenshots show the final interface;
-- screenshots contain no credentials, user-profile names, private repositories, client data, or unrelated clipboard content;
-- a deliberate path to a public demonstration repository is acceptable;
-- documentation describes wheel navigation, focus synchronization, responsive behavior, Selected Files import/review, source fidelity, safety, and release artifacts;
-- the branch is `main`;
-- the working tree is clean after the documentation commit;
-- local `main` equals `origin/main`.
+- screenshots represent the final UI and disclose no credentials, user-profile names, private repositories, client data, or unrelated clipboard content;
+- deliberate paths to public demonstration repositories are acceptable;
+- the supported runtime is `gui.py -> xcc.gui -> xcc.pipeline`;
+- obsolete legacy launchers, `docs/M10_VALIDATION.md`, and `assets/original_icons/` are absent.
 
-Source gate:
+Run:
 
 ```powershell
 python -m compileall -q src tests scripts gui.py; python scripts\check_version_consistency.py; python -m pytest -q
 ```
 
-## 2. Final interface gate
+## 2. Source UI gate
 
-Validate the source build at:
+Validate at minimum:
 
 ```text
 920×620
@@ -58,75 +55,62 @@ Windows scaling 100%, 125%, 150%
 
 Confirm:
 
-- native title bar remains intact;
-- sidebar brand, WORKSPACE label, upper navigation, anchored About, and footer align correctly;
-- no navigation label or icon is clipped;
-- Setup and Last Run remain balanced;
-- Collect & Copy remains visible;
-- dialogs share the final design system;
-- long paths, `Mixed locations`, 100+ files, and disabled controls remain readable;
-- header runtime state and footer event guidance remain distinct;
-- `Ctrl+Alt+X` is displayed consistently;
-- keyboard focus is visible;
-- no stale secondary active/focus state remains after page navigation.
+- no clipping or accidental scrollbar in the shell;
+- Setup, Last Run, primary action, dialogs, Settings, History, and About remain readable;
+- header runtime state and footer event guidance have distinct roles;
+- long paths, `Mixed locations`, 100+ selected files, disabled controls, and keyboard focus remain clear;
+- all four pages are reachable by mouse and keyboard.
 
-### Sidebar wheel navigation
+### Sidebar wheel contract
 
-Verify over the logo, brand text, section label, every navigation button, separators, and empty sidebar space:
+Test wheel input over brand elements, labels, buttons, separators, and empty sidebar space:
 
-- wheel down moves to the next page;
-- wheel up moves to the previous page;
-- one input event changes at most one page;
-- partial touchpad/high-resolution deltas accumulate;
+- down/up moves one page in the expected direction;
+- one event changes at most one page;
+- partial high-resolution deltas accumulate;
 - reversing direction clears the partial accumulator;
-- navigation stops at Collect and About;
-- no visible sidebar scrollbar or `QScrollArea` appears;
-- the newly active button receives focus;
-- wheel input over the page content continues to scroll page content instead of changing tabs.
+- movement stops at Collect and About;
+- no sidebar `QScrollArea` or visible scrollbar exists;
+- focus follows the active page;
+- wheel input over page content keeps normal page scrolling.
 
-## 3. Selected Files packaged behavior gate
+## 3. Selected Files gate
 
-Verify:
+Confirm:
 
-- Paste Paths appears only in Selected Files mode;
-- guarded `Ctrl+V` does not replace text inside editable fields;
-- plain, Markdown, numbered, quoted, backtick, and fenced lists are recognized;
+- Paste Paths is visible only in Selected Files mode;
+- guarded `Ctrl+V` does not hijack editable text fields;
+- plain, Markdown, numbered, quoted, backtick, and fenced lists are parsed;
 - relative paths require a valid visible project root;
 - canonical traversal outside the root is rejected;
-- absolute files can be imported without a root;
-- duplicates are not added again;
+- absolute files remain supported;
+- duplicate paths are not added twice;
 - missing, directory, unsupported, invalid, outside-root, and external states are reported;
-- stale remembered roots trigger root selection again;
-- separate repositories display `Mixed locations`;
-- Source opens Selected Files Review by mouse and keyboard;
-- extended selection, `Delete`, Remove Selected, Clear All, Cancel, and Apply Changes work transactionally;
-- final output uses stable relative headers.
+- stale roots require a new root selection;
+- unrelated repositories produce `Mixed locations`;
+- Source opens transactional Selected Files Review;
+- extended selection, `Delete`, Remove Selected, Clear All, Cancel, and Apply Changes behave correctly;
+- final output uses stable distinguishable paths.
 
-## 4. Existing four-mode regression gate
+## 4. Four-mode regression gate
 
-Verify:
+Validate Selected Files, Full Folder, Git Changed Files, and Project Tree.
 
-- Selected Files;
-- Full Folder;
-- Git Changed Files;
-- Project Tree.
+Across the relevant modes confirm:
 
-For the four modes, confirm:
-
-- exact source fidelity;
-- staged/unstaged Git separation;
-- rename/copy/delete/untracked handling;
-- spaces and Unicode paths;
+- exact source payload fidelity;
+- staged and unstaged Git separation;
+- rename, copy, delete, untracked, spaces, and Unicode handling;
 - `.gitignore`, `.xccignore`, and built-in exclusions;
-- safety warnings and optional confirmation;
-- character-budget summaries;
-- cancellation without partial clipboard output;
+- warning-only safety detection and optional confirmation;
+- explicit budget summaries without partial source payloads;
+- cooperative cancellation without clipboard replacement;
 - Last Run and metadata-only Runtime History;
-- tray, native hotkey, autostart, config recovery, and single instance.
+- tray, native `Ctrl+Alt+X`, autostart, config recovery, and single instance.
 
 ## 5. Automated release-candidate gate
 
-Run from the repository root:
+Run from repository root:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0
@@ -140,7 +124,7 @@ artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256
 artifacts\XCC-v1.3.0-automated-gate.json
 ```
 
-The automated report must declare:
+The report must declare:
 
 ```text
 xcc_version: 1.3.0
@@ -148,33 +132,30 @@ passed: true
 gates.selected_files_regression: true
 ```
 
-It must bind the report to the exact archive filename and SHA-256.
+The report must bind itself to the exact archive filename and SHA-256.
 
 ## 6. Packaged application gate
 
-Extract the generated archive to a clean writable folder and verify:
+Extract the generated ZIP to a clean writable directory and verify:
 
-- `XCC Context Collector.exe` starts without Python installed;
-- `_internal` and `VERSION.txt` are present;
-- About and footer show `1.3.0`;
-- application, tray, navigation, card, metric, dialog, and action assets are present;
-- no console window appears during normal GUI startup;
-- second launch restores the existing instance;
-- close-to-tray, tray restore, tray quit, `Esc`, and `Ctrl+Alt+X` work;
-- Start with Windows can be enabled and removed;
-- all UI and workflow checks from sections 2–4 pass in the packaged build.
+- the application starts without Python installed;
+- `XCC Context Collector.exe`, `_internal`, and `VERSION.txt` are present;
+- About, footer, and `VERSION.txt` show `1.3.0`;
+- every required application, tray, navigation, card, metric, dialog, and action asset is present;
+- no console window appears during normal startup;
+- a second launch restores the existing instance;
+- tray toggle/restore/Quit, close-to-tray, `Esc`, `Ctrl+Alt+X`, and Start with Windows work;
+- sections 2–4 also pass in the packaged build.
 
-## 7. Manual Windows evidence
+## 7. Windows 10 and Windows 11 evidence
 
-Create evidence for the exact final archive on Windows 10 and Windows 11. Both records must reference the same archive SHA-256 and contain every explicit v1.3.0 manual gate.
-
-Validate the records:
+Create one complete record on each OS for the same final ZIP SHA-256, then run:
 
 ```powershell
 python scripts\validate_release_evidence.py --expected-version 1.3.0 --expected-archive-sha256 <FINAL_SHA256> --evidence artifacts\manual-validation\<windows-10-record>.json --evidence artifacts\manual-validation\<windows-11-record>.json
 ```
 
-Evidence JSON is private release material. Do not publish it as a GitHub Release asset.
+Evidence JSON is private release material and must not be attached to the public release.
 
 ## 8. Final readiness
 
@@ -190,22 +171,14 @@ Expected result:
 Release readiness passed for v1.3.0.
 ```
 
-Final readiness must confirm:
+Before tagging also confirm:
 
-- canonical version and dated changelog entry;
-- release-note markers;
-- safe archive structure;
-- checksum match;
-- automated report match;
-- Windows 10/11 evidence match;
-- clean `main`;
-- local `main == origin/main`.
-
-Confirm Windows CI is green for the same release commit.
+- branch is `main`;
+- working tree is clean;
+- local `main` equals `origin/main`;
+- Windows CI is green for the same release commit.
 
 ## 9. Tag and draft release
-
-Only after final readiness passes:
 
 ```powershell
 git tag -a v1.3.0 -m "XCC Context Collector v1.3.0"
@@ -219,21 +192,17 @@ git push origin v1.3.0
 gh release create v1.3.0 artifacts\XCC-Context-Collector-v1.3.0-win64.zip artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256 --title "XCC Context Collector v1.3.0" --notes-file docs\releases\v1.3.0.md --draft
 ```
 
-Do not upload automated or manual evidence JSON as public assets.
+Publish only the ZIP and checksum as release assets.
 
-## 10. Post-publication verification
+## 10. Public artifact verification
 
 After publication:
 
-- download the public ZIP and checksum;
-- verify the downloaded ZIP against the published checksum;
-- extract and start the downloaded package;
-- confirm About, footer, and `VERSION.txt` show `1.3.0`;
-- repeat one Paste Paths collection;
-- confirm sidebar wheel and focus behavior;
-- confirm the release badge resolves to v1.3.0;
-- confirm both public assets are present;
-- mark the roadmap `DONE — RELEASED`;
+- download the public ZIP and checksum independently;
+- verify SHA-256;
+- extract and launch the downloaded package;
+- confirm version surfaces, Paste Paths, one collection, sidebar wheel/focus behavior, and both public assets;
+- update the roadmap to `DONE — RELEASED`;
 - publish the release announcement.
 
-v1.3.0 is complete only after the downloadable public artifact has been independently verified.
+The release is complete only after the public downloadable artifact passes this verification.

@@ -2,7 +2,7 @@
 
 Version: 1.0  
 Target release: `v1.3.0`  
-Status: **FROZEN FOR IMPLEMENTATION**  
+Status: **FROZEN RELEASE BASELINE**  
 Implementation status: **COMPLETE — FINAL v1.3.0 RELEASE-CANDIDATE BASELINE**  
 Applies to: supported PySide6 application (`gui.py -> xcc.gui -> xcc.pipeline`)  
 Minimum supported window: `920 × 620`

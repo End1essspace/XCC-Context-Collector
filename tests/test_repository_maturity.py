@@ -142,3 +142,11 @@ def test_release_build_includes_every_runtime_asset() -> None:
     for asset_name in RUNTIME_ASSETS:
         assert (PROJECT_ROOT / "assets" / asset_name).is_file()
         assert asset_name in build
+
+def test_historical_material_is_release_scoped_and_active_tree_is_clean() -> None:
+    assert (
+        PROJECT_ROOT / "docs" / "releases" / "v1.2.0-validation.md"
+    ).is_file()
+    assert not (PROJECT_ROOT / "docs" / "M10_VALIDATION.md").exists()
+    assert not (PROJECT_ROOT / "assets" / "original_icons").exists()
+
