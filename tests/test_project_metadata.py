@@ -41,8 +41,22 @@ def test_dependency_groups_keep_runtime_minimal() -> None:
         "pytest-cov>=6,<8",
     ]
     assert extras["build"] == ["pyinstaller>=6.11,<7"]
-    assert extras["legacy"] == ["keyboard==0.13.5"]
+    assert set(extras) == {"dev", "build"}
     assert all("keyboard" not in dependency for dependency in runtime)
+
+
+def test_unsupported_legacy_workflows_are_removed() -> None:
+    removed_paths = (
+        "run.py",
+        "hotkey.py",
+        "src/xcc/main.py",
+        "src/xcc/hotkey.py",
+        "src/xcc/picker.py",
+        "tests/test_hotkey.py",
+    )
+
+    for relative_path in removed_paths:
+        assert not (PROJECT_ROOT / relative_path).exists()
 
 
 def test_pyproject_exposes_supported_gui_entry_point() -> None:
@@ -341,4 +355,3 @@ def test_v130_sidebar_wheel_navigation_is_documented() -> None:
     assert "no sidebar `QScrollArea` or visible scrollbar is created" in architecture
     assert "wheel navigation does not create a scrollbar or `QScrollArea`" in reference
     assert "M15.9.1 — Sidebar Wheel Navigation and Focus Synchronization" in roadmap
-

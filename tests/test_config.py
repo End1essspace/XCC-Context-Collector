@@ -5,7 +5,6 @@ from pathlib import Path
 from xcc.config import (
     is_allowed_context_file,
     qt_context_file_filter,
-    tkinter_context_filetypes,
 )
 
 
@@ -33,13 +32,3 @@ def test_qt_filter_contains_new_extensions() -> None:
     assert ".env.example" in file_filter
     assert ".xccignore" in file_filter
 
-
-def test_tkinter_filter_contains_new_extensions() -> None:
-    filetypes = tkinter_context_filetypes()
-    patterns = filetypes[0][1]
-
-    assert "*.tsx" in patterns
-    assert "*.rs" in patterns
-    assert "Dockerfile" in patterns
-    assert ".env.example" in patterns
-    assert ".xccignore" in patterns

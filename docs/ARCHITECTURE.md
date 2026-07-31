@@ -16,17 +16,13 @@ Installed entry point:
 xcc-context-collector
 ```
 
-The package uses a standard `src` layout and is imported as `xcc`. Root launchers add `src` to `sys.path` only for direct execution from a repository checkout.
-
-`run.py`, root `hotkey.py`, `xcc.main`, `xcc.picker`, and `xcc.hotkey` are unsupported legacy development-compatibility paths. New product behavior must target the PySide6 application.
+The package uses a standard `src` layout and is imported as `xcc`. The root `gui.py` launcher adds `src` to `sys.path` only for direct execution from a repository checkout. There is no secondary Tkinter or third-party-keyboard product path.
 
 ## Runtime layers
 
 ```text
-Root launchers
-├── gui.py       supported PySide6 application
-├── run.py       unsupported legacy Tkinter picker
-└── hotkey.py    unsupported legacy keyboard listener
+Root launcher
+└── gui.py       supported PySide6 application
 
 src/xcc
 ├── config.py

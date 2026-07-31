@@ -25,7 +25,7 @@ if ($RunningPackagedProcess.Count -gt 0) {
 
 Write-Host "Running XCC v$AppVersion release-candidate gate..." -ForegroundColor Yellow
 
-& $PythonExecutable -m compileall -q src tests scripts gui.py run.py hotkey.py
+& $PythonExecutable -m compileall -q src tests scripts gui.py
 if ($LASTEXITCODE -ne 0) { throw "Compileall failed." }
 
 & $PythonExecutable scripts\check_version_consistency.py

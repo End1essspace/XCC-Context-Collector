@@ -45,6 +45,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Long project roots, `Mixed locations`, 100+ file selections, and disabled collection controls retain readable, accessible UI states.
 - Wheel navigation no longer leaves a stale focus treatment on the previously active sidebar button.
 
+### Removed
+
+- Unsupported Tkinter launchers, the standalone third-party `keyboard` listener, their optional dependency group, and their dedicated compatibility tests.
+
 ### Security
 
 - Relative traversal outside the chosen project root is rejected after canonical path resolution.

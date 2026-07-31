@@ -43,9 +43,6 @@ dev = [
 build = [
     "pyinstaller>=6.11,<7",
 ]
-legacy = [
-    "keyboard==0.13.5",
-]
 
 [project.gui-scripts]
 xcc-context-collector = "xcc.gui:run_gui"

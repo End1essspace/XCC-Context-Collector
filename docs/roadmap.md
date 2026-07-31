@@ -1153,7 +1153,17 @@ fix: sync sidebar focus with wheel navigation
 
 ## M15.10 — Documentation Freeze and Release Candidate
 
-**Status: IN PROGRESS — DOCUMENTATION AND SCREENSHOTS FROZEN; RC GATE NEXT**
+**Status: PAUSED — PRE-RC REPOSITORY CLEANUP IN PROGRESS**
+
+### Pre-RC repository cleanup
+
+- [ ] **C1** remove unsupported legacy workflows and dependency surface;
+- [ ] **C2** remove obsolete compatibility APIs and dead symbols;
+- [ ] **C3** replace brittle source-text and milestone-history tests;
+- [ ] **C4** consolidate roadmap, validation docs, and unused assets;
+- [ ] **C5** re-freeze documentation, run the complete gate, and resume RC.
+
+The release-candidate gate remains blocked until C1-C5 are validated, committed, and pushed as separate focused changes.
 
 ### Documentation and screenshot freeze
 
@@ -1330,7 +1340,7 @@ Every milestone must be completed in this order:
 ## Standard Local Gate
 
 ```powershell
-python -m compileall -q src tests scripts gui.py run.py hotkey.py; python scripts\check_version_consistency.py; python -m pytest -q
+python -m compileall -q src tests scripts gui.py; python scripts\check_version_consistency.py; python -m pytest -q
 ```
 
 ## Repository Synchronization
@@ -1351,20 +1361,12 @@ Every PowerShell command in project instructions must be written on one physical
 
 # Immediate Next Step
 
-Complete **M15.10 — Documentation Freeze and Release Candidate**:
+Complete **C1 — Remove Unsupported Legacy Workflows**:
 
-1. apply the final documentation-and-screenshot archive;
+1. apply the focused archive and delete the six obsolete files;
 2. run the complete source gate;
-3. commit and push the frozen documentation;
-4. run `scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0`;
-5. validate the packaged interface and all four workflows;
-6. collect matching Windows 10 and Windows 11 evidence for the final ZIP;
-7. run final readiness;
-8. confirm clean synchronized `main` and green CI.
+3. confirm the supported PySide6 application starts;
+4. commit and push C1;
+5. continue with C2 only after the pushed commit is confirmed.
 
-After M15.10 passes for the exact final archive and release commit, continue
-with:
-
-> **M15.11 — Tag, Publish, and Verify v1.3.0**
-
-The `v1.3.0` tag remains blocked until final readiness passes.
+The `v1.3.0` release-candidate gate and tag remain blocked until C1-C5 are complete.

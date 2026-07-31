@@ -42,7 +42,7 @@ Confirm:
 Source gate:
 
 ```powershell
-python -m compileall -q src tests scripts gui.py run.py hotkey.py; python scripts\check_version_consistency.py; python -m pytest -q
+python -m compileall -q src tests scripts gui.py; python scripts\check_version_consistency.py; python -m pytest -q
 ```
 
 ## 2. Final interface gate

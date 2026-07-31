@@ -158,12 +158,3 @@ def context_file_patterns() -> list[str]:
 def qt_context_file_filter() -> str:
     patterns = " ".join(context_file_patterns())
     return f"Context files ({patterns});;All files (*.*)"
-
-
-def tkinter_context_filetypes() -> list[tuple[str, str]]:
-    patterns = " ".join(context_file_patterns())
-
-    return [
-        ("Context files", patterns),
-        ("All files", "*.*"),
-    ]

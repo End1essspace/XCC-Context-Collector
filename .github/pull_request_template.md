@@ -10,7 +10,7 @@ Describe the user-visible or repository-level change and the problem it solves.
 
 ## Validation
 
-- [ ] `python -m compileall -q src tests scripts gui.py run.py hotkey.py`
+- [ ] `python -m compileall -q src tests scripts gui.py`
 - [ ] `python scripts/check_version_consistency.py`
 - [ ] `python -m pytest -q`
 - [ ] Regression tests were added or updated for behavior changes
@@ -30,7 +30,7 @@ Exact commands and results:
 - [ ] Current version and release-note markers remain consistent
 - [ ] Screenshots were updated only when they represent the release UI
 - [ ] Supported PySide6 product behavior remains primary
-- [ ] Unsupported legacy workflows were not expanded unintentionally
+- [ ] Removed compatibility workflows were not reintroduced
 
 ## Safety and repository hygiene
 

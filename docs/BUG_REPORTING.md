@@ -67,7 +67,7 @@ For single-instance problems, confirm whether an XCC process remains in Task Man
 Include the failing command and the final relevant error block. Standard gates are:
 
 ```powershell
-python -m compileall -q src tests scripts gui.py run.py hotkey.py
+python -m compileall -q src tests scripts gui.py
 python scripts\check_version_consistency.py
 python -m pytest -q
 powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1

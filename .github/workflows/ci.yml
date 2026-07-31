@@ -48,7 +48,7 @@ jobs:
 
       - name: Compile source
         shell: pwsh
-        run: python -m compileall -q src tests scripts gui.py run.py hotkey.py
+        run: python -m compileall -q src tests scripts gui.py
 
       - name: Check repository version consistency
         shell: pwsh

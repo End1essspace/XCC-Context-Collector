@@ -6,7 +6,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 $ProjectRoot = Split-Path -Parent $PSScriptRoot
-$ValidationRoot = Join-Path $env:TEMP "xcc-m8-clean-$PID"
+$ValidationRoot = Join-Path $env:TEMP "xcc-release-clean-$PID"
 $VenvRoot = Join-Path $ValidationRoot ".venv"
 $VenvPython = Join-Path $VenvRoot "Scripts\python.exe"
 $InstallTarget = "$ProjectRoot[dev,build]"
@@ -44,12 +44,12 @@ try {
         throw "Installed package metadata or GUI imports are invalid."
     }
 
-    & $VenvPython -c "import importlib.util; assert importlib.util.find_spec('keyboard') is None, 'keyboard must remain optional'"
+    & $VenvPython -c "import importlib.util; assert importlib.util.find_spec('keyboard') is None, 'unsupported keyboard package must not be installed'"
     if ($LASTEXITCODE -ne 0) {
-        throw "The legacy keyboard dependency was installed unexpectedly."
+        throw "The unsupported keyboard package was installed unexpectedly."
     }
 
-    Write-Host "M8 clean-install validation passed." -ForegroundColor Green
+    Write-Host "Release clean-install validation passed." -ForegroundColor Green
 }
 finally {
     if ($KeepEnvironment) {

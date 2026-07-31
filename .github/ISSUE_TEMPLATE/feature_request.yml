@@ -77,7 +77,7 @@ body:
     attributes:
       label: Scope checks
       options:
-        - label: This request targets the supported PySide6 desktop application rather than only a legacy entry point.
+        - label: This request targets the supported PySide6 desktop application.
           required: true
         - label: This request does not require posting private project content or credentials.
           required: true

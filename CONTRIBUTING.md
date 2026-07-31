@@ -36,7 +36,7 @@ gui.py
   -> scanner, Git, safety, formatter, and budget modules
 ```
 
-The root `run.py`, root `hotkey.py`, `xcc.main`, `xcc.picker`, and `xcc.hotkey` paths are unsupported legacy development tools. Do not add new product behavior only to those paths.
+The supported application boundary is intentionally singular: `gui.py -> xcc.gui -> xcc.pipeline`. Removed compatibility launchers and Tkinter workflows must not be reintroduced without a new product-level decision.
 
 Read before cross-cutting changes:
 
@@ -50,7 +50,7 @@ Read before cross-cutting changes:
 For every code or documentation change:
 
 ```powershell
-python -m compileall -q src tests scripts gui.py run.py hotkey.py
+python -m compileall -q src tests scripts gui.py
 python scripts\check_version_consistency.py
 python -m pytest -q
 ```

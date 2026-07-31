@@ -22,7 +22,7 @@ Every completed item must refer to the same release commit and final archive SHA
 Source verification:
 
 ```powershell
-python -m compileall -q src tests scripts gui.py run.py hotkey.py; python scripts\check_version_consistency.py; python -m pytest -q
+python -m compileall -q src tests scripts gui.py; python scripts\check_version_consistency.py; python -m pytest -q
 ```
 
 ## 2. Repository state
