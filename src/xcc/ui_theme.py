@@ -38,7 +38,8 @@ class UiMetrics:
 
     control_height: int = 40
     primary_action_height: int = 52
-    footer_height: int = 40
+    footer_height: int = 36
+    window_titlebar_height: int = 42
     sidebar_width: int = 228
     metric_row_height: int = 58
     card_radius: int = 14
@@ -73,6 +74,86 @@ QWidget {
     color: #F2F2F2;
     font-family: Segoe UI;
     font-size: 13px;
+}
+
+#WindowFrame {
+    background: #0D0E10;
+    border: 1px solid #343026;
+    border-radius: 12px;
+}
+
+#WindowBody,
+#WindowBrand,
+#WindowBrandIcon,
+#WindowBrandText,
+#WindowControls {
+    background: transparent;
+}
+
+#WindowTitleBar {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #15171A,
+        stop: 1 #121417
+    );
+    border: none;
+    border-bottom: 1px solid #343026;
+}
+
+#WindowBrandTitle {
+    color: #F2F3F4;
+    font-size: 14px;
+    font-weight: 800;
+    background: transparent;
+}
+
+#WindowBrandSubtitle {
+    color: #959AA2;
+    font-size: 10px;
+    font-weight: 500;
+    background: transparent;
+}
+
+#WindowVersionCapsule {
+    background: #191811;
+    border: 1px solid #57471F;
+    border-radius: 9px;
+    padding: 3px 10px;
+    color: #D2A533;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+#WindowControlButton {
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: #C6CAD0;
+    padding: 0px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+#WindowControlButton:hover,
+#WindowControlButton:focus {
+    background: #1A1916;
+    border: 1px solid #3B3528;
+    color: #F2F3F4;
+}
+
+#WindowControlButton:pressed {
+    background: #262116;
+}
+
+#WindowControlButton[role="close"]:hover,
+#WindowControlButton[role="close"]:focus {
+    background: #532126;
+    border: 1px solid #D86C6C;
+    color: #F2F3F4;
+}
+
+#WindowControlButton[role="close"]:pressed {
+    background: #6A282F;
 }
 
 #CollectPage,
@@ -449,8 +530,8 @@ QCheckBox::indicator:checked {
     background: #121316;
     border: 1px solid #3A3428;
     border-radius: 8px;
-    padding: 4px 12px;
-    min-width: 142px;
+    padding: 3px 12px;
+    min-width: 138px;
 }
 
 #StatusBar {
@@ -466,13 +547,13 @@ QCheckBox::indicator:checked {
 
 #StatusText {
     color: #B8BBC1;
-    font-size: 12px;
+    font-size: 11px;
     background: transparent;
 }
 
 #StatusVersion {
     color: #90959D;
-    font-size: 11px;
+    font-size: 10px;
     background: transparent;
 }
 #MetricGroupTitle {

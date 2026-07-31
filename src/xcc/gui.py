@@ -8,6 +8,7 @@ from PySide6.QtCore import QEvent, QObject, QLockFile, QSize, QThread, Qt, QTime
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
 from PySide6.QtWidgets import (
     QApplication,
+    QAbstractButton,
     QAbstractItemView,
     QButtonGroup,
     QCheckBox,
@@ -30,6 +31,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QGridLayout,
     QScrollArea,
+    QToolButton,
 )
 from PySide6.QtGui import (
     QAction,
@@ -198,6 +200,37 @@ class ClickableSourceLineEdit(QLineEdit):
             return
 
         super().keyPressEvent(event)
+
+
+class WindowTitleBar(QFrame):
+    """Compact custom title bar that keeps the dark product shell stable."""
+
+    def __init__(self, window: "XccMainWindow") -> None:
+        super().__init__(window)
+        self._window = window
+        self.setObjectName("WindowTitleBar")
+        self.setFixedHeight(METRICS.window_titlebar_height)
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            child = self.childAt(event.position().toPoint())
+            if not isinstance(child, QAbstractButton):
+                handle = self.window().windowHandle()
+                if handle is not None and handle.startSystemMove():
+                    event.accept()
+                    return
+
+        super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            child = self.childAt(event.position().toPoint())
+            if not isinstance(child, QAbstractButton):
+                self._window._toggle_maximize_restore()
+                event.accept()
+                return
+
+        super().mouseDoubleClickEvent(event)
 
 
 class SelectedFilesReviewDialog(QDialog):
@@ -718,6 +751,7 @@ class XccMainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("XCC Context Collector")
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint, True)
         if APP_ICON_PATH.exists():
             self.setWindowIcon(QIcon(str(APP_ICON_PATH)))
         self.setMinimumSize(920, 620)
@@ -759,12 +793,17 @@ class XccMainWindow(QMainWindow):
         self._setup_tray()
 
     def _setup_ui(self) -> None:
-        root = QWidget()
+        root = QFrame()
+        root.setObjectName("WindowFrame")
         root_layout = QVBoxLayout(root)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
 
+        self.window_title_bar = self._build_title_bar()
+        root_layout.addWidget(self.window_title_bar)
+
         body = QWidget()
+        body.setObjectName("WindowBody")
         body_layout = QHBoxLayout(body)
         body_layout.setContentsMargins(0, 0, 0, 0)
         body_layout.setSpacing(0)
@@ -788,16 +827,17 @@ class XccMainWindow(QMainWindow):
         root_layout.addWidget(body, 1)
 
         status_bar = QFrame()
+        self.status_bar = status_bar
         status_bar.setObjectName("StatusBar")
         status_bar.setFixedHeight(METRICS.footer_height)
 
         status_layout = QHBoxLayout(status_bar)
-        status_layout.setContentsMargins(22, 0, 22, 0)
-        status_layout.setSpacing(12)
+        status_layout.setContentsMargins(20, 0, 20, 0)
+        status_layout.setSpacing(10)
 
         self.footer_status_dot = QLabel()
         self.footer_status_dot.setObjectName("FooterStatusDot")
-        self.footer_status_dot.setFixedSize(9, 9)
+        self.footer_status_dot.setFixedSize(8, 8)
         set_widget_state(
             self.footer_status_dot,
             RuntimeState.READY.semantic_state,
@@ -825,6 +865,7 @@ class XccMainWindow(QMainWindow):
         root_layout.addWidget(status_bar)
 
         self.setCentralWidget(root)
+        self._sync_title_bar_state()
 
         self.nav.currentRowChanged.connect(self._change_page)
         self.nav.setCurrentRow(0)
@@ -851,6 +892,130 @@ class XccMainWindow(QMainWindow):
         self.paste_paths_shortcut.setContext(Qt.ShortcutContext.WindowShortcut)
         self.paste_paths_shortcut.activated.connect(self._on_paste_paths_shortcut)
         self._refresh_source_controls()
+
+    def _build_title_bar(self) -> WindowTitleBar:
+        title_bar = WindowTitleBar(self)
+        title_bar.setAccessibleName("Window title bar")
+
+        layout = QHBoxLayout(title_bar)
+        layout.setContentsMargins(12, 0, 8, 0)
+        layout.setSpacing(10)
+
+        brand = QWidget()
+        brand.setObjectName("WindowBrand")
+        brand.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        brand_layout = QHBoxLayout(brand)
+        brand_layout.setContentsMargins(0, 0, 0, 0)
+        brand_layout.setSpacing(10)
+
+        brand_icon = QLabel()
+        brand_icon.setObjectName("WindowBrandIcon")
+        brand_icon.setFixedSize(18, 18)
+        brand_icon.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        if APP_IMAGE_PATH.exists():
+            pixmap = QPixmap(str(APP_IMAGE_PATH))
+            brand_icon.setPixmap(
+                pixmap.scaled(
+                    18,
+                    18,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation,
+                )
+            )
+
+        brand_text = QWidget()
+        brand_text.setObjectName("WindowBrandText")
+        brand_text.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        brand_text_layout = QVBoxLayout(brand_text)
+        brand_text_layout.setContentsMargins(0, 0, 0, 0)
+        brand_text_layout.setSpacing(0)
+
+        self.window_brand_title = QLabel("XCC Context Collector")
+        self.window_brand_title.setObjectName("WindowBrandTitle")
+        self.window_brand_title.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+
+        self.window_brand_subtitle = QLabel("Local-first Windows utility")
+        self.window_brand_subtitle.setObjectName("WindowBrandSubtitle")
+        self.window_brand_subtitle.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+
+        brand_text_layout.addWidget(self.window_brand_title)
+        brand_text_layout.addWidget(self.window_brand_subtitle)
+        brand_layout.addWidget(brand_icon, 0, Qt.AlignmentFlag.AlignVCenter)
+        brand_layout.addWidget(brand_text, 0, Qt.AlignmentFlag.AlignVCenter)
+
+        self.window_version_capsule = QLabel(f"v{__version__}")
+        self.window_version_capsule.setObjectName("WindowVersionCapsule")
+        self.window_version_capsule.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.window_version_capsule.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+
+        controls = QWidget()
+        controls.setObjectName("WindowControls")
+        controls_layout = QHBoxLayout(controls)
+        controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.setSpacing(4)
+
+        self.window_minimize_button = QToolButton()
+        self.window_minimize_button.setObjectName("WindowControlButton")
+        self.window_minimize_button.setProperty("role", "minimize")
+        self.window_minimize_button.setText("–")
+        self.window_minimize_button.setFixedSize(42, 28)
+        self.window_minimize_button.setToolTip("Minimize")
+        self.window_minimize_button.clicked.connect(self.showMinimized)
+
+        self.window_maximize_button = QToolButton()
+        self.window_maximize_button.setObjectName("WindowControlButton")
+        self.window_maximize_button.setProperty("role", "maximize")
+        self.window_maximize_button.setFixedSize(42, 28)
+        self.window_maximize_button.clicked.connect(self._toggle_maximize_restore)
+
+        self.window_close_button = QToolButton()
+        self.window_close_button.setObjectName("WindowControlButton")
+        self.window_close_button.setProperty("role", "close")
+        self.window_close_button.setText("✕")
+        self.window_close_button.setFixedSize(42, 28)
+        self.window_close_button.setToolTip("Close")
+        self.window_close_button.clicked.connect(self.close)
+
+        for button in (
+            self.window_minimize_button,
+            self.window_maximize_button,
+            self.window_close_button,
+        ):
+            button.setCursor(Qt.CursorShape.PointingHandCursor)
+            controls_layout.addWidget(button)
+
+        layout.addWidget(brand, 0, Qt.AlignmentFlag.AlignVCenter)
+        layout.addStretch(1)
+        layout.addWidget(self.window_version_capsule, 0, Qt.AlignmentFlag.AlignVCenter)
+        layout.addWidget(controls, 0, Qt.AlignmentFlag.AlignVCenter)
+        return title_bar
+
+    def _toggle_maximize_restore(self) -> None:
+        if self.isMaximized():
+            self.showNormal()
+        else:
+            self.showMaximized()
+        self._sync_title_bar_state()
+
+    def _sync_title_bar_state(self) -> None:
+        if not hasattr(self, "window_maximize_button"):
+            return
+
+        if self.isMaximized():
+            self.window_maximize_button.setText("❐")
+            self.window_maximize_button.setToolTip("Restore")
+        else:
+            self.window_maximize_button.setText("□")
+            self.window_maximize_button.setToolTip("Maximize")
 
     def _setup_global_hotkey(self) -> None:
         self._cleanup_global_hotkey()
@@ -1268,6 +1433,11 @@ class XccMainWindow(QMainWindow):
             parent=self,
         )
 
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.WindowStateChange:
+            self._sync_title_bar_state()
+
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         if hasattr(self, "collect_page_layout"):
@@ -1358,14 +1528,14 @@ class XccMainWindow(QMainWindow):
         )
 
         stats_horizontal = 18 if compact else 20 if medium else 22
-        stats_vertical = 14 if compact else 15 if medium else 16
+        stats_vertical = 12 if compact else 13 if medium else 14
         self.stats_card_layout.setContentsMargins(
             stats_horizontal,
             stats_vertical,
             stats_horizontal,
             stats_vertical,
         )
-        self.stats_card_layout.setSpacing(10 if compact else 11 if medium else 12)
+        self.stats_card_layout.setSpacing(8 if compact else 9 if medium else 10)
         self.stats_card.setMinimumHeight(0)
         self.stats_card.setMaximumHeight(16_777_215)
         self.stats_card.setSizePolicy(
@@ -1816,15 +1986,15 @@ class XccMainWindow(QMainWindow):
 
         self.stats_card_layout = self._card_layout(stats_card)
         stats_layout = self.stats_card_layout
-        stats_layout.setContentsMargins(22, 16, 22, 16)
-        stats_layout.setSpacing(12)
+        stats_layout.setContentsMargins(22, 14, 22, 14)
+        stats_layout.setSpacing(10)
 
         stats_header = QWidget()
         stats_header.setObjectName("TransparentWidget")
-        stats_header.setFixedHeight(30)
+        stats_header.setFixedHeight(28)
         stats_header_layout = QHBoxLayout(stats_header)
         stats_header_layout.setContentsMargins(0, 0, 0, 0)
-        stats_header_layout.setSpacing(12)
+        stats_header_layout.setSpacing(10)
 
         stats_header_layout.addWidget(
             make_icon_title(
@@ -1843,8 +2013,8 @@ class XccMainWindow(QMainWindow):
         self.last_run_state_label = QLabel("No collection yet")
         self.last_run_state_label.setObjectName("LastRunState")
         self.last_run_state_label.setAccessibleName("Last run state")
-        self.last_run_state_label.setFixedHeight(30)
-        self.last_run_state_label.setMinimumWidth(150)
+        self.last_run_state_label.setFixedHeight(28)
+        self.last_run_state_label.setMinimumWidth(146)
         self.last_run_state_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         stats_header_layout.addWidget(
             self.last_run_state_label,
@@ -1873,7 +2043,7 @@ class XccMainWindow(QMainWindow):
         self.metrics_layout = QGridLayout()
         self.metrics_layout.setContentsMargins(0, 0, 0, 0)
         self.metrics_layout.setHorizontalSpacing(14)
-        self.metrics_layout.setVerticalSpacing(10)
+        self.metrics_layout.setVerticalSpacing(8)
 
         self.volume_metric_group = self._build_metric_group(
             "Volume",

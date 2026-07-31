@@ -68,10 +68,14 @@ def test_maximized_density_balances_setup_and_last_run(
     window.show()
     _settle(qapp, window)
 
+    assert window.windowFlags() & Qt.WindowType.FramelessWindowHint
+    assert window.window_title_bar.height() == 42
+    assert window.status_bar.height() == 36
     assert window.setup_card_layout.contentsMargins().top() == 22
     assert window.setup_grid.verticalSpacing() == 12
-    assert window.stats_card_layout.contentsMargins().top() == 16
-    assert window.stats_card_layout.spacing() == 12
+    assert window.stats_card_layout.contentsMargins().top() == 14
+    assert window.stats_card_layout.spacing() == 10
+    assert window.last_run_state_label.height() == 28
     assert all(metric.maximumHeight() <= 60 for metric in window.metric_capsules)
 
     window._is_quitting = True

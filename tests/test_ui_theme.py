@@ -31,7 +31,8 @@ def test_ui_palette_matches_frozen_v130_contract() -> None:
 def test_ui_metrics_keep_supported_geometry_contract() -> None:
     assert METRICS.control_height == 40
     assert METRICS.primary_action_height == 52
-    assert METRICS.footer_height == 40
+    assert METRICS.footer_height == 36
+    assert METRICS.window_titlebar_height == 42
     assert METRICS.sidebar_width == 228
     assert METRICS.metric_row_height == 58
     assert METRICS.card_radius == 14
@@ -45,6 +46,11 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
 
     for selector in (
         "QMainWindow",
+        "#WindowFrame",
+        "#WindowTitleBar",
+        "#WindowBrandTitle",
+        "#WindowVersionCapsule",
+        "#WindowControlButton",
         "#Sidebar",
         "#SidebarIdentity",
         "#SidebarBrandIcon",
