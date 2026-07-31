@@ -1,12 +1,14 @@
 # XCC v1.3.0 Release Validation
 
-Status: **ACTIVE — RUN AFTER PRE-RC CLEANUP**
+Status: **ACTIVE — FINAL RELEASE CANDIDATE**
 
 This is the canonical procedure for the exact commit and archive that will become XCC v1.3.0. The compact operational checklist is [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md).
 
 ## Release invariant
 
 Do not tag or publish until every automated gate, packaged check, Windows evidence record, repository check, and CI run refers to the same release commit and final archive SHA-256.
+
+C1–C4 cleanup is complete. Apply and commit the final C5 documentation re-freeze before running the automated candidate gate.
 
 ## 1. Source and documentation preflight
 
@@ -206,3 +208,4 @@ After publication:
 - publish the release announcement.
 
 The release is complete only after the public downloadable artifact passes this verification.
+

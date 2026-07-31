@@ -35,6 +35,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Repository regression tests now enforce stable package, governance, release-tool, and runtime boundaries instead of exact implementation text or milestone-history wording.
 - Release documentation was consolidated into one canonical v1.3.0 procedure, a non-duplicating operational checklist, and a release-scoped historical v1.2.0 validation record.
 - The roadmap now records release-level outcomes and the active path instead of duplicating Git history as an implementation diary.
+- Final v1.3.0 documentation was re-frozen after C1–C4 cleanup so the release-candidate gate starts from one clean, synchronized repository state.
 
 ### Fixed
 
@@ -146,3 +147,4 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 [1.1.2]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.2
 [1.1.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.0
 [1.0.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.0.0
+

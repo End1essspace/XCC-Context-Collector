@@ -2,7 +2,7 @@
 
 Last updated: 2026-07-31  
 Current source version: `1.3.0`  
-Current state: **PRE-RC CLEANUP — C4 PREPARED, LOCAL VALIDATION PENDING**  
+Current state: **FINAL RELEASE FREEZE — C5 SOURCE GATE**  
 Supported runtime: `gui.py -> xcc.gui -> xcc.pipeline`
 
 ---
@@ -116,7 +116,7 @@ Completed:
 
 ### M15.10 — Documentation Freeze & Release Candidate
 
-**Status: PAUSED FOR PRE-RC CLEANUP**
+**Status: FINAL RE-FREEZE — SOURCE GATE PENDING**
 
 Cleanup sequence:
 
@@ -125,10 +125,18 @@ Cleanup sequence:
 | C1 — Remove unsupported legacy workflows | DONE | Tkinter path, standalone `keyboard` listener, launchers, dependency, and tests removed |
 | C2 — Remove obsolete compatibility APIs | DONE | compatibility wrappers and dead symbols removed |
 | C3 — Replace brittle repository tests | DONE | prose/snippet assertions replaced with stable behavioral and repository contracts |
-| C4 — Consolidate documentation and archival assets | PREPARED | compact roadmap, separated historical validation, lean current checklist, unused icon copies removed after local application |
-| C5 — Re-freeze and run RC | NEXT | final documentation sync, complete automated gate, packaged validation, evidence, CI |
+| C4 — Consolidate documentation and archival assets | DONE | roadmap and validation material consolidated; historical validation release-scoped; unused icon copies removed |
+| C5 — Re-freeze and run RC | ACTIVE | freeze final documentation, pass the source gate, build the candidate, validate the package, collect evidence, and confirm CI |
 
-C4 is complete only after the archive is applied, the archival files are removed, the full test suite passes, and the change is committed and pushed.
+C1–C4 are closed. C5 must run from a clean `main` commit after the final documentation re-freeze is committed and pushed.
+
+### C5 execution order
+
+1. apply the final documentation re-freeze;
+2. run compileall, version consistency, and the full pytest suite;
+3. commit and push the re-freeze;
+4. run the automated release-candidate gate on the clean commit;
+5. complete packaged validation, Windows 10/11 evidence, readiness, and CI checks.
 
 ### C5 release-candidate outputs
 
@@ -228,3 +236,4 @@ python -m compileall -q src tests scripts gui.py; python scripts\check_version_c
 # Immediate next step
 
 Apply and validate **C4 — Documentation and Asset Consolidation**, remove the two obsolete paths listed by the C4 instructions, commit and push, then start C5.
+

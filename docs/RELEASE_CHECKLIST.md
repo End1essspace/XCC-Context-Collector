@@ -7,6 +7,7 @@ Every checked item must refer to the same release commit and final ZIP SHA-256.
 ## A. Repository freeze
 
 - [ ] C1–C4 cleanup changes are committed and pushed
+- [ ] C5 documentation re-freeze is applied, source-tested, committed, and pushed
 - [ ] canonical version is `1.3.0`
 - [ ] README, changelog, architecture, UI reference, release notes, roadmap, and screenshots are final
 - [ ] `docs/M10_VALIDATION.md` is absent
@@ -86,3 +87,4 @@ Commands and required arguments: sections 7–8 of `M15_VALIDATION.md`.
 - [ ] both public assets are present
 - [ ] roadmap is marked `DONE — RELEASED`
 - [ ] release announcement is published
+
