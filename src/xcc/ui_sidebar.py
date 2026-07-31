@@ -217,7 +217,9 @@ class SidebarNavigation(QFrame):
 
         identity = QFrame(self)
         identity.setObjectName("SidebarIdentity")
-        identity.setFixedHeight(72)
+        # Keep the product lockup compact so navigation starts sooner without
+        # shrinking the approved logo or typography.
+        identity.setFixedHeight(64)
         identity.setAccessibleName("XCC Context Collector")
 
         layout = QHBoxLayout(identity)
