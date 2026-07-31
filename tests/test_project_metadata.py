@@ -248,7 +248,7 @@ def test_v130_last_run_metrics_redesign_is_registered() -> None:
         roadmap.index("## M15.6"):
         roadmap.index("## M15.7")
     ]
-    assert "IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING" in m156
+    assert "**Status: DONE**" in m156
     assert "### M15.6.1 — Icon Rendering and Visual Polish" in m156
     assert "official Lucide SVG files are tinted at runtime" in m156
 
@@ -301,6 +301,7 @@ def test_v130_responsive_collect_layout_is_registered() -> None:
         roadmap.index("## M15.7"):
         roadmap.index("## M15.8")
     ]
+    assert "**Status: DONE**" in m157
     assert "M15.7.5 SIDEBAR BRAND SCALE POLISH" in m157
     assert "### M15.7.2 — Geometry Architecture Reset and Sidebar Rebuild" in m157
     assert "### M15.7.3 — Mode Group and Sidebar Brand Composition" in m157
@@ -317,3 +318,5 @@ def test_v130_responsive_collect_layout_is_registered() -> None:
     assert "SidebarBrandIcon" in sidebar
     assert "identity_mark" not in sidebar
     assert "#SidebarBrandMark" not in theme
+
+

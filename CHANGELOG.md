@@ -6,7 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
-## [1.3.0] - 2026-07-30
+## [1.3.0] - 2026-07-31
 
 ### Added
 
@@ -15,6 +15,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Explicit project-root resolution for relative paths with validation before selection state is changed.
 - Selected Files Review dialog with relative paths, root visibility, multi-select removal, `Delete`, `Clear All`, `Cancel`, and transactional `Apply Changes`.
 - End-to-end regression coverage for AI path list import, review, removal, and final collection output.
+- Final reusable PySide6 interface system with shared theme tokens, reusable components, semantic capsules, responsive geometry policy, and real sidebar navigation buttons.
+- GUI semantic and accessibility regression coverage for dialogs, long paths, large selections, collection-active states, status roles, and version surfaces.
 
 ### Changed
 
@@ -24,6 +26,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Documentation, architecture, release validation, package names, and canonical version metadata are aligned for v1.3.0.
 - Final release readiness now binds the automated-gate report and Windows 10/11 evidence to the exact archive filename and SHA-256.
 - Manual evidence now records explicit Paste Paths, root-boundary, issue-reporting, mixed-location, review, and relative-output gates for v1.3.0.
+- The Collect page now uses a compact product sidebar, responsive Setup composition, four semantic Last Run groups, and distinct header runtime and footer event-status roles.
+- Paste Paths and Selected Files Review now share the final application typography, spacing, button hierarchy, validation states, focus treatment, and disabled-state clarity.
+- The interface adapts from `920×620` through maximized 2K layouts while reusing the same widget instances and preserving tab order and collection behavior.
 
 ### Fixed
 
@@ -32,6 +37,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - Files from separate repositories no longer receive a misleading common project root.
 - Absolute external files remain importable without being incorrectly resolved under the selected project root.
 - Review changes are not applied when the dialog is cancelled, and `Apply Changes` stays disabled until the selection actually changes.
+- Sidebar brand scale and vertical spacing no longer overpower the navigation or waste the top workspace area.
+- Restore-hotkey labels now display `Ctrl+Alt+X` consistently instead of exposing the lowercase configuration form.
+- Long project roots, `Mixed locations`, 100+ file selections, and disabled collection controls retain readable, accessible UI states.
 
 ### Security
 
@@ -124,3 +132,5 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 [1.1.2]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.2
 [1.1.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.0
 [1.0.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.0.0
+
+

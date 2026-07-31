@@ -70,6 +70,20 @@ Click the Source summary to open **Selected Files Review**. The review dialog sh
 
 Paste path lists directly from AI responses, resolve relative paths against an explicit project root, merge them with manual selection, and review the final ordered file set before collection. Duplicate, missing, unsupported, external, and outside-root paths receive explicit handling.
 
+### Final desktop interface
+
+The supported PySide6 application now uses one consistent dark product system across the application shell, Collect page, Paste Paths, and Selected Files Review. The layout adapts from the supported `920×620` minimum through maximized 2K displays without duplicating widgets or changing collection behavior.
+
+The final interface includes:
+
+- a compact product sidebar with keyboard navigation;
+- distinct header runtime state and footer event guidance;
+- balanced Setup and Last Run density;
+- responsive large, medium, and compact arrangements;
+- consistent focus, hover, pressed, and disabled states;
+- accessible names for primary actions, status surfaces, metrics, and dialogs;
+- product-formatted `Ctrl+Alt+X` display while retaining the same native hotkey.
+
 ### Source-content fidelity
 
 Collected file payloads are framed without trimming, compacting, normalizing, or rewriting their contents. Compact mode affects only XCC-generated structural text.
@@ -393,6 +407,20 @@ Collect & Copy
 
 Списки путей из ответов AI можно вставлять напрямую, разрешать относительно явно выбранного корня проекта, объединять с ручным выбором и проверять перед сбором. Дубликаты, отсутствующие, неподдерживаемые, внешние и выходящие за root пути обрабатываются явно.
 
+### Финальный desktop-интерфейс
+
+Поддерживаемое PySide6-приложение теперь использует единую тёмную продуктовую систему для shell, страницы Collect, Paste Paths и Selected Files Review. Интерфейс адаптируется от минимального поддерживаемого окна `920×620` до maximized 2K без дублирования виджетов и изменения collection behavior.
+
+Финальный интерфейс включает:
+
+- компактный продуктовый sidebar с keyboard navigation;
+- разные роли для runtime state в header и event guidance в footer;
+- сбалансированную плотность Setup и Last Run;
+- responsive large, medium и compact-композиции;
+- единые focus, hover, pressed и disabled states;
+- accessibility names для основных действий, статусов, метрик и диалогов;
+- продуктовое отображение `Ctrl+Alt+X` без изменения native hotkey.
+
 ### Точное сохранение исходного содержимого
 
 XCC не обрезает, не уплотняет и не нормализует payload собранных файлов. Compact mode применяется только к структурному тексту, созданному самим XCC.
@@ -647,3 +675,5 @@ GitHub: [End1essspace](https://github.com/End1essspace)
 XCC Context Collector распространяется по лицензии [GNU General Public License v3.0](LICENSE).
 
 Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
+
+

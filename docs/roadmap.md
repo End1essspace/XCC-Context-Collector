@@ -1,8 +1,8 @@
 # XCC Roadmap
 
-Last updated: 2026-07-30  
+Last updated: 2026-07-31  
 Current source version: `1.3.0`  
-Current release state: **v1.3.0 IN DEVELOPMENT — UI FINALIZATION AND RELEASE VALIDATION**  
+Current release state: **v1.3.0 RELEASE CANDIDATE PREPARATION — M15.10 IN PROGRESS**  
 Supported product boundary: `gui.py -> xcc.gui -> xcc.pipeline`
 
 ---
@@ -258,7 +258,7 @@ Turn XCC from a useful utility into a dependable context-collection tool whose o
 
 # v1.3.0 Selected Files Workflow and Final Interface
 
-**Status: IN DEVELOPMENT — M15 IN PROGRESS**  
+**Status: RELEASE CANDIDATE PREPARATION — M15.10 IN PROGRESS**  
 Selected Files Workflow Status: IMPLEMENTED — M15 RELEASE VALIDATION PENDING
 
 ## Release Goal
@@ -395,7 +395,7 @@ Pasted text is treated only as path input. It is never executed as code or shell
 
 # M15 — v1.3.0 Validation and Release
 
-**Status: IN PROGRESS — CURRENT MILESTONE**
+**Status: IN PROGRESS — M15.10 DOCUMENTATION FREEZE AND RELEASE CANDIDATE**
 
 M15 is the release blocker. The `v1.3.0` tag must not be created until all M15 sub-milestones pass for the same final commit and archive.
 
@@ -722,7 +722,7 @@ feat: redesign collect setup workflow
 
 ## M15.6 — Last Run Metrics Redesign and Visual Calibration
 
-**Status: IMPLEMENTED — LOCAL VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 ### Goal
 
@@ -790,7 +790,7 @@ Source 349,675     Truncated       No Summary  0 / 0   Warnings / Errors 0 / 0
 
 ### M15.6.1 — Icon Rendering and Visual Polish
 
-**Status: IMPLEMENTED — INCLUDED IN THE M15.6 VALIDATION GATE**
+**Status: DONE**
 
 - [x] official Lucide SVG files are tinted at runtime instead of relying on embedded black strokes or `currentColor`;
 - [x] Setup, Last Run, Volume, Output, Coverage, Health, and Paste Paths use the semantic gold accent;
@@ -811,8 +811,8 @@ Source 349,675     Truncated       No Summary  0 / 0   Warnings / Errors 0 / 0
 - [x] empty metrics remain neutral and do not show misleading zeros;
 - [x] outcome, truncation, coverage, and issue states are semantic;
 - [x] no collection-domain module was changed;
-- [ ] full Qt suite and visual behavior pass local Windows validation;
-- [ ] changes are committed and pushed.
+- [x] full Qt suite and visual behavior pass local Windows validation;
+- [x] changes are committed and pushed.
 
 ### Intended commit
 
@@ -824,7 +824,9 @@ feat: redesign last run metrics
 
 ## M15.7 — Responsive Layout and Premium Visual Polish
 
-**Status: IMPLEMENTED — M15.7.5 SIDEBAR BRAND SCALE POLISH, LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
+
+**M15.7.5 SIDEBAR BRAND SCALE POLISH — CLOSED**
 
 ### Goal
 
@@ -887,7 +889,7 @@ fixed-height correction.
 
 ### M15.7.2 — Geometry Architecture Reset and Sidebar Rebuild
 
-**Status: IMPLEMENTED — LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 #### Sidebar rebuild
 
@@ -939,7 +941,7 @@ fixed-height correction.
 
 ### M15.7.3 — Mode Group and Sidebar Brand Composition
 
-**Status: IMPLEMENTED — LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 Windows review confirmed that the geometry reset solved clipping and scrollbar
 defects, but two composition problems remained: the four collection modes were
@@ -978,7 +980,7 @@ like a detached card rather than one integrated brand lockup.
 
 ### M15.7.4 — Product Density and Branding Polish
 
-**Status: IMPLEMENTED — LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 Windows review confirmed that M15.7.3 corrected mode distribution, but the final
 page still had an uneven density profile: Setup was visually compressed, Last
@@ -1021,7 +1023,7 @@ look smaller than the surrounding interface.
 
 ### M15.7.5 — Sidebar Brand Scale Polish
 
-**Status: IMPLEMENTED — LOCAL WINDOWS VALIDATION, COMMIT, AND PUSH PENDING**
+**Status: DONE**
 
 The M15.7.4 screenshot confirmed that removing the logo frame was correct, but
 the 54 px rendered artwork dominated the sidebar and made the identity heavier
@@ -1078,35 +1080,22 @@ fix: calibrate sidebar brand scale
 
 ## M15.8 — Dialog Visual Integration
 
-**Status: PLANNED**
+**Status: DONE**
 
-### Paste Paths Dialog
+Completed:
 
-- [ ] match final theme and typography;
-- [ ] refine project-root selector;
-- [ ] improve path input readability;
-- [ ] distinguish valid, warning, and error summaries;
-- [ ] keep disabled-state clarity;
-- [ ] preserve live validation.
+- [x] Paste Paths matches the final theme, typography, spacing, and action hierarchy;
+- [x] project-root input and Browse action are visually integrated;
+- [x] path input readability and long-root tooltips are preserved;
+- [x] validation summaries distinguish neutral, success, warning, and error states;
+- [x] Add Files remains disabled when nothing can be applied;
+- [x] Selected Files Review presents project root or `Mixed locations` clearly;
+- [x] file-count badge, list rows, selection state, and action rows are calibrated;
+- [x] multi-select, `Delete`, `Remove Selected`, `Clear All`, transactional `Cancel`, and explicit `Apply Changes` remain intact;
+- [x] dedicated dialog tests cover validation states, large selections, root scope, and transactionality;
+- [x] changes were validated, committed, and pushed.
 
-### Selected Files Review
-
-- [ ] refine project-root or Mixed locations presentation;
-- [ ] improve file-count badge;
-- [ ] use a calmer selected-row state;
-- [ ] preserve multi-select and `Delete`;
-- [ ] preserve `Remove Selected`;
-- [ ] preserve transactional `Cancel`;
-- [ ] preserve explicit `Apply Changes`;
-- [ ] handle long paths without layout breakage.
-
-### Acceptance Criteria
-
-- dialogs visually belong to the same product;
-- actions remain understandable without documentation;
-- no visual change weakens the existing workflow guarantees.
-
-### Intended commit
+### Commit
 
 ```text
 feat: align selected files dialogs with new UI
@@ -1116,64 +1105,21 @@ feat: align selected files dialogs with new UI
 
 ## M15.9 — UI Regression, Accessibility, and Final Polish
 
-**Status: PLANNED**
+**Status: DONE**
 
-### Automated Coverage
+Completed:
 
-Planned tests:
+- [x] mode-specific labels, Paste Paths visibility, Source summaries, clear behavior, and review opening are regression-covered;
+- [x] collection-active disabled state and header/footer status separation are covered;
+- [x] final hotkey display uses `Ctrl+Alt+X`;
+- [x] footer status, version, Last Run state, primary action, and metric rows expose accessibility names;
+- [x] long project roots and validation summaries expose useful tooltips and descriptions;
+- [x] keyboard focus treatment was strengthened for primary actions, Source review, and clear actions;
+- [x] disabled buttons, fields, radio buttons, and checkboxes remain legible;
+- [x] real-window semantics cover long paths, `Mixed locations`, 100+ files, clearing, review, and active collection state;
+- [x] final visual polish was validated, committed, and pushed.
 
-```text
-tests/test_gui_semantics.py
-tests/test_gui_responsive_layout.py
-tests/test_ui_components.py
-```
-
-Required checks:
-
-- [ ] mode-specific action labels;
-- [ ] Paste Paths visibility;
-- [ ] Source summary and Mixed locations;
-- [ ] clear behavior;
-- [ ] review opening;
-- [ ] responsive breakpoint switching;
-- [ ] metric number formatting;
-- [ ] collection-active disabled state;
-- [ ] header/footer status separation;
-- [ ] version labels;
-- [ ] keyboard accessibility;
-- [ ] no regression in existing Selected Files workflow tests.
-
-### Manual UI Checklist
-
-- [ ] hover, pressed, disabled, and focus states;
-- [ ] keyboard-only navigation;
-- [ ] long folder path;
-- [ ] one selected file;
-- [ ] 100+ selected files;
-- [ ] mixed repositories;
-- [ ] warning result;
-- [ ] failure result;
-- [ ] truncated result;
-- [ ] cancellation;
-- [ ] no-history state;
-- [ ] minimum window;
-- [ ] maximized window;
-- [ ] Windows scaling 100%, 125%, and 150%.
-
-### Final Visual Review
-
-- [ ] spacing;
-- [ ] alignment;
-- [ ] typography;
-- [ ] icon sizing;
-- [ ] divider lengths;
-- [ ] active sidebar weight;
-- [ ] primary button saturation;
-- [ ] Source affordance;
-- [ ] Last Run density;
-- [ ] screenshot parity with the approved design direction.
-
-### Intended commit
+### Commit
 
 ```text
 fix: complete v1.3.0 interface polish
@@ -1183,25 +1129,22 @@ fix: complete v1.3.0 interface polish
 
 ## M15.10 — Documentation Freeze and Release Candidate
 
-**Status: PLANNED**
+**Status: IN PROGRESS — DOCUMENTATION FREEZE**
 
-### Documentation
+### Documentation freeze
 
-Update after the final GUI is approved:
+- [x] README aligned with the final Selected Files workflow and interface;
+- [x] changelog aligned with final v1.3.0 behavior;
+- [x] architecture expanded to include presentation, responsive, accessibility, threading, fidelity, security, and packaging boundaries;
+- [x] M15 validation procedure aligned with the final UI and release gate;
+- [x] release checklist aligned with the final release-candidate process;
+- [x] v1.3.0 release notes aligned with the final interface;
+- [x] roadmap statuses updated through M15.9;
+- [ ] replace `docs/screenshots/xcc-collect.png` with the final Collect screenshot;
+- [ ] replace `docs/screenshots/xcc-history.png` with the final History screenshot;
+- [ ] commit and push the documentation-and-screenshot freeze.
 
-```text
-README.md
-CHANGELOG.md
-docs/ARCHITECTURE.md
-docs/M15_VALIDATION.md
-docs/RELEASE_CHECKLIST.md
-docs/releases/v1.3.0.md
-docs/roadmap.md
-docs/screenshots/xcc-collect.png
-docs/screenshots/xcc-history.png
-```
-
-### Automated Gate
+### Automated gate
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0
@@ -1215,33 +1158,22 @@ artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256
 artifacts\XCC-v1.3.0-automated-gate.json
 ```
 
-### Packaged Validation
+### Packaged validation
 
-- [ ] correct header, sidebar, footer, cards, and responsive layout;
-- [ ] correct v1.3.0 labels;
-- [ ] Paste Paths;
-- [ ] guarded `Ctrl+V`;
-- [ ] Selected Files Review;
+- [ ] final application shell, sidebar, Setup, Last Run, dialogs, and responsive behavior;
+- [ ] correct v1.3.0 labels and complete packaged assets;
+- [ ] Paste Paths, guarded `Ctrl+V`, and Selected Files Review;
 - [ ] all four collection modes;
-- [ ] source fidelity;
-- [ ] staged and unstaged Git separation;
-- [ ] ignore rules;
-- [ ] safety warnings;
-- [ ] character budget;
-- [ ] cancellation;
-- [ ] Last Run and History;
-- [ ] tray;
-- [ ] native restore hotkey;
-- [ ] autostart;
-- [ ] config recovery;
-- [ ] single instance;
-- [ ] application and tray icons.
+- [ ] source fidelity, Git separation, ignore rules, safety, budget, and cancellation;
+- [ ] Last Run, History, tray, native hotkey, autostart, config recovery, and single instance;
+- [ ] minimum, normal, maximized, 100%, 125%, and 150% interface checks.
 
-### Release Evidence
+### Release evidence
 
 - [ ] automated report declares version `1.3.0`;
 - [ ] automated report declares `passed: true`;
-- [ ] manual evidence references the final ZIP SHA-256;
+- [ ] clean-install validation passed;
+- [ ] manual evidence references the exact final ZIP SHA-256;
 - [ ] final readiness validation passes;
 - [ ] repository is clean;
 - [ ] local `main` equals `origin/main`;
@@ -1380,10 +1312,18 @@ Every PowerShell command in project instructions must be written on one physical
 
 # Immediate Next Step
 
-Apply and validate **M15.6 + M15.6.1 — Last Run Metrics, SVG Tinting, and Visual Calibration**, including the complete test suite and a real Windows screenshot at the normal maximized size. Confirm that all central Lucide icons are gold while the Collect & Copy icon remains dark.
+Complete **M15.10 — Documentation Freeze and Release Candidate** in this order:
 
-After the combined M15.6 milestone is committed and pushed, continue with:
+1. apply the documentation-freeze archive;
+2. capture and replace the final Collect and History screenshots;
+3. run the complete source gate;
+4. commit and push the frozen documentation and screenshots;
+5. run `scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0`;
+6. perform packaged validation and collect matching Windows evidence;
+7. run final readiness.
 
-> **M15.7 — Responsive Layout**
+After M15.10 passes for the final archive and release commit, continue with:
 
-The v1.3.0 tag and public release remain blocked until M15.11 is complete.
+> **M15.11 — Tag, Publish, and Verify v1.3.0**
+
+The `v1.3.0` tag remains blocked until final readiness passes.

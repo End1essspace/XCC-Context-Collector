@@ -1,16 +1,18 @@
 # XCC v1.3.0 Release Checklist
 
-This checklist is the operational companion to `docs/M15_VALIDATION.md`. A release is complete only when every applicable item has objective evidence.
+This checklist is the operational companion to `docs/M15_VALIDATION.md`. The release is complete only when every applicable item has objective evidence for the same release commit and archive.
 
 ## 1. Documentation and version freeze
 
 - [ ] `src/xcc/__init__.py` declares `1.3.0`
 - [ ] README contains both current-version markers for v1.3.0
-- [ ] `CHANGELOG.md` contains a dated `[1.3.0]` section
+- [ ] README describes the final responsive interface and Selected Files workflow
+- [ ] `CHANGELOG.md` contains the dated `[1.3.0]` section
 - [ ] `docs/releases/v1.3.0.md` is final and user-facing
-- [ ] `docs/roadmap.md` reports M11–M14 accurately
-- [ ] `docs/ARCHITECTURE.md` documents parser, importer, review, and security boundaries
+- [ ] `docs/roadmap.md` reports M11–M15.9 accurately and M15.10 as the active release-candidate stage
+- [ ] `docs/ARCHITECTURE.md` documents collection, presentation, responsive, accessibility, threading, fidelity, and security boundaries
 - [ ] `docs/M15_VALIDATION.md` matches implemented release tooling
+- [ ] final `xcc-collect.png` and `xcc-history.png` show the approved interface
 - [ ] no private paths, secrets, temporary hashes, or local-only evidence appear in public docs
 
 ```powershell
@@ -22,7 +24,7 @@ python scripts\check_version_consistency.py; python -m pytest tests\test_project
 - [ ] branch is `main`
 - [ ] working tree is clean
 - [ ] `main` equals `origin/main`
-- [ ] final M14 commit is pushed
+- [ ] final M15.10 release-candidate commit is pushed
 - [ ] Windows CI is green for that commit
 
 ```powershell
@@ -52,7 +54,21 @@ artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256
 artifacts\XCC-v1.3.0-automated-gate.json
 ```
 
-## 4. Selected Files workflow
+## 4. Final interface
+
+- [ ] sidebar brand scale and navigation density match the approved result
+- [ ] Setup and Last Run density are balanced
+- [ ] dialogs belong to the same design system
+- [ ] minimum `920×620`, normal, and maximized layouts pass
+- [ ] 100%, 125%, and 150% Windows scaling pass
+- [ ] keyboard-only navigation passes
+- [ ] focus, hover, pressed, and disabled states remain clear
+- [ ] long paths, `Mixed locations`, and 100+ files do not break layout
+- [ ] header runtime state and footer event status remain distinct
+- [ ] hotkey displays as `Ctrl+Alt+X`
+- [ ] screenshots were recaptured from the final build
+
+## 5. Selected Files workflow
 
 - [ ] Paste Paths appears only in Selected Files
 - [ ] guarded `Ctrl+V` works
@@ -60,25 +76,26 @@ artifacts\XCC-v1.3.0-automated-gate.json
 - [ ] relative paths resolve under a visible project root
 - [ ] absolute paths work without a root
 - [ ] duplicates are skipped
-- [ ] missing, directories, unsupported, invalid, outside-root, and external paths are reported
+- [ ] missing, directory, unsupported, invalid, outside-root, and external paths are reported
 - [ ] stale root recovery works
 - [ ] mixed repositories show `Mixed locations`
 - [ ] Source opens Selected Files Review
 - [ ] `Delete`, removal, clear, cancel, and apply behave correctly
 - [ ] final output has stable relative headers
 
-## 5. Existing behavior and Windows integration
+## 6. Existing behavior and Windows integration
 
 - [ ] all four modes pass
-- [ ] source fidelity and budget contracts pass
+- [ ] source-fidelity and budget contracts pass
 - [ ] Git staged/unstaged and rename/copy/delete behavior pass
 - [ ] safety detection and optional confirmation pass
 - [ ] cancellation never copies partial output
+- [ ] Last Run and metadata-only History pass
 - [ ] tray, hotkey, autostart, config recovery, and single instance pass
 - [ ] packaged app starts without Python installed
-- [ ] final UI and screenshots are reviewed
+- [ ] all application, tray, navigation, card, metric, dialog, and action assets are present
 
-## 6. Clean-host evidence
+## 7. Clean-host evidence
 
 - [ ] Windows 10 record exists
 - [ ] Windows 11 record exists
@@ -91,7 +108,7 @@ artifacts\XCC-v1.3.0-automated-gate.json
 python scripts\validate_release_evidence.py --expected-version 1.3.0 --expected-archive-sha256 <FINAL_SHA256> --evidence artifacts\manual-validation\<windows-10-record>.json --evidence artifacts\manual-validation\<windows-11-record>.json
 ```
 
-## 7. Final readiness
+## 8. Final readiness
 
 ```powershell
 python scripts\check_release_readiness.py --archive artifacts\XCC-Context-Collector-v1.3.0-win64.zip --checksum artifacts\XCC-Context-Collector-v1.3.0-win64.zip.sha256 --automated-report artifacts\XCC-v1.3.0-automated-gate.json --evidence artifacts\manual-validation\<windows-10-record>.json --evidence artifacts\manual-validation\<windows-11-record>.json
@@ -103,7 +120,7 @@ python scripts\check_release_readiness.py --archive artifacts\XCC-Context-Collec
 - [ ] checksum file is present
 - [ ] automated report matches the final archive filename and SHA-256
 
-## 8. Tag and draft release
+## 9. Tag and draft release
 
 ```powershell
 git tag -a v1.3.0 -m "XCC Context Collector v1.3.0"; git push origin v1.3.0
@@ -118,11 +135,11 @@ gh release create v1.3.0 artifacts\XCC-Context-Collector-v1.3.0-win64.zip artifa
 - [ ] ZIP and checksum are attached
 - [ ] evidence JSON is not public
 
-## 9. Post-publication
+## 10. Post-publication
 
-- [ ] downloaded ZIP matches the checksum
+- [ ] downloaded ZIP matches the published checksum
 - [ ] downloaded application starts
 - [ ] About and `VERSION.txt` show 1.3.0
 - [ ] Paste Paths works in the downloaded build
 - [ ] release badge resolves to v1.3.0
-- [ ] roadmap is marked released after verification
+- [ ] roadmap is marked `DONE — RELEASED`
