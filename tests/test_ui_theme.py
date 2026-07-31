@@ -72,6 +72,22 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
         '#SourceInputBox[reviewable="true"]',
         "#PastePathsButton",
         "#SelectSourceButton",
+        "#PastePathsDialog",
+        "#SelectedFilesReviewDialog",
+        "#DialogHeader",
+        "#DialogSection",
+        "#DialogSectionTitle",
+        "#DialogSectionMeta",
+        "#DialogFooter",
+        "#DialogSummary",
+        '#DialogSummary[state="success"]',
+        '#DialogSummary[state="warning"]',
+        '#DialogSummary[state="error"]',
+        "#DialogPrimaryButton",
+        "#DialogSecondaryButton",
+        "#DialogQuietButton",
+        '#ReviewRootInput[scope="mixed"]',
+        "#SelectedFilesReviewList",
         '#MetricValue[state="success"]',
         '#MetricValue[state="warning"]',
         '#MetricValue[state="error"]',
@@ -107,3 +123,5 @@ def test_tray_menu_uses_shared_palette() -> None:
     assert PALETTE.accent_border in stylesheet
     assert PALETTE.quiet_border in stylesheet
     assert "@" not in stylesheet
+
+

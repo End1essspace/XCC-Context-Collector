@@ -806,13 +806,25 @@ QScrollBar::sub-page:vertical {
     color: #111111;
 }
 
-#PastePathsDialog {
+#PastePathsDialog,
+#SelectedFilesReviewDialog {
     background: #0F0F10;
+}
+
+#DialogHeader,
+#DialogFooter,
+#DialogTitleRow,
+#DialogTitleIcon {
+    background: transparent;
+}
+
+#DialogFooter {
+    border-top: 1px solid #302D26;
 }
 
 #DialogTitle {
     color: #F2F2F2;
-    font-size: 20px;
+    font-size: 21px;
     font-weight: 800;
     background: transparent;
 }
@@ -820,24 +832,102 @@ QScrollBar::sub-page:vertical {
 #DialogDescription {
     color: #AFAFAF;
     font-size: 12px;
+    line-height: 1.35;
     background: transparent;
 }
 
+#DialogSection {
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #1B1C1F,
+        stop: 1 #17181A
+    );
+    border: 1px solid #302D26;
+    border-radius: 12px;
+}
+
+#DialogSectionTitle {
+    color: #F2F2F2;
+    font-size: 13px;
+    font-weight: 700;
+    background: transparent;
+}
+
+#DialogSectionMeta {
+    color: #7F848C;
+    font-size: 11px;
+    background: transparent;
+}
+
+#DialogPathInput,
+#ReviewRootInput {
+    background: #101010;
+    border: 1px solid #40341D;
+    border-radius: 9px;
+    padding: 8px 11px;
+    color: #F2F2F2;
+    selection-background-color: #D6A93A;
+    selection-color: #111111;
+}
+
+#DialogPathInput:hover,
+#DialogPathInput:focus,
+#ReviewRootInput:hover,
+#ReviewRootInput:focus {
+    border: 1px solid #D6A93A;
+}
+
+#ReviewRootInput[scope="project"] {
+    color: #B9B9B9;
+}
+
+#ReviewRootInput[scope="mixed"] {
+    color: #D5A13B;
+    border: 1px solid #57471F;
+    background: #191811;
+}
+
+#ReviewRootInput[scope="empty"] {
+    color: #7F848C;
+}
+
 #DialogSummary {
-    color: #D6A93A;
+    color: #90959D;
     font-size: 12px;
     font-weight: 700;
     background: #171717;
-    border: 1px solid #3A311C;
-    border-radius: 8px;
-    padding: 8px 10px;
+    border: 1px solid #302D26;
+    border-radius: 9px;
+    padding: 9px 12px;
+}
+
+#DialogSummary[state="success"] {
+    color: #69B985;
+    background: #151C18;
+    border: 1px solid #31533E;
+}
+
+#DialogSummary[state="warning"] {
+    color: #D5A13B;
+    background: #1D1911;
+    border: 1px solid #57471F;
+}
+
+#DialogSummary[state="error"] {
+    color: #D86C6C;
+    background: #211415;
+    border: 1px solid #603436;
+}
+
+#DialogSummary[state="neutral"] {
+    color: #90959D;
 }
 
 #PathListInput {
     background: #101010;
-    border: 1px solid #5A4820;
+    border: 1px solid #40341D;
     border-radius: 10px;
-    padding: 10px;
+    padding: 11px 12px;
     color: #F2F2F2;
     selection-background-color: #D6A93A;
     selection-color: #111111;
@@ -851,61 +941,106 @@ QScrollBar::sub-page:vertical {
 }
 
 #DialogPrimaryButton {
-    background: #C79A31;
-    border: 1px solid #C79A31;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #DDB23E,
+        stop: 0.48 #D2A533,
+        stop: 1 #BE8E27
+    );
+    border: 1px solid #D6AA36;
+    border-radius: 10px;
     color: #111111;
     font-weight: 800;
+    padding: 9px 16px;
 }
 
 #DialogPrimaryButton:hover {
-    background: #D6A93A;
-    border: 1px solid #D6A93A;
+    background: qlineargradient(
+        x1: 0, y1: 0, x2: 0, y2: 1,
+        stop: 0 #E5BC49,
+        stop: 0.48 #DDB342,
+        stop: 1 #C99A2E
+    );
+    border: 1px solid #E0B440;
     color: #111111;
 }
 
-#DialogPrimaryButton:disabled {
-    background: #2A2A2A;
-    border: 1px solid #3A3A3A;
-    color: #777777;
+#DialogPrimaryButton:pressed {
+    background: #BE8E27;
 }
 
-#SelectedFilesReviewDialog {
-    background: #0F0F10;
+#DialogPrimaryButton:disabled {
+    background: #242529;
+    border: 1px solid #34363B;
+    color: #666A70;
+}
+
+#DialogSecondaryButton,
+#DialogQuietButton {
+    background: #17181A;
+    border: 1px solid #403A2E;
+    border-radius: 10px;
+    color: #F2F2F2;
+    font-weight: 700;
+    padding: 9px 14px;
+}
+
+#DialogSecondaryButton:hover,
+#DialogSecondaryButton:focus,
+#DialogQuietButton:hover,
+#DialogQuietButton:focus {
+    background: #1A1916;
+    border: 1px solid #D6A93A;
+    color: #D6A93A;
+}
+
+#DialogSecondaryButton:pressed,
+#DialogQuietButton:pressed {
+    background: #242016;
+}
+
+#DialogSecondaryButton:disabled,
+#DialogQuietButton:disabled {
+    background: #17181A;
+    border: 1px solid #302D26;
+    color: #666A70;
 }
 
 #SelectedFilesCount {
     color: #D6A93A;
     font-size: 12px;
     font-weight: 800;
-    background: #171717;
-    border: 1px solid #3A311C;
-    border-radius: 8px;
-    padding: 5px 10px;
-}
-
-#ReviewRootInput {
-    color: #B9B9B9;
+    background: #191811;
+    border: 1px solid #57471F;
+    border-radius: 10px;
+    padding: 4px 11px;
 }
 
 #SelectedFilesReviewList {
     background: #101010;
-    border: 1px solid #5A4820;
+    border: 1px solid #40341D;
     border-radius: 10px;
-    padding: 6px;
+    padding: 7px;
     outline: none;
     color: #E7E7E7;
     font-family: Consolas;
     font-size: 12px;
 }
 
+#SelectedFilesReviewList:focus {
+    border: 1px solid #D6A93A;
+}
+
 #SelectedFilesReviewList::item {
-    min-height: 30px;
-    border-radius: 6px;
-    padding: 3px 8px;
+    min-height: 32px;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    padding: 3px 9px;
 }
 
 #SelectedFilesReviewList::item:hover {
-    background: #211D12;
+    background: #1A1916;
+    border: 1px solid #3B3528;
     color: #F2F2F2;
 }
 
@@ -914,6 +1049,7 @@ QScrollBar::sub-page:vertical {
     color: #F2F2F2;
     border: 1px solid #57471F;
 }
+
 """
 
 
@@ -1088,3 +1224,5 @@ def _semantic_state_stylesheet() -> str:
         .replace("@muted", PALETTE.muted_text)
         .strip()
     )
+
+

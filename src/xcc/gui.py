@@ -210,8 +210,8 @@ class SelectedFilesReviewDialog(QDialog):
         self.setObjectName("SelectedFilesReviewDialog")
         self.setWindowTitle("Selected Files")
         self.setModal(True)
-        self.setMinimumSize(700, 480)
-        self.resize(780, 540)
+        self.setMinimumSize(740, 520)
+        self.resize(860, 610)
 
         self._original_paths = tuple(paths)
         self._selected_paths = list(paths)
@@ -221,47 +221,89 @@ class SelectedFilesReviewDialog(QDialog):
         )
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 22, 24, 22)
-        layout.setSpacing(14)
+        layout.setContentsMargins(26, 24, 26, 22)
+        layout.setSpacing(16)
 
-        title_row = QHBoxLayout()
-        title_row.setContentsMargins(0, 0, 0, 0)
-        title_row.setSpacing(12)
+        header = QFrame()
+        header.setObjectName("DialogHeader")
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(14)
 
-        title = QLabel("Selected Files")
-        title.setObjectName("DialogTitle")
+        header_layout.addWidget(
+            make_icon_title(
+                "Selected Files",
+                NAV_COLLECT_ICON_PATH,
+                object_name="DialogTitleRow",
+                text_object_name="DialogTitle",
+                icon_object_name="DialogTitleIcon",
+                icon_size=20,
+            )
+        )
+        header_layout.addStretch(1)
 
         self.count_label = QLabel()
         self.count_label.setObjectName("SelectedFilesCount")
-        self.count_label.setAlignment(
-            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
-        )
-
-        title_row.addWidget(title)
-        title_row.addStretch(1)
-        title_row.addWidget(self.count_label)
-        layout.addLayout(title_row)
+        self.count_label.setFixedHeight(30)
+        self.count_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.count_label.setAccessibleName("Selected file count")
+        header_layout.addWidget(self.count_label)
+        layout.addWidget(header)
 
         description = make_helper_text(
-            "Review relative paths, remove individual files, or clear the "
-            "selection before collecting context.",
+            "Review the final ordered selection. Remove individual files or "
+            "clear the selection before collecting context.",
             object_name="DialogDescription",
         )
         layout.addWidget(description)
 
-        root_label = QLabel("Project root")
-        root_label.setObjectName("FieldLabel")
-        layout.addWidget(root_label)
+        root_section = QFrame()
+        root_section.setObjectName("DialogSection")
+        root_layout = QVBoxLayout(root_section)
+        root_layout.setContentsMargins(16, 14, 16, 16)
+        root_layout.setSpacing(10)
+
+        root_header = QHBoxLayout()
+        root_header.setContentsMargins(0, 0, 0, 0)
+        root_header.setSpacing(10)
+
+        root_label = QLabel("Selection scope")
+        root_label.setObjectName("DialogSectionTitle")
+        root_header.addWidget(root_label)
+        root_header.addStretch(1)
+
+        root_hint = QLabel("Project root or mixed locations")
+        root_hint.setObjectName("DialogSectionMeta")
+        root_header.addWidget(root_hint)
+        root_layout.addLayout(root_header)
 
         self.root_value = QLineEdit()
         self.root_value.setObjectName("ReviewRootInput")
         self.root_value.setReadOnly(True)
-        self.root_value.setFixedHeight(40)
-        layout.addWidget(self.root_value)
+        self.root_value.setFixedHeight(42)
+        self.root_value.setAccessibleName("Selected files project root")
+        root_layout.addWidget(self.root_value)
+        layout.addWidget(root_section)
+
+        files_section = QFrame()
+        files_section.setObjectName("DialogSection")
+        files_layout = QVBoxLayout(files_section)
+        files_layout.setContentsMargins(16, 14, 16, 16)
+        files_layout.setSpacing(10)
+
+        files_header = QHBoxLayout()
+        files_header.setContentsMargins(0, 0, 0, 0)
+        files_header.setSpacing(10)
 
         files_label = QLabel("Files")
-        files_label.setObjectName("FieldLabel")
-        layout.addWidget(files_label)
+        files_label.setObjectName("DialogSectionTitle")
+        files_header.addWidget(files_label)
+        files_header.addStretch(1)
+
+        files_hint = QLabel("Ctrl/Shift for multi-select · Delete to remove")
+        files_hint.setObjectName("DialogSectionMeta")
+        files_header.addWidget(files_hint)
+        files_layout.addLayout(files_header)
 
         self.files_list = QListWidget()
         self.files_list.setObjectName("SelectedFilesReviewList")
@@ -270,47 +312,58 @@ class SelectedFilesReviewDialog(QDialog):
         )
         self.files_list.setAlternatingRowColors(False)
         self.files_list.setMinimumHeight(250)
+        self.files_list.setAccessibleName("Selected files list")
         self.files_list.itemSelectionChanged.connect(
             self._refresh_action_states
         )
-        layout.addWidget(self.files_list, 1)
+        files_layout.addWidget(self.files_list, 1)
 
         actions_row = QHBoxLayout()
         actions_row.setContentsMargins(0, 0, 0, 0)
         actions_row.setSpacing(10)
 
-        self.remove_button = QPushButton("Remove Selected")
-        self.remove_button.setFixedHeight(40)
-        self.remove_button.setMinimumWidth(150)
+        self.remove_button = make_secondary_button(
+            "Remove Selected",
+            object_name="DialogSecondaryButton",
+            minimum_width=154,
+        )
+        self.remove_button.setAccessibleName("Remove selected files")
 
-        self.clear_button = QPushButton("Clear All")
-        self.clear_button.setFixedHeight(40)
-        self.clear_button.setMinimumWidth(110)
+        self.clear_button = make_secondary_button(
+            "Clear All",
+            object_name="DialogQuietButton",
+            minimum_width=112,
+        )
+        self.clear_button.setAccessibleName("Clear all selected files")
 
         actions_row.addWidget(self.remove_button)
         actions_row.addWidget(self.clear_button)
         actions_row.addStretch(1)
-        layout.addLayout(actions_row)
+        files_layout.addLayout(actions_row)
+        layout.addWidget(files_section, 1)
 
-        footer_row = QHBoxLayout()
-        footer_row.setContentsMargins(0, 0, 0, 0)
+        footer = QFrame()
+        footer.setObjectName("DialogFooter")
+        footer_row = QHBoxLayout(footer)
+        footer_row.setContentsMargins(0, 14, 0, 0)
         footer_row.setSpacing(10)
         footer_row.addStretch(1)
 
         self.cancel_button = make_secondary_button(
             "Cancel",
-            minimum_width=100,
+            object_name="DialogSecondaryButton",
+            minimum_width=104,
         )
 
         self.apply_button = make_primary_button(
             "Apply Changes",
             object_name="DialogPrimaryButton",
-            minimum_width=138,
+            minimum_width=144,
         )
 
         footer_row.addWidget(self.cancel_button)
         footer_row.addWidget(self.apply_button)
-        layout.addLayout(footer_row)
+        layout.addWidget(footer)
 
         self.remove_button.clicked.connect(self._remove_selected)
         self.clear_button.clicked.connect(self._clear_all)
@@ -323,6 +376,12 @@ class SelectedFilesReviewDialog(QDialog):
         )
         self.delete_shortcut.setContext(Qt.ShortcutContext.WidgetShortcut)
         self.delete_shortcut.activated.connect(self._remove_selected)
+
+        self.setTabOrder(self.root_value, self.files_list)
+        self.setTabOrder(self.files_list, self.remove_button)
+        self.setTabOrder(self.remove_button, self.clear_button)
+        self.setTabOrder(self.clear_button, self.cancel_button)
+        self.setTabOrder(self.cancel_button, self.apply_button)
 
         self._render_files()
 
@@ -350,12 +409,20 @@ class SelectedFilesReviewDialog(QDialog):
         self.count_label.setText(
             f"{count} file{'s' if count != 1 else ''}"
         )
-        self.root_value.setText(
+
+        mixed_locations = self.project_root is None and count > 0
+        root_text = (
             str(self.project_root)
             if self.project_root is not None
-            else "Mixed locations"
+            else "Mixed locations" if mixed_locations else "No files selected"
         )
-        self.root_value.setToolTip(self.root_value.text())
+        self.root_value.setText(root_text)
+        self.root_value.setToolTip(root_text)
+        set_widget_property(
+            self.root_value,
+            "scope",
+            "mixed" if mixed_locations else "empty" if count == 0 else "project",
+        )
         self._refresh_action_states()
 
     def _refresh_action_states(self) -> None:
@@ -401,32 +468,61 @@ class PastePathsDialog(QDialog):
         self.setObjectName("PastePathsDialog")
         self.setWindowTitle("Paste File Paths")
         self.setModal(True)
-        self.setMinimumSize(680, 470)
-        self.resize(760, 520)
+        self.setMinimumSize(720, 520)
+        self.resize(820, 590)
 
         self._existing_paths = list(existing_paths)
         self.import_result = SelectedFilesImportResult()
         self.project_root: Path | None = None
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 22, 24, 22)
-        layout.setSpacing(14)
+        layout.setContentsMargins(26, 24, 26, 22)
+        layout.setSpacing(16)
 
-        title = QLabel("Paste File Paths")
-        title.setObjectName("DialogTitle")
+        header = QFrame()
+        header.setObjectName("DialogHeader")
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(14)
+        header_layout.addWidget(
+            make_icon_title(
+                "Paste File Paths",
+                UI_PASTE_PATHS_ICON_PATH,
+                object_name="DialogTitleRow",
+                text_object_name="DialogTitle",
+                icon_object_name="DialogTitleIcon",
+                icon_size=20,
+            )
+        )
+        header_layout.addStretch(1)
+        layout.addWidget(header)
 
         description = make_helper_text(
-            "Choose the project root once. Relative paths from the pasted "
-            "AI response will be resolved and validated before they are added.",
+            "Paste a path list from an AI response. Relative paths are resolved "
+            "against one visible project root before anything is added.",
             object_name="DialogDescription",
         )
-
-        layout.addWidget(title)
         layout.addWidget(description)
 
+        root_section = QFrame()
+        root_section.setObjectName("DialogSection")
+        root_layout = QVBoxLayout(root_section)
+        root_layout.setContentsMargins(16, 14, 16, 16)
+        root_layout.setSpacing(10)
+
+        root_header = QHBoxLayout()
+        root_header.setContentsMargins(0, 0, 0, 0)
+        root_header.setSpacing(10)
+
         root_label = QLabel("Project root")
-        root_label.setObjectName("FieldLabel")
-        layout.addWidget(root_label)
+        root_label.setObjectName("DialogSectionTitle")
+        root_header.addWidget(root_label)
+        root_header.addStretch(1)
+
+        root_hint = QLabel("Required for relative paths")
+        root_hint.setObjectName("DialogSectionMeta")
+        root_header.addWidget(root_hint)
+        root_layout.addLayout(root_header)
 
         root_row = QHBoxLayout()
         root_row.setContentsMargins(0, 0, 0, 0)
@@ -435,20 +531,43 @@ class PastePathsDialog(QDialog):
         self.root_input = QLineEdit(
             str(initial_root) if initial_root is not None else ""
         )
+        self.root_input.setObjectName("DialogPathInput")
         self.root_input.setPlaceholderText("Select the repository or project folder")
-        self.root_input.setFixedHeight(40)
+        self.root_input.setFixedHeight(42)
+        self.root_input.setAccessibleName("Project root")
 
-        self.browse_button = QPushButton("Browse")
-        self.browse_button.setFixedHeight(40)
-        self.browse_button.setMinimumWidth(104)
+        self.browse_button = make_secondary_button(
+            "Browse",
+            object_name="DialogSecondaryButton",
+            minimum_width=108,
+            height=42,
+        )
+        self.browse_button.setAccessibleName("Browse for project root")
 
         root_row.addWidget(self.root_input, 1)
         root_row.addWidget(self.browse_button)
-        layout.addLayout(root_row)
+        root_layout.addLayout(root_row)
+        layout.addWidget(root_section)
+
+        paths_section = QFrame()
+        paths_section.setObjectName("DialogSection")
+        paths_layout = QVBoxLayout(paths_section)
+        paths_layout.setContentsMargins(16, 14, 16, 16)
+        paths_layout.setSpacing(10)
+
+        paths_header = QHBoxLayout()
+        paths_header.setContentsMargins(0, 0, 0, 0)
+        paths_header.setSpacing(10)
 
         paths_label = QLabel("File paths")
-        paths_label.setObjectName("FieldLabel")
-        layout.addWidget(paths_label)
+        paths_label.setObjectName("DialogSectionTitle")
+        paths_header.addWidget(paths_label)
+        paths_header.addStretch(1)
+
+        paths_hint = QLabel("Plain text, Markdown lists, quotes, or code blocks")
+        paths_hint.setObjectName("DialogSectionMeta")
+        paths_header.addWidget(paths_hint)
+        paths_layout.addLayout(paths_header)
 
         self.paths_input = QPlainTextEdit()
         self.paths_input.setObjectName("PathListInput")
@@ -457,38 +576,50 @@ class PastePathsDialog(QDialog):
             "src/package/module.py\ndocs/ROADMAP.md"
         )
         self.paths_input.setMinimumHeight(210)
-        layout.addWidget(self.paths_input, 1)
+        self.paths_input.setAccessibleName("Pasted file paths")
+        paths_layout.addWidget(self.paths_input, 1)
 
         self.summary_label = QLabel()
         self.summary_label.setObjectName("DialogSummary")
         self.summary_label.setWordWrap(True)
-        layout.addWidget(self.summary_label)
+        self.summary_label.setMinimumHeight(44)
+        self.summary_label.setAccessibleName("Path validation summary")
+        paths_layout.addWidget(self.summary_label)
+        layout.addWidget(paths_section, 1)
 
-        button_row = QHBoxLayout()
-        button_row.setContentsMargins(0, 0, 0, 0)
+        footer = QFrame()
+        footer.setObjectName("DialogFooter")
+        button_row = QHBoxLayout(footer)
+        button_row.setContentsMargins(0, 14, 0, 0)
         button_row.setSpacing(10)
         button_row.addStretch(1)
 
         self.cancel_button = make_secondary_button(
             "Cancel",
-            minimum_width=100,
+            object_name="DialogSecondaryButton",
+            minimum_width=104,
         )
 
         self.add_button = make_primary_button(
             "Add Files",
             object_name="DialogPrimaryButton",
-            minimum_width=132,
+            minimum_width=138,
         )
 
         button_row.addWidget(self.cancel_button)
         button_row.addWidget(self.add_button)
-        layout.addLayout(button_row)
+        layout.addWidget(footer)
 
         self.browse_button.clicked.connect(self._browse_root)
         self.cancel_button.clicked.connect(self.reject)
         self.add_button.clicked.connect(self._accept_import)
         self.root_input.textChanged.connect(self._refresh_preview)
         self.paths_input.textChanged.connect(self._refresh_preview)
+
+        self.setTabOrder(self.root_input, self.browse_button)
+        self.setTabOrder(self.browse_button, self.paths_input)
+        self.setTabOrder(self.paths_input, self.cancel_button)
+        self.setTabOrder(self.cancel_button, self.add_button)
 
         self._refresh_preview()
 
@@ -513,28 +644,44 @@ class PastePathsDialog(QDialog):
         self.import_result = result
 
         if not result.parsed:
-            summary = "No file paths were detected in the pasted text."
+            summary = "Paste one or more file paths to continue."
+            state = "neutral"
         elif result.root_required:
             summary = (
-                f"Detected {len(result.parsed)} path(s). Choose a project root "
-                "to resolve relative paths."
+                f"Project root required · {len(result.parsed)} path(s) detected."
             )
+            state = "warning"
         elif result.root_error:
             summary = result.root_error
+            state = "error"
         else:
             other_issues = max(
                 0,
                 result.issue_count - len(result.missing),
             )
-            summary = (
-                f"Found {result.added_count} file(s) · "
+            counts = (
+                f"Add {result.added_count} · "
                 f"Missing {len(result.missing)} · "
                 f"Duplicates {result.duplicate_count} · "
                 f"External {len(result.external)} · "
                 f"Other issues {other_issues}"
             )
+            if result.can_apply and result.issue_count == 0:
+                summary = f"Ready · {counts}"
+                state = "success"
+            elif result.can_apply:
+                summary = f"Ready with review items · {counts}"
+                state = "warning"
+            elif result.duplicate_count and result.issue_count == 0:
+                summary = f"Already selected · {counts}"
+                state = "neutral"
+            else:
+                summary = f"Nothing can be added yet · {counts}"
+                state = "warning"
 
         self.summary_label.setText(summary)
+        set_widget_state(self.summary_label, state)
+        self.summary_label.setToolTip(summary)
         self.add_button.setEnabled(result.can_apply)
         self.add_button.setText(
             f"Add {result.added_count} File"
@@ -3283,3 +3430,5 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
+
+
