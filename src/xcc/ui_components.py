@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -245,6 +246,7 @@ class MetricCapsule(QFrame):
     ) -> None:
         super().__init__(parent)
         self.setObjectName("MetricCapsule")
+        self.setAccessibleName(f"{label} metric")
         self.setMinimumWidth(0)
         self._layout = QHBoxLayout(self)
         self._layout.setSpacing(12)
@@ -257,12 +259,14 @@ class MetricCapsule(QFrame):
 
         self.label_widget = QLabel(label, self)
         self.label_widget.setObjectName("MetricLabel")
+        self.label_widget.setAccessibleName(f"{label} metric label")
         self.label_widget.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
 
         self.value_label = QLabel(value, self)
         self.value_label.setObjectName("MetricValue")
+        self.value_label.setAccessibleName(f"{label} metric value")
         self.value_label.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )

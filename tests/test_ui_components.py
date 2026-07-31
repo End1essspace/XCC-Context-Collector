@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import os
@@ -109,6 +110,9 @@ def test_metric_capsule_preserves_value_label_api(qapp: QApplication) -> None:
     assert metric.objectName() == "MetricCapsule"
     assert metric.height() == METRICS.metric_row_height
     assert metric.label_widget.text() == "Files"
+    assert metric.accessibleName() == "Files metric"
+    assert metric.label_widget.accessibleName() == "Files metric label"
+    assert metric.value_label.accessibleName() == "Files metric value"
     assert isinstance(metric.value_label, QLabel)
     assert metric.value_label.property("state") == "neutral"
 

@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import sys
@@ -83,7 +84,11 @@ from .ui_collect import (
     collect_mode_presentation,
     selected_files_source_summary,
 )
-from .ui_shell import RuntimeState, default_footer_message
+from .ui_shell import (
+    RuntimeState,
+    default_footer_message,
+    format_hotkey_for_display,
+)
 from .ui_sidebar import SidebarNavigation
 from .ui_metrics import (
     coverage_metric_state,
@@ -136,6 +141,7 @@ UI_PASTE_PATHS_ICON_PATH = resource_path("assets", "ui-paste-paths.svg")
 UI_COLLECT_COPY_ICON_PATH = resource_path("assets", "ui-collect-copy.svg")
 INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
 INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
+DISPLAY_HOTKEY = format_hotkey_for_display(DEFAULT_HOTKEY)
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -635,6 +641,7 @@ class PastePathsDialog(QDialog):
 
     def _refresh_preview(self) -> None:
         root_text = self.root_input.text().strip()
+        self.root_input.setToolTip(root_text)
         root = Path(root_text) if root_text else None
         result = import_selected_files(
             self.paths_input.toPlainText(),
@@ -680,6 +687,7 @@ class PastePathsDialog(QDialog):
                 state = "warning"
 
         self.summary_label.setText(summary)
+        self.summary_label.setAccessibleDescription(summary)
         set_widget_state(self.summary_label, state)
         self.summary_label.setToolTip(summary)
         self.add_button.setEnabled(result.can_apply)
@@ -798,9 +806,11 @@ class XccMainWindow(QMainWindow):
 
         self.status_label = QLabel("Ready · Select a source to begin")
         self.status_label.setObjectName("StatusText")
+        self.status_label.setAccessibleName("Current event status")
 
         self.status_version_label = QLabel(f"v{__version__}")
         self.status_version_label.setObjectName("StatusVersion")
+        self.status_version_label.setAccessibleName("Application version")
         self.status_version_label.setAlignment(
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
         )
@@ -875,8 +885,8 @@ class XccMainWindow(QMainWindow):
 
         self._hotkey_manager = manager
         self._hotkey_available = True
-        self._hotkey_status_message = DEFAULT_HOTKEY
-        self.hotkey_capsule.setText(f"Hotkey: {DEFAULT_HOTKEY}")
+        self._hotkey_status_message = DISPLAY_HOTKEY
+        self.hotkey_capsule.setText(f"Hotkey: {DISPLAY_HOTKEY}")
         self.hotkey_capsule.set_state(None)
         self._set_runtime_state(RuntimeState.READY)
         self._restore_default_footer_status()
@@ -1568,7 +1578,7 @@ class XccMainWindow(QMainWindow):
         self.header_status.setAccessibleName("Runtime status")
 
         self.hotkey_capsule = make_status_capsule(
-            f"Hotkey: {DEFAULT_HOTKEY}",
+            f"Hotkey: {DISPLAY_HOTKEY}",
             object_name="HotkeyCapsule",
         )
         self.hotkey_capsule.setAccessibleName("Restore hotkey")
@@ -1833,6 +1843,7 @@ class XccMainWindow(QMainWindow):
 
         self.last_run_state_label = QLabel("No collection yet")
         self.last_run_state_label.setObjectName("LastRunState")
+        self.last_run_state_label.setAccessibleName("Last run state")
         self.last_run_state_label.setFixedHeight(30)
         self.last_run_state_label.setMinimumWidth(150)
         self.last_run_state_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -1933,6 +1944,7 @@ class XccMainWindow(QMainWindow):
             icon_size=20,
         )
         self.collect_button.setMinimumHeight(METRICS.primary_action_height)
+        self.collect_button.setAccessibleName("Collect and copy context")
         self.collect_button.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
@@ -3181,7 +3193,7 @@ class XccMainWindow(QMainWindow):
         card_layout.addWidget(
             self._about_info_row(
                 "Default hotkey",
-                DEFAULT_HOTKEY,
+                DISPLAY_HOTKEY,
             )
         )
 
@@ -3430,5 +3442,3 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
-
-

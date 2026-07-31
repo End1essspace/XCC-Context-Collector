@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from xcc.ui_theme import (
@@ -110,6 +111,12 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert "#E5BC49" in stylesheet
     assert "stop: 0.48" in stylesheet
     assert "#D8AD42" not in stylesheet
+    assert "#PrimaryButton:focus" in stylesheet
+    assert "#DialogPrimaryButton:focus" in stylesheet
+    assert "#ClearSourceButton:focus" in stylesheet
+    assert "#SourceInputEmbedded:focus" in stylesheet
+    assert "QLineEdit:disabled" in stylesheet
+    assert "QRadioButton:disabled" in stylesheet
     assert "@accent" not in stylesheet
     assert "@primary" not in stylesheet
 
@@ -123,5 +130,3 @@ def test_tray_menu_uses_shared_palette() -> None:
     assert PALETTE.accent_border in stylesheet
     assert PALETTE.quiet_border in stylesheet
     assert "@" not in stylesheet
-
-

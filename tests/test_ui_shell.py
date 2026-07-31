@@ -1,6 +1,7 @@
+
 from __future__ import annotations
 
-from xcc.ui_shell import RuntimeState, default_footer_message
+from xcc.ui_shell import RuntimeState, default_footer_message, format_hotkey_for_display
 
 
 def test_runtime_state_vocabulary_is_fixed() -> None:
@@ -39,3 +40,10 @@ def test_default_footer_guidance_avoids_duplicate_ready_only_message() -> None:
         mode="git",
         has_source=True,
     ) == "Ready · Source selected"
+
+
+def test_hotkey_display_format_is_product_facing_without_changing_input() -> None:
+    assert format_hotkey_for_display("ctrl+alt+x") == "Ctrl+Alt+X"
+    assert format_hotkey_for_display("control+shift+f12") == "Ctrl+Shift+F12"
+    assert format_hotkey_for_display("win+1") == "Win+1"
+    assert format_hotkey_for_display("") == ""

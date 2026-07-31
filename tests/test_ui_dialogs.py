@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import os
@@ -125,5 +126,66 @@ def test_selected_files_review_marks_separate_repositories_as_mixed(
     assert dialog.root_value.text() == "Mixed locations"
     assert dialog.root_value.property("scope") == "mixed"
     assert dialog.root_value.toolTip() == "Mixed locations"
+
+    dialog.close()
+
+
+def test_paste_paths_dialog_preserves_long_root_tooltip_and_accessible_summary(
+    qapp: QApplication,
+    tmp_path: Path,
+) -> None:
+    project_root = tmp_path
+    for index in range(8):
+        project_root = project_root / f"very-long-project-segment-{index}"
+    source = project_root / "src" / "module.py"
+    source.parent.mkdir(parents=True)
+    source.write_text("VALUE = 1\n", encoding="utf-8")
+
+    dialog = PastePathsDialog(
+        "src/module.py",
+        existing_paths=[],
+        initial_root=project_root,
+    )
+    qapp.processEvents()
+
+    assert dialog.root_input.toolTip() == str(project_root)
+    assert dialog.summary_label.accessibleDescription() == dialog.summary_label.text()
+    assert dialog.summary_label.toolTip() == dialog.summary_label.text()
+    assert dialog.add_button.isEnabled()
+
+    dialog.close()
+
+
+def test_selected_files_review_handles_large_selection_and_empty_state(
+    qapp: QApplication,
+    tmp_path: Path,
+) -> None:
+    project_root = tmp_path / "project"
+    paths: list[Path] = []
+
+    for index in range(101):
+        path = project_root / "src" / f"module_{index:03d}.py"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"VALUE = {index}\n", encoding="utf-8")
+        paths.append(path)
+
+    dialog = SelectedFilesReviewDialog(
+        paths,
+        project_root=project_root,
+    )
+    qapp.processEvents()
+
+    assert dialog.count_label.text() == "101 files"
+    assert dialog.files_list.count() == 101
+    assert dialog.root_value.toolTip() == str(project_root)
+
+    dialog._clear_all()
+    qapp.processEvents()
+
+    assert dialog.count_label.text() == "0 files"
+    assert dialog.root_value.text() == "No files selected"
+    assert dialog.root_value.property("scope") == "empty"
+    assert not dialog.clear_button.isEnabled()
+    assert dialog.apply_button.isEnabled()
 
     dialog.close()

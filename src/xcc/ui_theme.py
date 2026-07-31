@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -303,6 +304,18 @@ QPushButton:pressed {
     background: #2A2412;
 }
 
+QLineEdit:disabled,
+QPushButton:disabled {
+    background: #1B1C1F;
+    border: 1px solid #302D26;
+    color: #666A70;
+}
+
+QRadioButton:disabled,
+QCheckBox:disabled {
+    color: #666A70;
+}
+
 #PrimaryButton {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
@@ -318,7 +331,8 @@ QPushButton:pressed {
     padding: 9px 18px;
 }
 
-#PrimaryButton:hover {
+#PrimaryButton:hover,
+#PrimaryButton:focus {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
         stop: 0 #E5BC49,
@@ -777,9 +791,15 @@ QScrollBar::sub-page:vertical {
     selection-color: #111111;
 }
 
-#SourceInputEmbedded:hover,
-#SourceInputEmbedded:focus {
+#SourceInputEmbedded:hover {
     border: none;
+}
+
+#SourceInputEmbedded:focus {
+    background: #191811;
+    border: 1px solid #D6A93A;
+    border-radius: 8px;
+    padding: 0px 6px;
 }
 
 #ClearSourceButton {
@@ -794,7 +814,8 @@ QScrollBar::sub-page:vertical {
     text-align: center;
 }
 
-#ClearSourceButton:hover {
+#ClearSourceButton:hover,
+#ClearSourceButton:focus {
     background: #2A2412;
     border: 1px solid #D6A93A;
     color: #F2F2F2;
@@ -954,7 +975,8 @@ QScrollBar::sub-page:vertical {
     padding: 9px 16px;
 }
 
-#DialogPrimaryButton:hover {
+#DialogPrimaryButton:hover,
+#DialogPrimaryButton:focus {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
         stop: 0 #E5BC49,
@@ -1224,5 +1246,3 @@ def _semantic_state_stylesheet() -> str:
         .replace("@muted", PALETTE.muted_text)
         .strip()
     )
-
-
