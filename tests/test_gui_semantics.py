@@ -250,3 +250,91 @@ def test_close_to_tray_rearms_guarded_close_controller(
     window.show()
     qapp.processEvents()
 
+def test_hotkey_restores_minimized_normal_window(
+    qapp: QApplication,
+    window: XccMainWindow,
+) -> None:
+    window._restore_to_normal_geometry()
+    qapp.processEvents()
+
+    window._minimize_window()
+    qapp.processEvents()
+    assert window.isMinimized()
+    assert window._restore_maximized_on_show is False
+
+    window._restore_from_hotkey()
+    qapp.processEvents()
+
+    assert window.isVisible()
+    assert not window.isMinimized()
+    assert not window._is_effectively_maximized()
+
+
+def test_tray_restores_minimized_custom_maximized_window(
+    qapp: QApplication,
+    window: XccMainWindow,
+) -> None:
+    window._maximize_to_available_geometry()
+    qapp.processEvents()
+    assert window._is_effectively_maximized()
+
+    window._minimize_window()
+    qapp.processEvents()
+    assert window.isMinimized()
+    assert window._restore_maximized_on_show is True
+
+    window._show_from_tray()
+    qapp.processEvents()
+
+    assert window.isVisible()
+    assert not window.isMinimized()
+    assert window._is_effectively_maximized()
+
+
+def test_tray_trigger_restores_instead_of_hiding_minimized_window(
+    qapp: QApplication,
+    window: XccMainWindow,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    restored: list[bool] = []
+    hidden: list[bool] = []
+
+    window._restore_to_normal_geometry()
+    window._minimize_window()
+    qapp.processEvents()
+    assert window.isMinimized()
+
+    monkeypatch.setattr(
+        window,
+        "_show_from_tray",
+        lambda: restored.append(True),
+    )
+    monkeypatch.setattr(
+        window,
+        "_hide_to_tray",
+        lambda: hidden.append(True),
+    )
+
+    window._on_tray_activated(
+        gui_module.QSystemTrayIcon.ActivationReason.Trigger
+    )
+
+    assert restored == [True]
+    assert hidden == []
+
+
+def test_hidden_startup_restore_preserves_configured_maximized_mode(
+    qapp: QApplication,
+    window: XccMainWindow,
+) -> None:
+    window._restore_to_normal_geometry()
+    window._restore_maximized_on_show = True
+    window.hide()
+    qapp.processEvents()
+
+    window._show_from_tray()
+    qapp.processEvents()
+
+    assert window.isVisible()
+    assert not window.isMinimized()
+    assert window._is_effectively_maximized()

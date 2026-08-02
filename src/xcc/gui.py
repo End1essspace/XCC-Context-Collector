@@ -1031,6 +1031,9 @@ class XccMainWindow(QMainWindow):
         self._effective_stats_min_height = 0
         self._is_custom_maximized = False
         self._normal_geometry: QRect | None = None
+        self._restore_maximized_on_show = bool(
+            self.app_settings.start_maximized
+        )
 
         self._setup_ui()
         self._fitts_close = FittsCloseController(
@@ -1293,7 +1296,7 @@ class XccMainWindow(QMainWindow):
         )
         self.window_minimize_button.setAccessibleName("Minimize window")
         self.window_minimize_button.setToolTip("Minimize")
-        self.window_minimize_button.clicked.connect(self.showMinimized)
+        self.window_minimize_button.clicked.connect(self._minimize_window)
 
         self.window_maximize_button = WindowControlButton(
             "maximize",
@@ -1350,6 +1353,7 @@ class XccMainWindow(QMainWindow):
             self._is_custom_maximized = True
             self.setGeometry(screen.availableGeometry())
 
+        self._restore_maximized_on_show = True
         self._sync_title_bar_state()
 
     def _restore_to_normal_geometry(self) -> None:
@@ -1367,6 +1371,7 @@ class XccMainWindow(QMainWindow):
         if restore_geometry is not None:
             self.setGeometry(restore_geometry)
 
+        self._restore_maximized_on_show = False
         self._sync_title_bar_state()
 
     def _restore_for_system_move(self, global_position: QPoint) -> None:
@@ -1430,6 +1435,7 @@ class XccMainWindow(QMainWindow):
         self._is_custom_maximized = False
         self.showNormal()
         self.setGeometry(restore_geometry)
+        self._restore_maximized_on_show = False
         self._sync_title_bar_state()
 
     def _toggle_maximize_restore(self) -> None:
@@ -1596,18 +1602,57 @@ class XccMainWindow(QMainWindow):
         self._restore_default_footer_status()
         self._refresh_settings_page()
 
-    def _restore_from_hotkey(self) -> None:
-        self._fitts_close.reset_interaction()
+    def _minimize_window(self) -> None:
+        self._restore_maximized_on_show = (
+            self._is_effectively_maximized()
+        )
+        self.showMinimized()
 
-        if self.app_settings.start_maximized:
+    def _window_should_restore_maximized(self) -> bool:
+        if self.isMinimized() or not self.isVisible():
+            return self._restore_maximized_on_show
+
+        return self._is_effectively_maximized()
+
+    def _clear_minimized_window_state(self) -> None:
+        if not self.isMinimized():
+            return
+
+        state = self.windowState()
+        state &= ~Qt.WindowState.WindowMinimized
+        state &= ~Qt.WindowState.WindowMaximized
+        self.setWindowState(state)
+        self.showNormal()
+
+    def _restore_running_window(self, status_message: str) -> None:
+        self._fitts_close.reset_interaction()
+        restore_maximized = self._window_should_restore_maximized()
+
+        # show() does not reliably remove WindowMinimized on Windows,
+        # especially when XCC uses its custom available-geometry maximize.
+        # Clear the native minimized state first, then restore the exact
+        # pre-minimize window mode.
+        self._clear_minimized_window_state()
+
+        if restore_maximized:
             self._maximize_to_available_geometry()
         else:
             self._restore_to_normal_geometry()
 
+        self.show()
         self.raise_()
         self.activateWindow()
+
+        handle = self.windowHandle()
+        if handle is not None:
+            handle.requestActivate()
+
+        self._restore_maximized_on_show = restore_maximized
         QTimer.singleShot(0, self._fitts_close.sync_timer)
-        self._set_transient_event_status("Window restored by hotkey.")
+        self._set_transient_event_status(status_message)
+
+    def _restore_from_hotkey(self) -> None:
+        self._restore_running_window("Window restored by hotkey.")
     
     def _on_autostart_changed(self) -> None:
         if self._is_loading_settings:
@@ -1856,17 +1901,7 @@ class XccMainWindow(QMainWindow):
             self._restore_to_normal_geometry()
 
     def _show_from_tray(self) -> None:
-        self._fitts_close.reset_interaction()
-
-        if self.app_settings.start_maximized:
-            self._maximize_to_available_geometry()
-        else:
-            self._restore_to_normal_geometry()
-
-        self.raise_()
-        self.activateWindow()
-        QTimer.singleShot(0, self._fitts_close.sync_timer)
-        self._set_transient_event_status("Window restored.")
+        self._restore_running_window("Window restored.")
 
     def _hide_to_tray(self) -> None:
         if not (hasattr(self, "tray_icon") and self.tray_icon.isVisible()):
@@ -1969,7 +2004,7 @@ class XccMainWindow(QMainWindow):
             return
 
         if reason == QSystemTrayIcon.ActivationReason.Trigger:
-            if self.isVisible():
+            if self.isVisible() and not self.isMinimized():
                 self._hide_to_tray()
             else:
                 self._show_from_tray()
@@ -1986,7 +2021,20 @@ class XccMainWindow(QMainWindow):
         )
 
     def changeEvent(self, event) -> None:
+        if event.type() == QEvent.Type.WindowStateChange:
+            old_state = event.oldState()
+            became_minimized = (
+                self.isMinimized()
+                and not bool(old_state & Qt.WindowState.WindowMinimized)
+            )
+            if became_minimized:
+                self._restore_maximized_on_show = (
+                    self._is_custom_maximized
+                    or bool(old_state & Qt.WindowState.WindowMaximized)
+                )
+
         super().changeEvent(event)
+
         if event.type() == QEvent.Type.WindowStateChange:
             self._sync_title_bar_state()
 
@@ -4170,4 +4218,3 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
-
