@@ -105,6 +105,7 @@ def test_maximized_density_balances_setup_and_last_run(
     assert window.sidebar_status_group.parent() is window.status_bar
     assert window.status_bar_layout.contentsMargins().left() == 20
     assert window.status_bar_layout.contentsMargins().right() == 20
+    assert window.sidebar_status_layout.spacing() == 7
     assert window.sidebar_brand_header.layout().contentsMargins().left() == 14
     assert window.sidebar_brand_header.layout().contentsMargins().right() == 8
     assert window.sidebar_brand_header.layout().contentsMargins().top() == 5
@@ -114,7 +115,7 @@ def test_maximized_density_balances_setup_and_last_run(
     assert window.sidebar_brand_icon.pixmap().deviceIndependentSize().width() == 36
     assert window.sidebar_brand_title.text() == "XCC"
     assert window.sidebar_brand_subtitle.text() == "Context Collector"
-    assert window.sidebar_brand_text_layout.spacing() == 6
+    assert window.sidebar_brand_text_layout.spacing() == 7
     assert window.sidebar_brand_title.x() < window.sidebar_brand_subtitle.x()
     assert (
         window.sidebar_brand_text_layout.itemAt(0).alignment()
@@ -231,4 +232,3 @@ def test_frameless_window_exposes_native_resize_and_caption_regions(
 
     window._is_quitting = True
     window.close()
-

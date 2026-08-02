@@ -20,6 +20,9 @@ def test_ui_palette_matches_frozen_v130_contract() -> None:
     assert PALETTE.selected_surface == "#242016"
     assert PALETTE.hover_surface == "#1A1916"
     assert PALETTE.quiet_border == "#302D26"
+    assert PALETTE.card_border == "#36352F"
+    assert PALETTE.metric_border == "#2D3034"
+    assert PALETTE.selected_border == "#3B3528"
     assert PALETTE.frame_border == "#35393E"
     assert PALETTE.shell_divider == "#25282C"
     assert PALETTE.control_border == "#3A3D42"
@@ -31,6 +34,7 @@ def test_ui_palette_matches_frozen_v130_contract() -> None:
     assert PALETTE.warning == "#D5A13B"
     assert PALETTE.error == "#D86C6C"
     assert PALETTE.neutral == "#90959D"
+    assert PALETTE.status_text == "#BEC2C8"
 
 
 def test_ui_metrics_keep_supported_geometry_contract() -> None:
@@ -127,7 +131,8 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert '#WindowControlButton[role="close"]' in stylesheet
     assert '#WindowControlButton[role="close"][maximized="true"]' not in stylesheet
     assert "font-size: 11.25pt" in stylesheet
-    assert "font-size: 12.75pt" in stylesheet
+    assert "font-size: 13.25pt" in stylesheet
+    assert "font-size: 8.5pt" in stylesheet
     assert not re.search(r"font-size:\s*[^;]*px", stylesheet)
     assert "min-height: 42px" in stylesheet
     assert "#WindowControlButton:focus" not in stylesheet
@@ -155,7 +160,9 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
         assert match is not None
         assert f"border: 1px solid {PALETTE.control_border};" in match.group("body")
 
-    assert "#BE8E27" in stylesheet
+    assert "#B68225" in stylesheet
+    assert "#C89B30" in stylesheet
+    assert "#BF942F" in stylesheet
     assert "#DDB342" in stylesheet
     assert "#E5BC49" in stylesheet
     assert "stop: 0.48" in stylesheet
@@ -205,6 +212,58 @@ def test_content_canvas_and_header_backgrounds_are_unified() -> None:
     assert 'border-bottom-right-radius: 11px;' in footer_rule.group('body')
     assert '#SidebarFooter' not in stylesheet
 
+def test_final_polish_keeps_resting_surfaces_quiet_and_states_clear() -> None:
+    stylesheet = build_application_stylesheet()
+
+    def rule(selector: str) -> str:
+        match = re.search(
+            rf"(?ms)^{re.escape(selector)}\s*\{{(?P<body>.*?)^\}}",
+            stylesheet,
+        )
+        assert match is not None
+        return match.group("body")
+
+    brand_title = rule("#SidebarBrandTitle")
+    assert "font-size: 13.25pt;" in brand_title
+
+    brand_subtitle = rule("#SidebarBrandSubtitle")
+    assert f"color: {PALETTE.secondary_text};" in brand_subtitle
+    assert "font-size: 8.5pt;" in brand_subtitle
+
+    section_label = rule("#SidebarSectionLabel")
+    assert f"color: {PALETTE.muted_text};" in section_label
+
+    selected_nav = rule('#SidebarNavButton[selected="true"]')
+    assert f"border: 1px solid {PALETTE.selected_border};" in selected_nav
+    assert f"border-left: 3px solid {PALETTE.accent};" in selected_nav
+
+    card = rule("#Card")
+    assert f"border: 1px solid {PALETTE.card_border};" in card
+
+    metric = rule("#MetricCapsule")
+    assert f"border: 1px solid {PALETTE.metric_border};" in metric
+    assert "stop: 0 #1C1E22" in metric
+    assert "stop: 1 #181A1D" in metric
+
+    footer = rule("#StatusText")
+    assert f"color: {PALETTE.status_text};" in footer
+    assert "font-size: 8.25pt;" in footer
+
+    primary = rule("#PrimaryButton")
+    assert "stop: 0 #D3AA3C" in primary
+    assert "stop: 0.48 #C89B30" in primary
+    assert "stop: 1 #B68225" in primary
+    assert "border: 1px solid #BF942F;" in primary
+
+    subtitle = rule("#PageSubtitle")
+    assert "padding: 3px 0px 0px 0px;" in subtitle
+
+    assert "@card_border" not in stylesheet
+    assert "@metric_border" not in stylesheet
+    assert "@selected_border" not in stylesheet
+    assert "@status_text" not in stylesheet
+
+
 def test_tray_menu_uses_shared_palette() -> None:
     stylesheet = build_tray_menu_stylesheet()
 
@@ -222,4 +281,3 @@ def test_custom_header_styles_drop_legacy_subtitle_and_footer_version() -> None:
 
     assert "#WindowBrandSubtitle" not in stylesheet
     assert "#StatusVersion" not in stylesheet
-

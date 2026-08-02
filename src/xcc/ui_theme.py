@@ -17,6 +17,9 @@ class UiPalette:
     selected_surface: str = "#242016"
     hover_surface: str = "#1A1916"
     quiet_border: str = "#302D26"
+    card_border: str = "#36352F"
+    metric_border: str = "#2D3034"
+    selected_border: str = "#3B3528"
     frame_border: str = "#35393E"
     shell_divider: str = "#25282C"
     control_border: str = "#3A3D42"
@@ -26,6 +29,7 @@ class UiPalette:
     accent_hover: str = "#E0B440"
     primary_text: str = "#F2F3F4"
     secondary_text: str = "#ADB1B7"
+    status_text: str = "#BEC2C8"
     muted_text: str = "#7F848C"
     success: str = "#69B985"
     warning: str = "#D5A13B"
@@ -237,20 +241,20 @@ QWidget {
 
 #SidebarBrandTitle {
     color: #F2F3F4;
-    font-size: 12.75pt;
+    font-size: 13.25pt;
     font-weight: 800;
     background: transparent;
 }
 
 #SidebarBrandSubtitle {
-    color: #959AA2;
-    font-size: 8.25pt;
+    color: @secondary_text;
+    font-size: 8.5pt;
     font-weight: 500;
     background: transparent;
 }
 
 #SidebarSectionLabel {
-    color: #666B73;
+    color: @muted_text;
     font-size: 6.75pt;
     font-weight: 800;
     letter-spacing: 1px;
@@ -285,7 +289,7 @@ QWidget {
 
 #SidebarNavButton[selected="true"] {
     background: #242016;
-    border: 1px solid #57471F;
+    border: 1px solid @selected_border;
     border-left: 3px solid #D2A533;
     color: #F2F3F4;
     font-weight: 700;
@@ -315,7 +319,7 @@ QWidget {
         stop: 0.42 #181A1E,
         stop: 1 #15171A
     );
-    border: 1px solid #3A3428;
+    border: 1px solid @card_border;
     border-radius: 14px;
 }
 
@@ -397,14 +401,14 @@ QCheckBox:disabled {
 #PrimaryButton {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #DDB23E,
-        stop: 0.48 #D2A533,
-        stop: 1 #BE8E27
+        stop: 0 #D3AA3C,
+        stop: 0.48 #C89B30,
+        stop: 1 #B68225
     );
     color: #111111;
     font-size: 11.25pt;
     font-weight: 800;
-    border: 1px solid #D6AA36;
+    border: 1px solid #BF942F;
     border-radius: 11px;
     padding: 9px 18px;
 }
@@ -485,18 +489,18 @@ QCheckBox::indicator:checked {
 #MetricCapsule {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #1B1D21,
-        stop: 1 #17191C
+        stop: 0 #1C1E22,
+        stop: 1 #181A1D
     );
-    border: 1px solid #343027;
+    border: 1px solid @metric_border;
     border-radius: 10px;
 }
 
 #MetricCapsule:hover {
     background: qlineargradient(
         x1: 0, y1: 0, x2: 0, y2: 1,
-        stop: 0 #202228,
-        stop: 1 #1A1C20
+        stop: 0 #22242A,
+        stop: 1 #1C1E22
     );
     border: 1px solid #57471F;
 }
@@ -525,7 +529,7 @@ QCheckBox::indicator:checked {
     color: #ADB1B7;
     font-size: 9pt;
     background: #121316;
-    border: 1px solid #3A3428;
+    border: 1px solid @card_border;
     border-radius: 8px;
     padding: 3px 12px;
     min-width: 138px;
@@ -551,8 +555,8 @@ QCheckBox::indicator:checked {
 }
 
 #StatusText {
-    color: #B8BBC1;
-    font-size: 7.5pt;
+    color: @status_text;
+    font-size: 8.25pt;
     background: transparent;
 }
 
@@ -660,7 +664,7 @@ QScrollBar::sub-page:vertical {
     color: #8F8F8F;
     font-size: 9pt;
     background: transparent;
-    padding: 2px 0px 0px 0px;
+    padding: 3px 0px 0px 0px;
     margin: 0px;
 }
 
@@ -1205,6 +1209,16 @@ def build_application_stylesheet() -> str:
     for source, replacement in _COLOR_REPLACEMENTS.items():
         stylesheet = stylesheet.replace(source, replacement)
 
+    stylesheet = (
+        stylesheet
+        .replace("@card_border", PALETTE.card_border)
+        .replace("@metric_border", PALETTE.metric_border)
+        .replace("@selected_border", PALETTE.selected_border)
+        .replace("@secondary_text", PALETTE.secondary_text)
+        .replace("@status_text", PALETTE.status_text)
+        .replace("@muted_text", PALETTE.muted_text)
+    )
+
     semantic_state_rules = _semantic_state_stylesheet()
     return f"{stylesheet}\n\n{semantic_state_rules}\n"
 
@@ -1331,4 +1345,3 @@ def _semantic_state_stylesheet() -> str:
         .replace("@muted", PALETTE.muted_text)
         .strip()
     )
-

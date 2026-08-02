@@ -948,7 +948,7 @@ class XccMainWindow(QMainWindow):
         sidebar_status_layout = QHBoxLayout(self.sidebar_status_group)
         self.sidebar_status_layout = sidebar_status_layout
         sidebar_status_layout.setContentsMargins(0, 0, 0, 0)
-        sidebar_status_layout.setSpacing(8)
+        sidebar_status_layout.setSpacing(7)
 
         self.footer_status_dot = QLabel()
         self.footer_status_dot.setObjectName("FooterStatusDot")
@@ -1066,7 +1066,7 @@ class XccMainWindow(QMainWindow):
         text_layout = QHBoxLayout(brand_text)
         self.sidebar_brand_text_layout = text_layout
         text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(6)
+        text_layout.setSpacing(7)
         text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         self.sidebar_brand_title = QLabel("XCC", brand_text)
@@ -3868,4 +3868,3 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
-
