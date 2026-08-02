@@ -59,6 +59,7 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     for selector in (
         "QMainWindow",
         "#WindowFrame",
+        "#WindowFrameBorderOverlay",
         "#SidebarBrandHeader",
         "#WindowTitleBar",
         '#WindowFrame[maximized="true"]',
@@ -127,14 +128,21 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert "#SidebarIdentity" not in stylesheet
     assert "#WindowBrandIcon" not in stylesheet
     assert "#WindowBrandTitle" not in stylesheet
-    assert 'border-radius: 7px;' in stylesheet
     assert '#WindowControlButton[role="close"]' in stylesheet
-    assert '#WindowControlButton[role="close"][maximized="true"]' not in stylesheet
+    assert 'border-top-right-radius: 11px;' in stylesheet
+    assert '#WindowControlButton[role="close"][maximized="true"]' in stylesheet
+    assert 'border-top-right-radius: 0px;' in stylesheet
     assert "font-size: 11.25pt" in stylesheet
     assert not re.search(r"font-size:\s*[^;]*px", stylesheet)
     assert "min-height: 42px" in stylesheet
     assert "#WindowControlButton:focus" not in stylesheet
-    assert f"border: 1px solid {PALETTE.frame_border};" in stylesheet
+    frame_rule = re.search(
+        r"(?ms)^#WindowFrame\s*\{(?P<body>.*?)^\}",
+        stylesheet,
+    )
+    assert frame_rule is not None
+    assert "border: none;" in frame_rule.group("body")
+    assert f"border: 1px solid {PALETTE.frame_border};" not in frame_rule.group("body")
     assert stylesheet.count(f"border-bottom: 1px solid {PALETTE.shell_divider};") == 2
     assert stylesheet.count(f"border-top: 1px solid {PALETTE.shell_divider};") == 1
     assert f"border-right: 1px solid {PALETTE.shell_divider};" in stylesheet

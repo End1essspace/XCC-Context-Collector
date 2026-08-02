@@ -9,6 +9,7 @@ from PySide6.QtCore import (
     QLockFile,
     QPoint,
     QRect,
+    QRectF,
     QSize,
     QThread,
     Qt,
@@ -46,10 +47,14 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import (
     QAction,
     QCursor,
+    QColor,
     QIcon,
     QIntValidator,
     QKeySequence,
+    QPainter,
+    QPen,
     QPixmap,
+    QRegion,
     QShortcut,
 )
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
@@ -159,6 +164,7 @@ INSTANCE_SERVER_NAME = "xcc-context-collector-single-instance"
 INSTANCE_LOCK_PATH = Path(tempfile.gettempdir()) / "xcc-context-collector.lock"
 DISPLAY_HOTKEY = format_hotkey_for_display(DEFAULT_HOTKEY)
 WM_NCHITTEST = 0x0084
+HTCLIENT = 1
 HTLEFT = 10
 HTRIGHT = 11
 HTTOP = 12
@@ -229,6 +235,74 @@ class ClickableSourceLineEdit(QLineEdit):
         super().keyPressEvent(event)
 
 
+class WindowFrameBorderOverlay(QWidget):
+    """Paint the outer shell border without shrinking the client layout."""
+
+    def __init__(self, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setObjectName("WindowFrameBorderOverlay")
+        self.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+
+    def paintEvent(self, event) -> None:
+        parent = self.parentWidget()
+        if parent is None or bool(parent.property("maximized")):
+            return
+
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor(PALETTE.frame_border), 1.0))
+
+        # Keep the decorative border above the shell, but let the close-button
+        # hover surface own the physical top-right corner like a native Windows
+        # caption button. The exclusion is active only while that control is hot.
+        clip = QRegion(self.rect())
+        close_button = getattr(self.window(), "window_close_button", None)
+        if (
+            close_button is not None
+            and close_button.isVisible()
+            and (close_button.underMouse() or close_button.isDown())
+        ):
+            close_origin = close_button.mapTo(self, QPoint(0, 0))
+            close_edge_rect = QRect(
+                close_origin.x(),
+                0,
+                max(0, self.width() - close_origin.x()),
+                max(
+                    METRICS.window_titlebar_height,
+                    close_origin.y() + close_button.height(),
+                ),
+            )
+            clip = clip.subtracted(QRegion(close_edge_rect))
+
+        painter.setClipRegion(clip)
+        frame_rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
+        painter.drawRoundedRect(frame_rect, 11.5, 11.5)
+
+
+class WindowFrame(QFrame):
+    """Root shell frame with a non-layout-affecting painted border."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.border_overlay = WindowFrameBorderOverlay(self)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self.border_overlay.setGeometry(self.rect())
+        self.border_overlay.raise_()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self.border_overlay.setGeometry(self.rect())
+        self.border_overlay.raise_()
+
+
 class WindowControlButton(QToolButton):
     """Window-control button backed by packaged Lucide SVG assets."""
 
@@ -280,6 +354,19 @@ class WindowControlButton(QToolButton):
                 "#D5D9DF",
             )
         )
+
+    def enterEvent(self, event) -> None:
+        super().enterEvent(event)
+        self._refresh_frame_border()
+
+    def leaveEvent(self, event) -> None:
+        super().leaveEvent(event)
+        self._refresh_frame_border()
+
+    def _refresh_frame_border(self) -> None:
+        overlay = getattr(self.window(), "window_frame_overlay", None)
+        if overlay is not None:
+            overlay.update()
 
 
 class WindowTitleBar(QFrame):
@@ -878,8 +965,9 @@ class XccMainWindow(QMainWindow):
         self._setup_tray()
 
     def _setup_ui(self) -> None:
-        root = QFrame()
+        root = WindowFrame()
         self.window_frame = root
+        self.window_frame_overlay = root.border_overlay
         root.setObjectName("WindowFrame")
 
         root_layout = QVBoxLayout(root)
@@ -1109,8 +1197,11 @@ class XccMainWindow(QMainWindow):
         controls.setObjectName("WindowControls")
         controls_layout = QHBoxLayout(controls)
         self.window_controls_layout = controls_layout
-        controls_layout.setContentsMargins(0, 0, 6, 0)
-        controls_layout.setSpacing(4)
+        # Window controls form one edge-aligned native-style cluster. The
+        # close button must reach the right edge instead of floating inside
+        # the title bar behind an artificial margin.
+        controls_layout.setContentsMargins(0, 0, 0, 0)
+        controls_layout.setSpacing(0)
 
         self.window_minimize_button = WindowControlButton(
             "minimize",
@@ -1193,19 +1284,38 @@ class XccMainWindow(QMainWindow):
             if button is not None:
                 set_widget_property(button, "maximized", maximized)
 
+        overlay = getattr(self, "window_frame_overlay", None)
+        if overlay is not None:
+            overlay.setVisible(not maximized)
+            if not maximized:
+                overlay.setGeometry(self.window_frame.rect())
+                overlay.raise_()
+                overlay.update()
+
     def _window_hit_test(self, global_position: QPoint) -> int | None:
         """Return a native Windows non-client hit-test code for one point."""
 
-        # Caption controls occupy the complete title-bar height. They must win
-        # over the top resize strip so their upper pixels remain clickable.
+        window_origin = self.mapToGlobal(QPoint(0, 0))
+
+        # Caption controls own their full client area before resize hit-testing.
+        # Expand Close to the physical top-right window corner so the last pixel
+        # remains clickable even if a style or platform rounds its visual surface.
+        close_button = getattr(self, "window_close_button", None)
+        if close_button is not None and close_button.isVisible():
+            close_origin = close_button.mapToGlobal(QPoint(0, 0))
+            close_rect = QRect(close_origin, close_button.size())
+            close_rect.setTop(window_origin.y())
+            close_rect.setRight(window_origin.x() + self.width() - 1)
+            if close_rect.contains(global_position):
+                return HTCLIENT
+
         controls = getattr(self, "window_controls", None)
         if controls is not None and controls.isVisible():
             controls_origin = controls.mapToGlobal(QPoint(0, 0))
             controls_rect = QRect(controls_origin, controls.size())
             if controls_rect.contains(global_position):
-                return None
+                return HTCLIENT
 
-        window_origin = self.mapToGlobal(QPoint(0, 0))
         local_x = global_position.x() - window_origin.x()
         local_y = global_position.y() - window_origin.y()
         width = self.width()

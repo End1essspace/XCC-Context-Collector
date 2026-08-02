@@ -91,13 +91,17 @@ QWidget {
 
 #WindowFrame {
     background: #0D0E10;
-    border: 1px solid #484238;
+    border: none;
     border-radius: 12px;
 }
 
 #WindowFrame[maximized="true"] {
-    border: none;
     border-radius: 0px;
+}
+
+#WindowFrameBorderOverlay {
+    background: transparent;
+    border: none;
 }
 
 #WindowBody,
@@ -148,8 +152,16 @@ QWidget {
 #WindowControlButton {
     background: transparent;
     border: none;
-    border-radius: 7px;
+    border-radius: 0px;
     padding: 0px;
+}
+
+#WindowControlButton[role="close"] {
+    border-top-right-radius: 11px;
+}
+
+#WindowControlButton[role="close"][maximized="true"] {
+    border-top-right-radius: 0px;
 }
 
 #WindowControlButton:hover {

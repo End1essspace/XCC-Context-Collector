@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QApplication, QSizePolicy
 from xcc.gui import (
     HTBOTTOMRIGHT,
     HTCAPTION,
+    HTCLIENT,
     HTTOPLEFT,
     XccMainWindow,
 )
@@ -129,8 +130,28 @@ def test_maximized_density_balances_setup_and_last_run(
     assert not hasattr(window, "window_brand_title")
     assert not hasattr(window, "window_brand_subtitle")
     assert not hasattr(window, "status_version_label")
-    assert window.window_controls_layout.spacing() == 4
-    assert window.window_controls_layout.contentsMargins().right() == 6
+    assert window.window_controls_layout.spacing() == 0
+    assert window.window_controls_layout.contentsMargins().right() == 0
+    assert window.window_controls_layout.contentsMargins().top() == 0
+    assert window.window_controls_layout.contentsMargins().bottom() == 0
+    assert (
+        window.window_close_button.geometry().right()
+        == window.window_controls.contentsRect().right()
+    )
+    assert (
+        window.window_controls.geometry().right()
+        == window.window_title_bar.contentsRect().right()
+    )
+    assert window.window_frame.contentsRect() == window.window_frame.rect()
+    assert window.window_frame_overlay.geometry() == window.window_frame.rect()
+    assert window.window_frame_overlay.testAttribute(
+        Qt.WidgetAttribute.WA_TransparentForMouseEvents
+    )
+    window_origin = window.mapToGlobal(QPoint(0, 0))
+    close_top_right = window.window_close_button.mapToGlobal(
+        QPoint(window.window_close_button.width() - 1, 0)
+    )
+    assert close_top_right == window_origin + QPoint(window.width() - 1, 0)
     assert all(
         button.text() == ""
         and button.width() == 52
@@ -234,7 +255,10 @@ def test_frameless_window_exposes_native_resize_and_caption_regions(
     assert window._window_hit_test(footer_point) is None
 
     controls_point = window.window_controls.mapToGlobal(QPoint(4, 4))
-    assert window._window_hit_test(controls_point) is None
+    assert window._window_hit_test(controls_point) == HTCLIENT
+
+    top_right = origin + QPoint(window.width() - 1, 0)
+    assert window._window_hit_test(top_right) == HTCLIENT
 
     window._is_quitting = True
     window.close()
