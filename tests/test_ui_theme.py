@@ -35,8 +35,6 @@ def test_ui_palette_matches_frozen_v130_contract() -> None:
     assert PALETTE.error == "#D86C6C"
     assert PALETTE.neutral == "#90959D"
     assert PALETTE.status_text == "#BEC2C8"
-    assert PALETTE.brand_secondary_text == "#B2BAC5"
-    assert PALETTE.brand_separator == "#34383E"
 
 
 def test_ui_metrics_keep_supported_geometry_contract() -> None:
@@ -71,7 +69,6 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
         "#StatusBar",
         "#SidebarBrandIcon",
         "#SidebarBrandTitle",
-        "#SidebarBrandSeparator",
         "#SidebarBrandSubtitle",
         "#SidebarNavButton",
         "#ModeSelectorGroup",
@@ -136,7 +133,6 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert '#WindowControlButton[role="close"][maximized="true"]' not in stylesheet
     assert "font-size: 11.25pt" in stylesheet
     assert "font-size: 12.5pt" in stylesheet
-    assert "font-size: 9.25pt" in stylesheet
     assert not re.search(r"font-size:\s*[^;]*px", stylesheet)
     assert "min-height: 42px" in stylesheet
     assert "#WindowControlButton:focus" not in stylesheet
@@ -227,19 +223,11 @@ def test_final_polish_keeps_resting_surfaces_quiet_and_states_clear() -> None:
         assert match is not None
         return match.group("body")
 
-    brand_title = rule("#SidebarBrandTitle")
-    assert "color: #F2F4F7;" in brand_title
-    assert "font-size: 12.5pt;" in brand_title
-    assert "font-weight: 700;" in brand_title
-
-    brand_separator = rule("#SidebarBrandSeparator")
-    assert f"background: {PALETTE.brand_separator};" in brand_separator
-    assert "border: none;" in brand_separator
-
-    brand_subtitle = rule("#SidebarBrandSubtitle")
-    assert f"color: {PALETTE.brand_secondary_text};" in brand_subtitle
-    assert "font-size: 9.25pt;" in brand_subtitle
-    assert "font-weight: 500;" in brand_subtitle
+    brand_lockup = rule("#SidebarBrandTitle,\n#SidebarBrandSubtitle")
+    assert "color: #F2F4F7;" in brand_lockup
+    assert "font-size: 12.5pt;" in brand_lockup
+    assert "font-weight: 700;" in brand_lockup
+    assert "#SidebarBrandSeparator" not in stylesheet
 
     section_label = rule("#SidebarSectionLabel")
     assert f"color: {PALETTE.muted_text};" in section_label
@@ -273,8 +261,6 @@ def test_final_polish_keeps_resting_surfaces_quiet_and_states_clear() -> None:
     assert "@metric_border" not in stylesheet
     assert "@selected_border" not in stylesheet
     assert "@status_text" not in stylesheet
-    assert "@brand_secondary_text" not in stylesheet
-    assert "@brand_separator" not in stylesheet
 
 
 def test_tray_menu_uses_shared_palette() -> None:
@@ -294,3 +280,4 @@ def test_custom_header_styles_drop_legacy_subtitle_and_footer_version() -> None:
 
     assert "#WindowBrandSubtitle" not in stylesheet
     assert "#StatusVersion" not in stylesheet
+

@@ -7,7 +7,7 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtCore import QPoint, QSize, Qt
+from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QApplication, QSizePolicy
 
 from xcc.gui import (
@@ -115,10 +115,9 @@ def test_maximized_density_balances_setup_and_last_run(
     assert window.sidebar_brand_icon.pixmap().deviceIndependentSize().width() == 34
     assert window.sidebar_brand_title.text() == "XCC"
     assert window.sidebar_brand_subtitle.text() == "Context Collector"
-    assert window.sidebar_brand_separator.size() == QSize(1, 16)
-    assert window.sidebar_brand_text_layout.spacing() == 0
-    assert window.sidebar_brand_title.x() < window.sidebar_brand_separator.x()
-    assert window.sidebar_brand_separator.x() < window.sidebar_brand_subtitle.x()
+    assert not hasattr(window, "sidebar_brand_separator")
+    assert window.sidebar_brand_text_layout.spacing() == 6
+    assert window.sidebar_brand_title.x() < window.sidebar_brand_subtitle.x()
     assert (
         window.sidebar_brand_text_layout.itemAt(0).alignment()
         & Qt.AlignmentFlag.AlignVCenter
@@ -128,14 +127,13 @@ def test_maximized_density_balances_setup_and_last_run(
         & Qt.AlignmentFlag.AlignBaseline
     )
     assert (
-        window.sidebar_brand_text_layout.itemAt(2).alignment()
+        window.sidebar_brand_text_layout.itemAt(1).alignment()
         & Qt.AlignmentFlag.AlignVCenter
     )
-    assert (
-        window.sidebar_brand_text_layout.itemAt(4).alignment()
-        & Qt.AlignmentFlag.AlignVCenter
+    assert not (
+        window.sidebar_brand_text_layout.itemAt(1).alignment()
+        & Qt.AlignmentFlag.AlignBaseline
     )
-    assert window.sidebar_brand_separator.isVisible()
     assert window.sidebar_brand_subtitle.isVisible()
     assert not hasattr(window, "window_brand_icon")
     assert not hasattr(window, "window_brand_title")
@@ -201,7 +199,7 @@ def test_minimum_window_uses_vertical_scroll_without_horizontal_scroll(
 
     assert window._collect_layout_mode is CollectLayoutMode.COMPACT
     assert window.sidebar_shell.width() == 196
-    assert not window.sidebar_brand_separator.isVisible()
+    assert not hasattr(window, "sidebar_brand_separator")
     assert not window.sidebar_brand_subtitle.isVisible()
     assert window.sidebar_brand_title.isVisible()
     assert (
@@ -248,3 +246,4 @@ def test_frameless_window_exposes_native_resize_and_caption_regions(
 
     window._is_quitting = True
     window.close()
+

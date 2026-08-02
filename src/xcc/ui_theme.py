@@ -30,8 +30,6 @@ class UiPalette:
     primary_text: str = "#F2F3F4"
     secondary_text: str = "#ADB1B7"
     status_text: str = "#BEC2C8"
-    brand_secondary_text: str = "#B2BAC5"
-    brand_separator: str = "#34383E"
     muted_text: str = "#7F848C"
     success: str = "#69B985"
     warning: str = "#D5A13B"
@@ -241,22 +239,11 @@ QWidget {
     background: transparent;
 }
 
-#SidebarBrandTitle {
+#SidebarBrandTitle,
+#SidebarBrandSubtitle {
     color: #F2F4F7;
     font-size: 12.5pt;
     font-weight: 700;
-    background: transparent;
-}
-
-#SidebarBrandSeparator {
-    background: @brand_separator;
-    border: none;
-}
-
-#SidebarBrandSubtitle {
-    color: @brand_secondary_text;
-    font-size: 9.25pt;
-    font-weight: 500;
     background: transparent;
 }
 
@@ -1223,8 +1210,6 @@ def build_application_stylesheet() -> str:
         .replace("@selected_border", PALETTE.selected_border)
         .replace("@secondary_text", PALETTE.secondary_text)
         .replace("@status_text", PALETTE.status_text)
-        .replace("@brand_secondary_text", PALETTE.brand_secondary_text)
-        .replace("@brand_separator", PALETTE.brand_separator)
         .replace("@muted_text", PALETTE.muted_text)
     )
 
@@ -1354,3 +1339,4 @@ def _semantic_state_stylesheet() -> str:
         .replace("@muted", PALETTE.muted_text)
         .strip()
     )
+

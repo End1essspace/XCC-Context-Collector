@@ -1066,7 +1066,7 @@ class XccMainWindow(QMainWindow):
         text_layout = QHBoxLayout(brand_text)
         self.sidebar_brand_text_layout = text_layout
         text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(0)
+        text_layout.setSpacing(6)
         text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         self.sidebar_brand_title = QLabel("XCC", brand_text)
@@ -1075,14 +1075,6 @@ class XccMainWindow(QMainWindow):
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
         self.sidebar_brand_title.setAttribute(
-            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
-            True,
-        )
-
-        self.sidebar_brand_separator = QFrame(brand_text)
-        self.sidebar_brand_separator.setObjectName("SidebarBrandSeparator")
-        self.sidebar_brand_separator.setFixedSize(1, 16)
-        self.sidebar_brand_separator.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
             True,
         )
@@ -1102,13 +1094,6 @@ class XccMainWindow(QMainWindow):
             0,
             Qt.AlignmentFlag.AlignVCenter,
         )
-        text_layout.addSpacing(8)
-        text_layout.addWidget(
-            self.sidebar_brand_separator,
-            0,
-            Qt.AlignmentFlag.AlignVCenter,
-        )
-        text_layout.addSpacing(8)
         text_layout.addWidget(
             self.sidebar_brand_subtitle,
             0,
@@ -1754,8 +1739,6 @@ class XccMainWindow(QMainWindow):
         # Preserve the complete product lockup at the full sidebar width,
         # while using the compact brand mark when the descriptor would clip.
         show_descriptor = shell_width >= METRICS.sidebar_width
-        if hasattr(self, "sidebar_brand_separator"):
-            self.sidebar_brand_separator.setVisible(show_descriptor)
         if hasattr(self, "sidebar_brand_subtitle"):
             self.sidebar_brand_subtitle.setVisible(show_descriptor)
 
@@ -3898,3 +3881,4 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
+
