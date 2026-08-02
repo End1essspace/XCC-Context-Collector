@@ -1033,12 +1033,12 @@ class XccMainWindow(QMainWindow):
         header.setAccessibleName("XCC Context Collector")
 
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(14, 5, 8, 5)
-        layout.setSpacing(8)
+        layout.setContentsMargins(14, 7, 8, 7)
+        layout.setSpacing(10)
 
         self.sidebar_brand_icon = QLabel(header)
         self.sidebar_brand_icon.setObjectName("SidebarBrandIcon")
-        self.sidebar_brand_icon.setFixedSize(36, 36)
+        self.sidebar_brand_icon.setFixedSize(34, 34)
         self.sidebar_brand_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.sidebar_brand_icon.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
@@ -1049,8 +1049,8 @@ class XccMainWindow(QMainWindow):
             if not pixmap.isNull():
                 self.sidebar_brand_icon.setPixmap(
                     pixmap.scaled(
-                        36,
-                        36,
+                        34,
+                        34,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )
@@ -1066,17 +1066,32 @@ class XccMainWindow(QMainWindow):
         text_layout = QHBoxLayout(brand_text)
         self.sidebar_brand_text_layout = text_layout
         text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(7)
+        text_layout.setSpacing(0)
         text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
 
         self.sidebar_brand_title = QLabel("XCC", brand_text)
         self.sidebar_brand_title.setObjectName("SidebarBrandTitle")
+        self.sidebar_brand_title.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         self.sidebar_brand_title.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
             True,
         )
+
+        self.sidebar_brand_separator = QFrame(brand_text)
+        self.sidebar_brand_separator.setObjectName("SidebarBrandSeparator")
+        self.sidebar_brand_separator.setFixedSize(1, 16)
+        self.sidebar_brand_separator.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+
         self.sidebar_brand_subtitle = QLabel("Context Collector", brand_text)
         self.sidebar_brand_subtitle.setObjectName("SidebarBrandSubtitle")
+        self.sidebar_brand_subtitle.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
         self.sidebar_brand_subtitle.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
             True,
@@ -1085,12 +1100,19 @@ class XccMainWindow(QMainWindow):
         text_layout.addWidget(
             self.sidebar_brand_title,
             0,
-            Qt.AlignmentFlag.AlignBaseline,
+            Qt.AlignmentFlag.AlignVCenter,
         )
+        text_layout.addSpacing(8)
+        text_layout.addWidget(
+            self.sidebar_brand_separator,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        text_layout.addSpacing(8)
         text_layout.addWidget(
             self.sidebar_brand_subtitle,
             0,
-            Qt.AlignmentFlag.AlignBaseline,
+            Qt.AlignmentFlag.AlignVCenter,
         )
         text_layout.addStretch(1)
         layout.addWidget(
@@ -1728,6 +1750,14 @@ class XccMainWindow(QMainWindow):
         self.sidebar_shell.setFixedWidth(shell_width)
         self.nav.set_sidebar_width(shell_width)
         self.sidebar_brand_header.setFixedWidth(shell_width)
+
+        # Preserve the complete product lockup at the full sidebar width,
+        # while using the compact brand mark when the descriptor would clip.
+        show_descriptor = shell_width >= METRICS.sidebar_width
+        if hasattr(self, "sidebar_brand_separator"):
+            self.sidebar_brand_separator.setVisible(show_descriptor)
+        if hasattr(self, "sidebar_brand_subtitle"):
+            self.sidebar_brand_subtitle.setVisible(show_descriptor)
 
     def _apply_collect_layout(self, *, force: bool = False) -> None:
         viewport_size = self._collect_viewport_size()

@@ -7,7 +7,7 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QPoint, QSize, Qt
 from PySide6.QtWidgets import QApplication, QSizePolicy
 
 from xcc.gui import (
@@ -108,23 +108,35 @@ def test_maximized_density_balances_setup_and_last_run(
     assert window.sidebar_status_layout.spacing() == 7
     assert window.sidebar_brand_header.layout().contentsMargins().left() == 14
     assert window.sidebar_brand_header.layout().contentsMargins().right() == 8
-    assert window.sidebar_brand_header.layout().contentsMargins().top() == 5
-    assert window.sidebar_brand_header.layout().contentsMargins().bottom() == 5
-    assert window.sidebar_brand_header.layout().spacing() == 8
-    assert window.sidebar_brand_icon.size().width() == 36
-    assert window.sidebar_brand_icon.pixmap().deviceIndependentSize().width() == 36
+    assert window.sidebar_brand_header.layout().contentsMargins().top() == 7
+    assert window.sidebar_brand_header.layout().contentsMargins().bottom() == 7
+    assert window.sidebar_brand_header.layout().spacing() == 10
+    assert window.sidebar_brand_icon.size().width() == 34
+    assert window.sidebar_brand_icon.pixmap().deviceIndependentSize().width() == 34
     assert window.sidebar_brand_title.text() == "XCC"
     assert window.sidebar_brand_subtitle.text() == "Context Collector"
-    assert window.sidebar_brand_text_layout.spacing() == 7
-    assert window.sidebar_brand_title.x() < window.sidebar_brand_subtitle.x()
+    assert window.sidebar_brand_separator.size() == QSize(1, 16)
+    assert window.sidebar_brand_text_layout.spacing() == 0
+    assert window.sidebar_brand_title.x() < window.sidebar_brand_separator.x()
+    assert window.sidebar_brand_separator.x() < window.sidebar_brand_subtitle.x()
     assert (
+        window.sidebar_brand_text_layout.itemAt(0).alignment()
+        & Qt.AlignmentFlag.AlignVCenter
+    )
+    assert not (
         window.sidebar_brand_text_layout.itemAt(0).alignment()
         & Qt.AlignmentFlag.AlignBaseline
     )
     assert (
-        window.sidebar_brand_text_layout.itemAt(1).alignment()
-        & Qt.AlignmentFlag.AlignBaseline
+        window.sidebar_brand_text_layout.itemAt(2).alignment()
+        & Qt.AlignmentFlag.AlignVCenter
     )
+    assert (
+        window.sidebar_brand_text_layout.itemAt(4).alignment()
+        & Qt.AlignmentFlag.AlignVCenter
+    )
+    assert window.sidebar_brand_separator.isVisible()
+    assert window.sidebar_brand_subtitle.isVisible()
     assert not hasattr(window, "window_brand_icon")
     assert not hasattr(window, "window_brand_title")
     assert not hasattr(window, "window_brand_subtitle")
@@ -188,6 +200,10 @@ def test_minimum_window_uses_vertical_scroll_without_horizontal_scroll(
     _settle(qapp, window)
 
     assert window._collect_layout_mode is CollectLayoutMode.COMPACT
+    assert window.sidebar_shell.width() == 196
+    assert not window.sidebar_brand_separator.isVisible()
+    assert not window.sidebar_brand_subtitle.isVisible()
+    assert window.sidebar_brand_title.isVisible()
     assert (
         window.collect_page_scroll.horizontalScrollBarPolicy()
         == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
