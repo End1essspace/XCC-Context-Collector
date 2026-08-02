@@ -74,6 +74,7 @@ from .safety import (
     should_show_safety_confirmation,
 )
 from .resources import resource_path
+from .fitts_close import FittsCloseController
 from .ui_components import (
     MetricCapsule,
     PageHeader,
@@ -176,10 +177,6 @@ HTBOTTOMRIGHT = 17
 HTCAPTION = 2
 FRAME_RESIZE_MARGIN = 6
 FULL_BRAND_MIN_SIDEBAR_WIDTH = 212
-CLOSE_EDGE_EXTRA_LEFT = 8
-CLOSE_CORNER_OUTER_TOLERANCE = 12
-EDGE_CLOSE_POLL_INTERVAL_MS = 25
-SAFE_CLOSE_DELAY_MS = 120
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -1032,16 +1029,16 @@ class XccMainWindow(QMainWindow):
         self._collect_geometry_spec: CollectGeometrySpec | None = None
         self._effective_setup_height = 0
         self._effective_stats_min_height = 0
-        self._edge_close_pressed = False
-        self._edge_close_mouse_was_down = False
-        self._safe_close_requested = False
-        self._safe_close_timer = QTimer(self)
-        self._safe_close_timer.setSingleShot(True)
-        self._safe_close_timer.timeout.connect(self.close)
         self._is_custom_maximized = False
         self._normal_geometry: QRect | None = None
 
         self._setup_ui()
+        self._fitts_close = FittsCloseController(
+            window=self,
+            title_bar=self.window_title_bar,
+            close_button=self.window_close_button,
+            is_effectively_maximized=self._is_effectively_maximized,
+        )
         self._apply_collect_layout(force=True)
         self._apply_loaded_settings()
         if settings_result.recovered_from_error:
@@ -1049,7 +1046,6 @@ class XccMainWindow(QMainWindow):
         self._is_loading_settings = False
         self._apply_theme()
         self._setup_tray()
-        self._start_edge_close_watcher()
 
     def _setup_ui(self) -> None:
         root = WindowFrame()
@@ -1266,7 +1262,6 @@ class XccMainWindow(QMainWindow):
         title_bar = WindowTitleBar(self)
         title_bar.setAccessibleName("Window title bar")
         title_bar.setMouseTracking(True)
-        title_bar.installEventFilter(self)
 
         layout = QHBoxLayout(title_bar)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -1314,7 +1309,6 @@ class XccMainWindow(QMainWindow):
         )
         self.window_close_button.setAccessibleName("Close window")
         self.window_close_button.setToolTip("Close")
-        self.window_close_button.clicked.connect(self._request_safe_close)
 
         for button in (
             self.window_minimize_button,
@@ -1485,117 +1479,20 @@ class XccMainWindow(QMainWindow):
                 overlay.raise_()
                 overlay.update()
 
-    def _is_title_bar_close_edge(self, local_position: QPoint) -> bool:
-        title_bar = getattr(self, "window_title_bar", None)
-        close_button = getattr(self, "window_close_button", None)
-
-        if title_bar is None or close_button is None:
-            return False
-
-        left = (
-            title_bar.width()
-            - close_button.width()
-            - CLOSE_EDGE_EXTRA_LEFT
-        )
-        return (
-            left <= local_position.x() <= title_bar.width()
-            and 0 <= local_position.y() <= title_bar.height()
-        )
-
-    def _point_is_in_close_corner(self, local_position: QPoint) -> bool:
-        title_bar = getattr(self, "window_title_bar", None)
-        close_button = getattr(self, "window_close_button", None)
-
-        if title_bar is None or close_button is None:
-            return False
-
-        left = self.width() - close_button.width()
-        right = self.width() + CLOSE_CORNER_OUTER_TOLERANCE
-        top = -CLOSE_CORNER_OUTER_TOLERANCE
-        bottom = title_bar.height()
-
-        return (
-            left <= local_position.x() <= right
-            and top <= local_position.y() <= bottom
-        )
-
-    def _is_cursor_in_close_corner(self) -> bool:
-        return self._point_is_in_close_corner(
-            self.mapFromGlobal(QCursor.pos())
-        )
-
-    def _set_close_force_hover(self, enabled: bool) -> None:
-        close_button = getattr(self, "window_close_button", None)
-        if close_button is not None:
-            close_button.set_force_hover(enabled)
-
-    def _reset_edge_close_interaction(self) -> None:
-        self._edge_close_pressed = False
-        self._edge_close_mouse_was_down = False
-        self._set_close_force_hover(False)
-
-    def _start_edge_close_watcher(self) -> None:
-        self._edge_close_timer = QTimer(self)
-        self._edge_close_timer.setInterval(
-            EDGE_CLOSE_POLL_INTERVAL_MS
-        )
-        self._edge_close_timer.timeout.connect(
-            self._poll_edge_close_corner
-        )
-        self._edge_close_timer.start()
-
-    def _poll_edge_close_corner(self) -> None:
-        if (
-            self._safe_close_requested
-            or not self.isVisible()
-            or not self.isActiveWindow()
-        ):
-            self._edge_close_mouse_was_down = False
-            self._set_close_force_hover(False)
-            return
-
-        in_close_corner = self._is_cursor_in_close_corner()
-        left_down = bool(
-            QApplication.mouseButtons()
-            & Qt.MouseButton.LeftButton
-        )
-
-        self._set_close_force_hover(in_close_corner)
-
-        if left_down:
-            if (
-                in_close_corner
-                and not self._edge_close_mouse_was_down
-            ):
-                self._edge_close_mouse_was_down = True
-            return
-
-        if self._edge_close_mouse_was_down:
-            should_close = in_close_corner
-            self._edge_close_mouse_was_down = False
-            self._set_close_force_hover(False)
-
-            if should_close:
-                self._request_safe_close()
-
-    def _request_safe_close(self) -> None:
-        if self._safe_close_requested:
-            return
-
-        self._safe_close_requested = True
-        self._reset_edge_close_interaction()
-        self._safe_close_timer.start(SAFE_CLOSE_DELAY_MS)
+        controller = getattr(self, "_fitts_close", None)
+        if controller is not None:
+            QTimer.singleShot(0, controller.sync_timer)
 
     def _window_hit_test(self, global_position: QPoint) -> int | None:
         """Return a native Windows non-client hit-test code for one point."""
 
         window_origin = self.mapToGlobal(QPoint(0, 0))
-        local_position = self.mapFromGlobal(global_position)
-
-        # The complete virtual close corner owns the client path before native
-        # resize margins are evaluated.
-        if self._point_is_in_close_corner(local_position):
-            return HTCLIENT
+        close_button = getattr(self, "window_close_button", None)
+        if close_button is not None and close_button.isVisible():
+            close_origin = close_button.mapToGlobal(QPoint(0, 0))
+            close_rect = QRect(close_origin, close_button.size())
+            if close_rect.contains(global_position):
+                return HTCLIENT
 
         controls = getattr(self, "window_controls", None)
         if controls is not None and controls.isVisible():
@@ -1700,8 +1597,7 @@ class XccMainWindow(QMainWindow):
         self._refresh_settings_page()
 
     def _restore_from_hotkey(self) -> None:
-        self._safe_close_requested = False
-        self._reset_edge_close_interaction()
+        self._fitts_close.reset_interaction()
 
         if self.app_settings.start_maximized:
             self._maximize_to_available_geometry()
@@ -1710,6 +1606,7 @@ class XccMainWindow(QMainWindow):
 
         self.raise_()
         self.activateWindow()
+        QTimer.singleShot(0, self._fitts_close.sync_timer)
         self._set_transient_event_status("Window restored by hotkey.")
     
     def _on_autostart_changed(self) -> None:
@@ -1951,8 +1848,7 @@ class XccMainWindow(QMainWindow):
         self.status_label.setText(message)
 
     def _show_main_window(self) -> None:
-        self._safe_close_requested = False
-        self._reset_edge_close_interaction()
+        self._fitts_close.reset_interaction()
 
         if self.app_settings.start_maximized:
             self._maximize_to_available_geometry()
@@ -1960,8 +1856,7 @@ class XccMainWindow(QMainWindow):
             self._restore_to_normal_geometry()
 
     def _show_from_tray(self) -> None:
-        self._safe_close_requested = False
-        self._reset_edge_close_interaction()
+        self._fitts_close.reset_interaction()
 
         if self.app_settings.start_maximized:
             self._maximize_to_available_geometry()
@@ -1970,6 +1865,7 @@ class XccMainWindow(QMainWindow):
 
         self.raise_()
         self.activateWindow()
+        QTimer.singleShot(0, self._fitts_close.sync_timer)
         self._set_transient_event_status("Window restored.")
 
     def _hide_to_tray(self) -> None:
@@ -1977,8 +1873,9 @@ class XccMainWindow(QMainWindow):
             self._set_event_status("Tray is not available.")
             return
 
-        self._reset_edge_close_interaction()
+        self._fitts_close.reset_interaction()
         self.hide()
+        self._fitts_close.sync_timer()
         self._set_transient_event_status("Hidden to tray.")
 
     def _quit_from_tray(self) -> None:
@@ -2030,7 +1927,7 @@ class XccMainWindow(QMainWindow):
         super().keyPressEvent(event)
 
     def closeEvent(self, event) -> None:
-        self._reset_edge_close_interaction()
+        self._fitts_close.reset_interaction()
 
         if self._is_quitting:
             self._cleanup_global_hotkey()
@@ -2042,7 +1939,6 @@ class XccMainWindow(QMainWindow):
             and hasattr(self, "tray_icon")
             and self.tray_icon.isVisible()
         ):
-            self._safe_close_requested = False
             self.hide()
             self._set_transient_event_status("Hidden to tray.")
 
@@ -2059,7 +1955,6 @@ class XccMainWindow(QMainWindow):
             return
 
         if self._collection_active:
-            self._safe_close_requested = False
             self._close_after_collection = True
             self._cancel_collection()
             event.ignore()
@@ -2101,59 +1996,6 @@ class XccMainWindow(QMainWindow):
             QTimer.singleShot(0, self._apply_collect_layout)
 
     def eventFilter(self, watched, event) -> bool:
-        if watched is getattr(self, "window_title_bar", None):
-            if event.type() == QEvent.Type.MouseMove:
-                local_position = event.position().toPoint()
-                self._set_close_force_hover(
-                    self._is_title_bar_close_edge(local_position)
-                )
-                return False
-
-            if event.type() == QEvent.Type.Leave:
-                self._edge_close_pressed = False
-                self._set_close_force_hover(False)
-                return False
-
-            if (
-                event.type() == QEvent.Type.MouseButtonDblClick
-                and event.button() == Qt.MouseButton.LeftButton
-            ):
-                if self._is_title_bar_close_edge(
-                    event.position().toPoint()
-                ):
-                    return True
-
-                return False
-
-            if (
-                event.type() == QEvent.Type.MouseButtonPress
-                and event.button() == Qt.MouseButton.LeftButton
-            ):
-                if self._is_title_bar_close_edge(
-                    event.position().toPoint()
-                ):
-                    self._edge_close_pressed = True
-                    self._set_close_force_hover(True)
-                    return True
-
-                return False
-
-            if (
-                event.type() == QEvent.Type.MouseButtonRelease
-                and event.button() == Qt.MouseButton.LeftButton
-                and self._edge_close_pressed
-            ):
-                should_close = self._is_title_bar_close_edge(
-                    event.position().toPoint()
-                )
-                self._edge_close_pressed = False
-                self._set_close_force_hover(False)
-
-                if should_close:
-                    self._request_safe_close()
-
-                return True
-
         if (
             hasattr(self, "collect_page_scroll")
             and watched is self.collect_page_scroll.viewport()
@@ -4328,3 +4170,4 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
+
