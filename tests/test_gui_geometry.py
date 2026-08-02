@@ -11,10 +11,13 @@ from PySide6.QtCore import QPoint, Qt
 from PySide6.QtWidgets import QApplication, QSizePolicy
 
 from xcc.gui import (
+    CLOSE_CORNER_OUTER_TOLERANCE,
+    EDGE_CLOSE_POLL_INTERVAL_MS,
     HTBOTTOMRIGHT,
     HTCAPTION,
     HTCLIENT,
     HTTOPLEFT,
+    SAFE_CLOSE_DELAY_MS,
     XccMainWindow,
 )
 from xcc.ui_responsive import CollectLayoutMode
@@ -165,6 +168,19 @@ def test_maximized_density_balances_setup_and_last_run(
             window.window_close_button,
         )
     )
+    assert all(
+        button.cursor().shape() == Qt.CursorShape.ArrowCursor
+        for button in (
+            window.window_minimize_button,
+            window.window_maximize_button,
+            window.window_close_button,
+        )
+    )
+    assert window.window_close_button.force_hover is False
+    window.window_close_button.set_force_hover(True)
+    assert window.window_close_button.force_hover is True
+    assert window.window_close_button.is_effectively_hovered()
+    window.window_close_button.set_force_hover(False)
     assert window.setup_card_layout.contentsMargins().top() == 22
     assert window.setup_grid.verticalSpacing() == 12
     assert window.stats_card_layout.contentsMargins().top() == 14
@@ -259,7 +275,59 @@ def test_frameless_window_exposes_native_resize_and_caption_regions(
 
     top_right = origin + QPoint(window.width() - 1, 0)
     assert window._window_hit_test(top_right) == HTCLIENT
+    assert window._point_is_in_close_corner(
+        QPoint(window.width() - 1, 0)
+    )
+    assert window._point_is_in_close_corner(
+        QPoint(
+            window.width() + CLOSE_CORNER_OUTER_TOLERANCE,
+            -CLOSE_CORNER_OUTER_TOLERANCE,
+        )
+    )
+    assert not window._point_is_in_close_corner(
+        QPoint(
+            window.width() - window.window_close_button.width() - 1,
+            0,
+        )
+    )
+
+    window._is_custom_maximized = True
+    window._sync_title_bar_state()
+    assert window._window_hit_test(origin + QPoint(2, 2)) != HTTOPLEFT
+    assert window._window_hit_test(top_right) == HTCLIENT
+    window._is_custom_maximized = False
+    window._sync_title_bar_state()
+
+    assert window._edge_close_timer.interval() == EDGE_CLOSE_POLL_INTERVAL_MS
+    assert window._edge_close_timer.isActive()
 
     window._is_quitting = True
     window.close()
 
+
+def test_safe_close_request_is_delayed_and_idempotent(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(1280, 760)
+    window.show()
+    _settle(qapp, window)
+
+    window.window_close_button.set_force_hover(True)
+    window._request_safe_close()
+    remaining_before_second_request = (
+        window._safe_close_timer.remainingTime()
+    )
+    window._request_safe_close()
+
+    assert window._safe_close_requested is True
+    assert window.window_close_button.force_hover is False
+    assert window._safe_close_timer.isSingleShot()
+    assert window._safe_close_timer.isActive()
+    assert window._safe_close_timer.interval() == SAFE_CLOSE_DELAY_MS
+    assert window._safe_close_timer.remainingTime() <= remaining_before_second_request
+
+    window._safe_close_timer.stop()
+    window._safe_close_requested = False
+    window._is_quitting = True
+    window.close()

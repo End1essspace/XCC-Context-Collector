@@ -154,30 +154,7 @@ QWidget {
     border: none;
     border-radius: 0px;
     padding: 0px;
-}
-
-#WindowControlButton[role="close"] {
-    border-top-right-radius: 11px;
-}
-
-#WindowControlButton[role="close"][maximized="true"] {
-    border-top-right-radius: 0px;
-}
-
-#WindowControlButton:hover {
-    background: #24262A;
-}
-
-#WindowControlButton:pressed {
-    background: #303238;
-}
-
-#WindowControlButton[role="close"]:hover {
-    background: #A8323E;
-}
-
-#WindowControlButton[role="close"]:pressed {
-    background: #C13B49;
+    margin: 0px;
 }
 
 #CollectPage,
@@ -1349,4 +1326,3 @@ def _semantic_state_stylesheet() -> str:
         .replace("@muted", PALETTE.muted_text)
         .strip()
     )
-

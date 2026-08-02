@@ -9,6 +9,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QCloseEvent
 from PySide6.QtWidgets import QApplication, QDialog
 
 import xcc.gui as gui_module
@@ -218,3 +219,30 @@ def test_shell_roles_versions_hotkey_and_accessible_names(
         for metric in window.metric_capsules
     )
 
+
+def test_close_to_tray_rearms_safe_corner_close(
+    qapp: QApplication,
+    window: XccMainWindow,
+) -> None:
+    class VisibleTray:
+        @staticmethod
+        def isVisible() -> bool:
+            return True
+
+    window.tray_icon = VisibleTray()
+    window.app_settings.close_to_tray = True
+    window._safe_close_requested = True
+    window.window_close_button.set_force_hover(True)
+
+    event = QCloseEvent()
+    window.closeEvent(event)
+    qapp.processEvents()
+
+    assert not event.isAccepted()
+    assert not window.isVisible()
+    assert window._safe_close_requested is False
+    assert window.window_close_button.force_hover is False
+
+    window.app_settings.close_to_tray = False
+    window.show()
+    qapp.processEvents()

@@ -128,10 +128,16 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert "#SidebarIdentity" not in stylesheet
     assert "#WindowBrandIcon" not in stylesheet
     assert "#WindowBrandTitle" not in stylesheet
-    assert '#WindowControlButton[role="close"]' in stylesheet
-    assert 'border-top-right-radius: 11px;' in stylesheet
-    assert '#WindowControlButton[role="close"][maximized="true"]' in stylesheet
-    assert 'border-top-right-radius: 0px;' in stylesheet
+    assert '#WindowControlButton[role="close"]' not in stylesheet
+    assert "#WindowControlButton:hover" not in stylesheet
+    assert "#WindowControlButton:pressed" not in stylesheet
+    window_control_rule = re.search(
+        r"(?ms)^#WindowControlButton\s*\{(?P<body>.*?)^\}",
+        stylesheet,
+    )
+    assert window_control_rule is not None
+    assert "border-radius: 0px;" in window_control_rule.group("body")
+    assert "margin: 0px;" in window_control_rule.group("body")
     assert "font-size: 11.25pt" in stylesheet
     assert not re.search(r"font-size:\s*[^;]*px", stylesheet)
     assert "min-height: 42px" in stylesheet
@@ -288,4 +294,3 @@ def test_custom_header_styles_drop_legacy_subtitle_and_footer_version() -> None:
 
     assert "#WindowBrandSubtitle" not in stylesheet
     assert "#StatusVersion" not in stylesheet
-
