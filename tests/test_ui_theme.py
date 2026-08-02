@@ -68,8 +68,7 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
         "#Sidebar",
         "#StatusBar",
         "#SidebarBrandIcon",
-        "#SidebarBrandTitle",
-        "#SidebarBrandSubtitle",
+        "#SidebarBrandLabel",
         "#SidebarNavButton",
         "#ModeSelectorGroup",
         '#SidebarNavButton[selected="true"]',
@@ -132,7 +131,6 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
     assert '#WindowControlButton[role="close"]' in stylesheet
     assert '#WindowControlButton[role="close"][maximized="true"]' not in stylesheet
     assert "font-size: 11.25pt" in stylesheet
-    assert "font-size: 12.5pt" in stylesheet
     assert not re.search(r"font-size:\s*[^;]*px", stylesheet)
     assert "min-height: 42px" in stylesheet
     assert "#WindowControlButton:focus" not in stylesheet
@@ -223,10 +221,12 @@ def test_final_polish_keeps_resting_surfaces_quiet_and_states_clear() -> None:
         assert match is not None
         return match.group("body")
 
-    brand_lockup = rule("#SidebarBrandTitle,\n#SidebarBrandSubtitle")
+    brand_lockup = rule("#SidebarBrandLabel")
     assert "color: #F2F4F7;" in brand_lockup
-    assert "font-size: 12.5pt;" in brand_lockup
+    assert "font-size: 11.25pt;" in brand_lockup
     assert "font-weight: 700;" in brand_lockup
+    assert "#SidebarBrandTitle" not in stylesheet
+    assert "#SidebarBrandSubtitle" not in stylesheet
     assert "#SidebarBrandSeparator" not in stylesheet
 
     section_label = rule("#SidebarSectionLabel")

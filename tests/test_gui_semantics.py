@@ -193,9 +193,11 @@ def test_shell_roles_versions_hotkey_and_accessible_names(
         )
     )
     assert window.sidebar_brand_header.accessibleName() == "XCC Context Collector"
-    assert window.sidebar_brand_title.text() == "XCC"
+    assert window.sidebar_brand_label.text() == "XCC Context Collector"
+    assert window.sidebar_brand_label.accessibleName() == "XCC Context Collector"
+    assert not hasattr(window, "sidebar_brand_title")
+    assert not hasattr(window, "sidebar_brand_subtitle")
     assert not hasattr(window, "sidebar_brand_separator")
-    assert window.sidebar_brand_subtitle.text() == "Context Collector"
     assert not hasattr(window, "window_brand_icon")
     assert not hasattr(window, "window_brand_title")
     assert not hasattr(window, "status_version_label")

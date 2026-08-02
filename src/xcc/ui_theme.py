@@ -103,7 +103,6 @@ QWidget {
 #WindowBody,
 #WindowControls,
 #ShellBody,
-#SidebarBrandText,
 #SidebarStatusGroup,
 #PageStack,
 #PageStack > QWidget {
@@ -239,10 +238,9 @@ QWidget {
     background: transparent;
 }
 
-#SidebarBrandTitle,
-#SidebarBrandSubtitle {
+#SidebarBrandLabel {
     color: #F2F4F7;
-    font-size: 12.5pt;
+    font-size: 11.25pt;
     font-weight: 700;
     background: transparent;
 }

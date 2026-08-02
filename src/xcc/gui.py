@@ -169,6 +169,7 @@ HTBOTTOMLEFT = 16
 HTBOTTOMRIGHT = 17
 HTCAPTION = 2
 FRAME_RESIZE_MARGIN = 6
+FULL_BRAND_MIN_SIDEBAR_WIDTH = 212
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -1033,12 +1034,12 @@ class XccMainWindow(QMainWindow):
         header.setAccessibleName("XCC Context Collector")
 
         layout = QHBoxLayout(header)
-        layout.setContentsMargins(14, 7, 8, 7)
-        layout.setSpacing(10)
+        layout.setContentsMargins(14, 8, 8, 8)
+        layout.setSpacing(9)
 
         self.sidebar_brand_icon = QLabel(header)
         self.sidebar_brand_icon.setObjectName("SidebarBrandIcon")
-        self.sidebar_brand_icon.setFixedSize(34, 34)
+        self.sidebar_brand_icon.setFixedSize(32, 32)
         self.sidebar_brand_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.sidebar_brand_icon.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
@@ -1049,63 +1050,41 @@ class XccMainWindow(QMainWindow):
             if not pixmap.isNull():
                 self.sidebar_brand_icon.setPixmap(
                     pixmap.scaled(
-                        34,
-                        34,
+                        32,
+                        32,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation,
                     )
                 )
 
-        brand_text = QWidget(header)
-        self.sidebar_brand_text = brand_text
-        brand_text.setObjectName("SidebarBrandText")
-        brand_text.setAttribute(
-            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
-            True,
-        )
-        text_layout = QHBoxLayout(brand_text)
-        self.sidebar_brand_text_layout = text_layout
-        text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(6)
-        text_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
-
-        self.sidebar_brand_title = QLabel("XCC", brand_text)
-        self.sidebar_brand_title.setObjectName("SidebarBrandTitle")
-        self.sidebar_brand_title.setAlignment(
+        self.sidebar_brand_label = QLabel("XCC Context Collector", header)
+        self.sidebar_brand_label.setObjectName("SidebarBrandLabel")
+        self.sidebar_brand_label.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
-        self.sidebar_brand_title.setAttribute(
+        self.sidebar_brand_label.setAccessibleName("XCC Context Collector")
+        self.sidebar_brand_label.setToolTip("XCC Context Collector")
+        self.sidebar_brand_label.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Fixed,
+        )
+        self.sidebar_brand_label.setMinimumWidth(0)
+        self.sidebar_brand_label.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
             True,
         )
 
-        self.sidebar_brand_subtitle = QLabel("Context Collector", brand_text)
-        self.sidebar_brand_subtitle.setObjectName("SidebarBrandSubtitle")
-        self.sidebar_brand_subtitle.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
-        self.sidebar_brand_subtitle.setAttribute(
-            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
-            True,
-        )
-
-        text_layout.addWidget(
-            self.sidebar_brand_title,
-            0,
-            Qt.AlignmentFlag.AlignVCenter,
-        )
-        text_layout.addWidget(
-            self.sidebar_brand_subtitle,
-            0,
-            Qt.AlignmentFlag.AlignVCenter,
-        )
-        text_layout.addStretch(1)
         layout.addWidget(
             self.sidebar_brand_icon,
             0,
             Qt.AlignmentFlag.AlignVCenter,
         )
-        layout.addWidget(brand_text, 1, Qt.AlignmentFlag.AlignVCenter)
+        layout.addWidget(
+            self.sidebar_brand_label,
+            0,
+            Qt.AlignmentFlag.AlignVCenter,
+        )
+        layout.addStretch(1)
         return header
 
     def _build_title_bar(self) -> WindowTitleBar:
@@ -1736,11 +1715,13 @@ class XccMainWindow(QMainWindow):
         self.nav.set_sidebar_width(shell_width)
         self.sidebar_brand_header.setFixedWidth(shell_width)
 
-        # Preserve the complete product lockup at the full sidebar width,
-        # while using the compact brand mark when the descriptor would clip.
-        show_descriptor = shell_width >= METRICS.sidebar_width
-        if hasattr(self, "sidebar_brand_subtitle"):
-            self.sidebar_brand_subtitle.setVisible(show_descriptor)
+        # The complete lockup belongs to both large and medium layouts.
+        # Only the compact sidebar uses the short product mark.
+        full_brand = shell_width >= FULL_BRAND_MIN_SIDEBAR_WIDTH
+        if hasattr(self, "sidebar_brand_label"):
+            self.sidebar_brand_label.setText(
+                "XCC Context Collector" if full_brand else "XCC"
+            )
 
     def _apply_collect_layout(self, *, force: bool = False) -> None:
         viewport_size = self._collect_viewport_size()

@@ -108,33 +108,23 @@ def test_maximized_density_balances_setup_and_last_run(
     assert window.sidebar_status_layout.spacing() == 7
     assert window.sidebar_brand_header.layout().contentsMargins().left() == 14
     assert window.sidebar_brand_header.layout().contentsMargins().right() == 8
-    assert window.sidebar_brand_header.layout().contentsMargins().top() == 7
-    assert window.sidebar_brand_header.layout().contentsMargins().bottom() == 7
-    assert window.sidebar_brand_header.layout().spacing() == 10
-    assert window.sidebar_brand_icon.size().width() == 34
-    assert window.sidebar_brand_icon.pixmap().deviceIndependentSize().width() == 34
-    assert window.sidebar_brand_title.text() == "XCC"
-    assert window.sidebar_brand_subtitle.text() == "Context Collector"
+    assert window.sidebar_brand_header.layout().contentsMargins().top() == 8
+    assert window.sidebar_brand_header.layout().contentsMargins().bottom() == 8
+    assert window.sidebar_brand_header.layout().spacing() == 9
+    assert window.sidebar_brand_icon.size().width() == 32
+    assert window.sidebar_brand_icon.pixmap().deviceIndependentSize().width() == 32
+    assert window.sidebar_brand_label.text() == "XCC Context Collector"
+    assert window.sidebar_brand_label.isVisible()
+    assert window.sidebar_brand_label.alignment() & Qt.AlignmentFlag.AlignVCenter
+    assert not hasattr(window, "sidebar_brand_title")
+    assert not hasattr(window, "sidebar_brand_subtitle")
     assert not hasattr(window, "sidebar_brand_separator")
-    assert window.sidebar_brand_text_layout.spacing() == 6
-    assert window.sidebar_brand_title.x() < window.sidebar_brand_subtitle.x()
+    assert not hasattr(window, "sidebar_brand_text_layout")
     assert (
-        window.sidebar_brand_text_layout.itemAt(0).alignment()
-        & Qt.AlignmentFlag.AlignVCenter
+        window.sidebar_brand_label.geometry().right()
+        <= window.sidebar_brand_header.width()
+        - window.sidebar_brand_header.layout().contentsMargins().right()
     )
-    assert not (
-        window.sidebar_brand_text_layout.itemAt(0).alignment()
-        & Qt.AlignmentFlag.AlignBaseline
-    )
-    assert (
-        window.sidebar_brand_text_layout.itemAt(1).alignment()
-        & Qt.AlignmentFlag.AlignVCenter
-    )
-    assert not (
-        window.sidebar_brand_text_layout.itemAt(1).alignment()
-        & Qt.AlignmentFlag.AlignBaseline
-    )
-    assert window.sidebar_brand_subtitle.isVisible()
     assert not hasattr(window, "window_brand_icon")
     assert not hasattr(window, "window_brand_title")
     assert not hasattr(window, "window_brand_subtitle")
@@ -199,9 +189,11 @@ def test_minimum_window_uses_vertical_scroll_without_horizontal_scroll(
 
     assert window._collect_layout_mode is CollectLayoutMode.COMPACT
     assert window.sidebar_shell.width() == 196
+    assert window.sidebar_brand_label.text() == "XCC"
+    assert window.sidebar_brand_label.isVisible()
+    assert not hasattr(window, "sidebar_brand_title")
+    assert not hasattr(window, "sidebar_brand_subtitle")
     assert not hasattr(window, "sidebar_brand_separator")
-    assert not window.sidebar_brand_subtitle.isVisible()
-    assert window.sidebar_brand_title.isVisible()
     assert (
         window.collect_page_scroll.horizontalScrollBarPolicy()
         == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
