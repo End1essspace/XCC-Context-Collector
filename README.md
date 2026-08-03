@@ -186,7 +186,7 @@ Runtime History records outcome, duration, source, coverage, truncation, warning
 
 ## Author
 
-**XCON | RX**  
+**End1essspace | RX**  
 Telegram: [@End1essspace](https://t.me/End1essspace)  
 GitHub: [End1essspace](https://github.com/End1essspace)
 
@@ -194,7 +194,7 @@ GitHub: [End1essspace](https://github.com/End1essspace)
 
 XCC Context Collector is licensed under the [GNU General Public License v3.0](LICENSE).
 
-Copyright (C) 2026 Rafael Xudoynazarov (XCON | RX)
+Copyright (C) 2026 Rafael Xudoynazarov (End1essspace | RX)
 
 ---
 
@@ -309,6 +309,6 @@ python gui.py
 
 ## Автор и лицензия
 
-**XCON | RX** · [@End1essspace](https://t.me/End1essspace) · [GitHub](https://github.com/End1essspace)
+**End1essspace | RX** · [@End1essspace](https://t.me/End1essspace) · [GitHub](https://github.com/End1essspace)
 
 XCC Context Collector распространяется по лицензии [GNU GPL v3.0](LICENSE).

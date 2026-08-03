@@ -51,7 +51,7 @@ def render_version_info(version: str = __version__) -> str:
       StringTable(
         '040904B0',
         [
-          StringStruct('CompanyName', 'XCON | RX'),
+          StringStruct('CompanyName', 'End1essspace | RX'),
           StringStruct('FileDescription', 'XCC Context Collector'),
           StringStruct('FileVersion', '{version}'),
           StringStruct('InternalName', 'XCC Context Collector'),
