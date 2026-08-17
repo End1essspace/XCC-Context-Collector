@@ -1,9 +1,8 @@
-
 from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QRectF, QSize, Qt
+from PySide6.QtCore import QEvent, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
@@ -63,6 +62,108 @@ def render_tinted_svg(
     )
     painter.end()
     return pixmap
+
+
+def render_dpi_aware_raster(
+    image_path: str | Path,
+    size: int,
+    *,
+    device_pixel_ratio: float = 1.0,
+) -> QPixmap:
+    """Scale a raster asset for one logical square at the requested DPR."""
+    if size <= 0:
+        raise ValueError("size must be greater than 0")
+
+    path = Path(image_path)
+    if not path.is_file():
+        return QPixmap()
+
+    source = QPixmap(str(path))
+    if source.isNull():
+        return QPixmap()
+
+    ratio = max(1.0, float(device_pixel_ratio))
+    physical_size = max(1, round(size * ratio))
+    pixmap = source.scaled(
+        physical_size,
+        physical_size,
+        Qt.AspectRatioMode.KeepAspectRatio,
+        Qt.TransformationMode.SmoothTransformation,
+    )
+    pixmap.setDevicePixelRatio(ratio)
+    return pixmap
+
+
+class DpiAwareImageLabel(QLabel):
+    """Fixed logical-size raster label that owns its DPR-aware pixmap.
+
+    QLabel may normalize the DPR of a pixmap passed through setPixmap() on
+    some PySide6/Windows backends. Keeping the rendered pixmap ourselves and
+    painting it directly preserves both the logical widget size and the
+    higher-resolution raster buffer at fractional display scales.
+    """
+
+    def __init__(
+        self,
+        image_path: str | Path,
+        size: int,
+        *,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        if size <= 0:
+            raise ValueError("size must be greater than 0")
+
+        self._image_path = Path(image_path)
+        self._logical_size = size
+        self._dpi_pixmap = QPixmap()
+        self.setFixedSize(size, size)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.refresh_pixmap()
+
+    def pixmap(self) -> QPixmap:
+        """Return the currently rendered DPR-aware pixmap by value."""
+
+        return QPixmap(self._dpi_pixmap)
+
+    def refresh_pixmap(
+        self,
+        device_pixel_ratio: float | None = None,
+    ) -> None:
+        ratio = (
+            max(1.0, float(device_pixel_ratio))
+            if device_pixel_ratio is not None
+            else max(1.0, float(self.devicePixelRatioF()))
+        )
+        self._dpi_pixmap = render_dpi_aware_raster(
+            self._image_path,
+            self._logical_size,
+            device_pixel_ratio=ratio,
+        )
+        self.update()
+
+    def paintEvent(self, event: QEvent) -> None:
+        del event
+
+        if self._dpi_pixmap.isNull():
+            return
+
+        painter = QPainter(self)
+        logical_size = self._dpi_pixmap.deviceIndependentSize()
+        target = QRectF(
+            (self.width() - logical_size.width()) / 2.0,
+            (self.height() - logical_size.height()) / 2.0,
+            logical_size.width(),
+            logical_size.height(),
+        )
+        painter.drawPixmap(target, self._dpi_pixmap, QRectF(self._dpi_pixmap.rect()))
+        painter.end()
+
+    def event(self, event: QEvent) -> bool:
+        handled = super().event(event)
+        if event.type() == QEvent.Type.DevicePixelRatioChange:
+            self.refresh_pixmap()
+        return handled
 
 
 def make_tinted_svg_icon(
@@ -182,6 +283,79 @@ class PageHeader(QWidget):
         self.actions_layout.addWidget(widget)
 
 
+class DpiAwareSvgLabel(QLabel):
+    """Fixed logical-size SVG label that preserves fractional DPR metadata."""
+
+    def __init__(
+        self,
+        icon_path: str | Path,
+        size: int,
+        color: str,
+        *,
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        if size <= 0:
+            raise ValueError("size must be greater than 0")
+
+        self._icon_path = Path(icon_path)
+        self._logical_size = size
+        self._color = color
+        self._dpi_pixmap = QPixmap()
+        self.setFixedSize(size, size)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.refresh_pixmap()
+
+    def pixmap(self) -> QPixmap:
+        """Return the currently rendered DPR-aware pixmap by value."""
+
+        return QPixmap(self._dpi_pixmap)
+
+    def refresh_pixmap(
+        self,
+        device_pixel_ratio: float | None = None,
+    ) -> None:
+        ratio = (
+            max(1.0, float(device_pixel_ratio))
+            if device_pixel_ratio is not None
+            else max(1.0, float(self.devicePixelRatioF()))
+        )
+        self._dpi_pixmap = render_tinted_svg(
+            self._icon_path,
+            self._logical_size,
+            self._color,
+            device_pixel_ratio=ratio,
+        )
+        self.update()
+
+    def paintEvent(self, event: QEvent) -> None:
+        del event
+
+        if self._dpi_pixmap.isNull():
+            return
+
+        painter = QPainter(self)
+        logical_size = self._dpi_pixmap.deviceIndependentSize()
+        target = QRectF(
+            (self.width() - logical_size.width()) / 2.0,
+            (self.height() - logical_size.height()) / 2.0,
+            logical_size.width(),
+            logical_size.height(),
+        )
+        painter.drawPixmap(
+            target,
+            self._dpi_pixmap,
+            QRectF(self._dpi_pixmap.rect()),
+        )
+        painter.end()
+
+    def event(self, event: QEvent) -> bool:
+        handled = super().event(event)
+        if event.type() == QEvent.Type.DevicePixelRatioChange:
+            self.refresh_pixmap()
+        return handled
+
+
 class IconTitle(QWidget):
     """Small icon + title row used by cards and metric groups."""
 
@@ -204,19 +378,17 @@ class IconTitle(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
 
-        self.icon_label = QLabel(self)
-        self.icon_label.setObjectName(icon_object_name)
-        self.icon_label.setFixedSize(icon_size, icon_size)
-        self.icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._icon_path = Path(icon_path)
+        self._icon_size = icon_size
+        self._icon_color = icon_color
 
-        pixmap = render_tinted_svg(
-            icon_path,
-            icon_size,
-            icon_color,
-            device_pixel_ratio=max(1.0, float(self.devicePixelRatioF())),
+        self.icon_label = DpiAwareSvgLabel(
+            self._icon_path,
+            self._icon_size,
+            self._icon_color,
+            parent=self,
         )
-        if not pixmap.isNull():
-            self.icon_label.setPixmap(pixmap)
+        self.icon_label.setObjectName(icon_object_name)
 
         self.text_label = QLabel(text, self)
         self.text_label.setObjectName(text_object_name)
@@ -227,6 +399,18 @@ class IconTitle(QWidget):
         layout.addWidget(self.icon_label)
         layout.addWidget(self.text_label)
         layout.addStretch(1)
+
+    def refresh_icon(
+        self,
+        device_pixel_ratio: float | None = None,
+    ) -> None:
+        self.icon_label.refresh_pixmap(device_pixel_ratio)
+
+    def event(self, event: QEvent) -> bool:
+        handled = super().event(event)
+        if event.type() == QEvent.Type.DevicePixelRatioChange:
+            self.refresh_icon()
+        return handled
 
 
 class MetricCapsule(QFrame):

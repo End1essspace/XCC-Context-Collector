@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import os
@@ -16,6 +15,7 @@ from xcc.resources import resource_path
 from xcc.ui_theme import METRICS, PALETTE
 
 from xcc.ui_components import (
+    DpiAwareImageLabel,
     ElidedLabel,
     IconTitle,
     MetricCapsule,
@@ -32,6 +32,7 @@ from xcc.ui_components import (
     make_runtime_status_capsule,
     make_secondary_button,
     make_tinted_svg_icon,
+    render_dpi_aware_raster,
     render_tinted_svg,
     make_section_title,
     set_metric_value,
@@ -179,6 +180,46 @@ def test_svg_tinting_overrides_original_lucide_stroke(
     assert colors
     assert PALETTE.accent.upper() in colors
     assert "#000000" not in colors
+
+
+def test_dpi_aware_raster_preserves_logical_size_at_fractional_scale(
+    qapp: QApplication,
+) -> None:
+    pixmap = render_dpi_aware_raster(
+        resource_path("assets", "xcc_app.png"),
+        32,
+        device_pixel_ratio=1.5,
+    )
+
+    assert not pixmap.isNull()
+    assert pixmap.devicePixelRatio() == pytest.approx(1.5)
+    assert pixmap.width() == 48
+    assert pixmap.height() == 48
+    assert pixmap.deviceIndependentSize().width() == pytest.approx(32.0)
+    assert pixmap.deviceIndependentSize().height() == pytest.approx(32.0)
+
+
+def test_dpi_sensitive_labels_can_rerender_for_new_screen_scale(
+    qapp: QApplication,
+) -> None:
+    raster = DpiAwareImageLabel(
+        resource_path("assets", "xcc_app.png"),
+        32,
+    )
+    raster.refresh_pixmap(1.5)
+    assert raster.pixmap() is not None
+    assert raster.pixmap().devicePixelRatio() == pytest.approx(1.5)
+
+    title = make_icon_title(
+        "Setup",
+        resource_path("assets", "ui-setup.svg"),
+        object_name="CardTitleRow",
+        text_object_name="CardTitle",
+        icon_object_name="CardTitleIcon",
+    )
+    title.refresh_icon(1.5)
+    assert title.icon_label.pixmap() is not None
+    assert title.icon_label.pixmap().devicePixelRatio() == pytest.approx(1.5)
 
 
 def test_tinted_button_icons_use_surface_specific_colors(

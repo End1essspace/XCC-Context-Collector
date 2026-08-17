@@ -7,7 +7,7 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtCore import QEvent, QPoint, Qt
+from PySide6.QtCore import QEvent, QPoint, QRect, QSize, Qt
 from PySide6.QtWidgets import QApplication, QLabel, QSizePolicy
 
 from xcc.fitts_close import EDGE_CLOSE_POLL_INTERVAL_MS
@@ -18,7 +18,10 @@ from xcc.gui import (
     HTCLIENT,
     HTTOPLEFT,
     XccMainWindow,
+    fit_window_geometry_to_available,
 )
+from xcc.ui_components import IconTitle
+
 from xcc.ui_responsive import (
     ABOUT_USEFUL_PAGE_MAX_WIDTH,
     LARGE_USEFUL_PAGE_MAX_WIDTH,
@@ -39,6 +42,86 @@ def _settle(qapp: QApplication, window: XccMainWindow) -> None:
         qapp.processEvents()
         window._apply_collect_layout(force=True)
         window._apply_responsive_pages(force=True)
+
+
+def test_window_geometry_is_clamped_to_positive_work_area(
+    qapp: QApplication,
+) -> None:
+    fitted = fit_window_geometry_to_available(
+        QRect(-120, -80, 1480, 840),
+        QRect(0, 0, 1366, 728),
+        minimum_size=QSize(920, 620),
+    )
+
+    assert fitted == QRect(0, 0, 1366, 728)
+
+
+def test_window_geometry_supports_negative_coordinate_secondary_screen(
+    qapp: QApplication,
+) -> None:
+    available = QRect(-1920, 0, 1920, 1040)
+    fitted = fit_window_geometry_to_available(
+        QRect(-2600, -200, 1480, 840),
+        available,
+        minimum_size=QSize(920, 620),
+    )
+
+    assert fitted.size() == QSize(1480, 840)
+    assert fitted.left() == available.left()
+    assert fitted.top() == available.top()
+    assert available.contains(fitted)
+
+
+def test_restore_normal_geometry_clamps_to_current_work_area(
+    qapp: QApplication,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    window = XccMainWindow()
+    window._is_custom_maximized = True
+    window._normal_geometry = QRect(-400, -250, 1800, 1000)
+    work_area = QRect(0, 0, 1366, 728)
+
+    class ScreenProbe:
+        def availableGeometry(self) -> QRect:
+            return QRect(work_area)
+
+    screen = ScreenProbe()
+    monkeypatch.setattr(
+        window,
+        "_screen_for_normal_geometry",
+        lambda geometry=None: screen,
+    )
+
+    window._restore_to_normal_geometry()
+
+    assert window.geometry() == work_area
+    assert window._normal_geometry == work_area
+
+    window._is_quitting = True
+    window.close()
+
+
+def test_dpi_refresh_updates_direct_pixmap_assets(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.show()
+    _settle(qapp, window)
+
+    window._refresh_dpi_sensitive_assets(None)
+
+    assert window.sidebar_brand_icon.pixmap() is not None
+    assert not window.sidebar_brand_icon.pixmap().isNull()
+    assert window.about_app_icon.pixmap() is not None
+    assert not window.about_app_icon.pixmap().isNull()
+    assert all(
+        title.icon_label.pixmap() is not None
+        and not title.icon_label.pixmap().isNull()
+        for title in window.findChildren(IconTitle)
+    )
+
+    window._is_quitting = True
+    window.close()
 
 
 def test_maximized_geometry_has_no_scrollbar_and_keeps_cta_visible(

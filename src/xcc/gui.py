@@ -53,8 +53,8 @@ from PySide6.QtGui import (
     QKeySequence,
     QPainter,
     QPen,
-    QPixmap,
     QRegion,
+    QScreen,
     QShortcut,
 )
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
@@ -76,6 +76,8 @@ from .safety import (
 from .resources import resource_path
 from .fitts_close import FittsCloseController
 from .ui_components import (
+    DpiAwareImageLabel,
+    IconTitle,
     MetricCapsule,
     PageHeader,
     make_card,
@@ -231,6 +233,31 @@ def _fit_dialog_to_work_area(
     dialog.resize(spec.width, spec.height)
     return spec
 
+
+
+def fit_window_geometry_to_available(
+    geometry: QRect,
+    available: QRect,
+    *,
+    minimum_size: QSize | None = None,
+) -> QRect:
+    """Clamp normal-window geometry to one logical screen work area."""
+    result = QRect(geometry)
+    if not available.isValid() or available.width() <= 0 or available.height() <= 0:
+        return result
+
+    minimum = minimum_size or QSize(1, 1)
+    min_width = min(max(1, minimum.width()), available.width())
+    min_height = min(max(1, minimum.height()), available.height())
+    width = min(max(min_width, result.width()), available.width())
+    height = min(max(min_height, result.height()), available.height())
+    result.setSize(QSize(width, height))
+
+    max_x = available.right() - width + 1
+    max_y = available.bottom() - height + 1
+    result.moveLeft(max(available.left(), min(result.left(), max_x)))
+    result.moveTop(max(available.top(), min(result.top(), max_y)))
+    return result
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -465,7 +492,10 @@ class WindowControlButton(QToolButton):
             painter.fillRect(self.rect(), background)
 
         icon = self._active_icon if hovered or pressed else self._normal_icon
-        pixmap = icon.pixmap(self.iconSize())
+        pixmap = icon.pixmap(
+            self.iconSize(),
+            max(1.0, float(self.devicePixelRatioF())),
+        )
         if not pixmap.isNull():
             target = QRect(
                 (self.width() - self.iconSize().width()) // 2,
@@ -1185,6 +1215,8 @@ class XccMainWindow(QMainWindow):
         self._effective_stats_min_height = 0
         self._is_custom_maximized = False
         self._normal_geometry: QRect | None = None
+        self._window_screen_signal_bound = False
+        self._tracked_screen: QScreen | None = None
         self._restore_maximized_on_show = bool(
             self.app_settings.start_maximized
         )
@@ -1366,25 +1398,16 @@ class XccMainWindow(QMainWindow):
         layout.setContentsMargins(14, 8, 8, 8)
         layout.setSpacing(9)
 
-        self.sidebar_brand_icon = QLabel(header)
+        self.sidebar_brand_icon = DpiAwareImageLabel(
+            APP_IMAGE_PATH,
+            32,
+            parent=header,
+        )
         self.sidebar_brand_icon.setObjectName("SidebarBrandIcon")
-        self.sidebar_brand_icon.setFixedSize(32, 32)
-        self.sidebar_brand_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.sidebar_brand_icon.setAttribute(
             Qt.WidgetAttribute.WA_TransparentForMouseEvents,
             True,
         )
-        if APP_IMAGE_PATH.exists():
-            pixmap = QPixmap(str(APP_IMAGE_PATH))
-            if not pixmap.isNull():
-                self.sidebar_brand_icon.setPixmap(
-                    pixmap.scaled(
-                        32,
-                        32,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation,
-                    )
-                )
 
         self.sidebar_brand_label = QLabel("XCC Context Collector", header)
         self.sidebar_brand_label.setObjectName("SidebarBrandLabel")
@@ -1488,6 +1511,140 @@ class XccMainWindow(QMainWindow):
     def _is_effectively_maximized(self) -> bool:
         return self._is_custom_maximized or self.isMaximized()
 
+    def _screen_for_normal_geometry(
+        self,
+        geometry: QRect | None = None,
+    ) -> QScreen | None:
+        candidate = geometry if geometry is not None and geometry.isValid() else None
+        if candidate is not None:
+            screen = QApplication.screenAt(candidate.center())
+            if screen is not None:
+                return screen
+        return self.screen() or QApplication.primaryScreen()
+
+    def _fit_normal_geometry_to_screen(
+        self,
+        geometry: QRect,
+        screen: QScreen | None = None,
+    ) -> QRect:
+        target_screen = screen or self._screen_for_normal_geometry(geometry)
+        if target_screen is None:
+            return QRect(geometry)
+        return fit_window_geometry_to_available(
+            geometry,
+            target_screen.availableGeometry(),
+            minimum_size=self.minimumSize(),
+        )
+
+    def _bind_window_screen_lifecycle(self) -> None:
+        handle = self.windowHandle()
+        if handle is not None and not self._window_screen_signal_bound:
+            handle.screenChanged.connect(self._on_window_screen_changed)
+            self._window_screen_signal_bound = True
+        self._bind_screen_signals(self.screen())
+
+    def _bind_screen_signals(self, screen: QScreen | None) -> None:
+        if screen is self._tracked_screen:
+            return
+
+        previous = self._tracked_screen
+        if previous is not None:
+            for signal, slot in (
+                (previous.availableGeometryChanged, self._on_screen_work_area_changed),
+                (previous.logicalDotsPerInchChanged, self._on_screen_dpi_changed),
+            ):
+                try:
+                    signal.disconnect(slot)
+                except (RuntimeError, TypeError):
+                    pass
+
+        self._tracked_screen = screen
+        if screen is None:
+            return
+
+        screen.availableGeometryChanged.connect(self._on_screen_work_area_changed)
+        screen.logicalDotsPerInchChanged.connect(self._on_screen_dpi_changed)
+
+    def _on_window_screen_changed(self, screen: QScreen | None) -> None:
+        self._bind_screen_signals(screen)
+        if screen is None:
+            return
+
+        if self._is_custom_maximized:
+            self.setGeometry(screen.availableGeometry())
+        elif not self.isMinimized():
+            geometry = self.geometry()
+            available = screen.availableGeometry()
+            needs_fit = (
+                geometry.width() > available.width()
+                or geometry.height() > available.height()
+                or not available.intersects(geometry)
+            )
+            if needs_fit:
+                fitted = self._fit_normal_geometry_to_screen(geometry, screen)
+                if fitted != geometry:
+                    self.setGeometry(fitted)
+                    self._normal_geometry = QRect(fitted)
+
+        self._refresh_dpi_sensitive_assets(screen)
+
+    def _on_screen_work_area_changed(self, available: QRect) -> None:
+        if self._tracked_screen is None or not available.isValid():
+            return
+
+        if self._is_custom_maximized:
+            self.setGeometry(available)
+            return
+
+        if self.isMinimized():
+            return
+
+        fitted = fit_window_geometry_to_available(
+            self.geometry(),
+            available,
+            minimum_size=self.minimumSize(),
+        )
+        if fitted != self.geometry():
+            self.setGeometry(fitted)
+            self._normal_geometry = QRect(fitted)
+
+    def _on_screen_dpi_changed(self, *_args) -> None:
+        self._refresh_dpi_sensitive_assets(self._tracked_screen)
+
+    def _refresh_dpi_sensitive_assets(
+        self,
+        screen: QScreen | None = None,
+    ) -> None:
+        handle = self.windowHandle()
+        if handle is not None:
+            ratio = max(1.0, float(handle.devicePixelRatio()))
+        elif screen is not None:
+            ratio = max(1.0, float(screen.devicePixelRatio()))
+        else:
+            ratio = max(1.0, float(self.devicePixelRatioF()))
+
+        for icon_title in self.findChildren(IconTitle):
+            icon_title.refresh_icon(ratio)
+
+        for label_name in ("sidebar_brand_icon", "about_app_icon"):
+            label = getattr(self, label_name, None)
+            if isinstance(label, DpiAwareImageLabel):
+                label.refresh_pixmap(ratio)
+
+        for button_name in (
+            "window_minimize_button",
+            "window_maximize_button",
+            "window_close_button",
+        ):
+            button = getattr(self, button_name, None)
+            if isinstance(button, WindowControlButton):
+                button._refresh_icon()
+                button.update()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._bind_window_screen_lifecycle()
+
     def _maximize_to_available_geometry(self) -> None:
         if not self._is_custom_maximized:
             if self.isMaximized():
@@ -1517,14 +1674,28 @@ class XccMainWindow(QMainWindow):
             if self._is_custom_maximized
             and self._normal_geometry is not None
             and self._normal_geometry.isValid()
-            else None
+            else QRect(self.geometry())
+        )
+        if not restore_geometry.isValid():
+            restore_geometry = QRect(QPoint(0, 0), QSize(1480, 840))
+
+        # A custom-maximized window must restore against the screen it is
+        # currently on, not the monitor that happens to contain the stale
+        # normal-geometry center. Passing no geometry keeps that policy inside
+        # the common screen resolver and also makes the lifecycle deterministic
+        # under the offscreen Qt test platform.
+        screen = self._screen_for_normal_geometry(
+            None if self._is_custom_maximized else restore_geometry
+        )
+        restore_geometry = self._fit_normal_geometry_to_screen(
+            restore_geometry,
+            screen,
         )
 
         self._is_custom_maximized = False
         self.showNormal()
-
-        if restore_geometry is not None:
-            self.setGeometry(restore_geometry)
+        self.setGeometry(restore_geometry)
+        self._normal_geometry = QRect(restore_geometry)
 
         self._restore_maximized_on_show = False
         self._sync_title_bar_state()
@@ -1567,12 +1738,21 @@ class XccMainWindow(QMainWindow):
                 )
             )
 
+        screen = QApplication.screenAt(global_position)
+        if screen is not None:
+            available = screen.availableGeometry()
+            restore_geometry.setSize(
+                QSize(
+                    min(restore_geometry.width(), available.width()),
+                    min(restore_geometry.height(), available.height()),
+                )
+            )
+
         target_x = global_position.x() - round(
             restore_geometry.width() * relative_x
         )
         target_y = global_position.y() - title_offset
 
-        screen = QApplication.screenAt(global_position)
         if screen is not None:
             available = screen.availableGeometry()
             visible_grip = min(120, restore_geometry.width())
@@ -4254,21 +4434,10 @@ class XccMainWindow(QMainWindow):
         identity_layout.setContentsMargins(0, 0, 0, 0)
         identity_layout.setSpacing(16)
 
-        icon_label = QLabel()
-        icon_label.setObjectName("AboutAppIcon")
-        icon_label.setFixedSize(56, 56)
-
         app_image_path = APP_IMAGE_PATH if APP_IMAGE_PATH.exists() else APP_ICON_PATH
-        if app_image_path.exists():
-            pixmap = QPixmap(str(app_image_path))
-            icon_label.setPixmap(
-                pixmap.scaled(
-                    56,
-                    56,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation,
-                )
-            )
+        icon_label = DpiAwareImageLabel(app_image_path, 56)
+        self.about_app_icon = icon_label
+        icon_label.setObjectName("AboutAppIcon")
 
         title_box = QWidget()
         title_box.setObjectName("TransparentWidget")
