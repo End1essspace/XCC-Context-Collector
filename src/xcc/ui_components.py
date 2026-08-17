@@ -64,15 +64,26 @@ def render_tinted_svg(
     return pixmap
 
 
+def _logical_raster_size(size: int | QSize) -> QSize:
+    if isinstance(size, QSize):
+        logical_size = QSize(size)
+    else:
+        logical_size = QSize(int(size), int(size))
+
+    if logical_size.width() <= 0 or logical_size.height() <= 0:
+        raise ValueError("size dimensions must be greater than 0")
+
+    return logical_size
+
+
 def render_dpi_aware_raster(
     image_path: str | Path,
-    size: int,
+    size: int | QSize,
     *,
     device_pixel_ratio: float = 1.0,
 ) -> QPixmap:
-    """Scale a raster asset for one logical square at the requested DPR."""
-    if size <= 0:
-        raise ValueError("size must be greater than 0")
+    """Scale a raster asset into one logical rectangle at the requested DPR."""
+    logical_size = _logical_raster_size(size)
 
     path = Path(image_path)
     if not path.is_file():
@@ -83,9 +94,11 @@ def render_dpi_aware_raster(
         return QPixmap()
 
     ratio = max(1.0, float(device_pixel_ratio))
-    physical_size = max(1, round(size * ratio))
+    physical_size = QSize(
+        max(1, round(logical_size.width() * ratio)),
+        max(1, round(logical_size.height() * ratio)),
+    )
     pixmap = source.scaled(
-        physical_size,
         physical_size,
         Qt.AspectRatioMode.KeepAspectRatio,
         Qt.TransformationMode.SmoothTransformation,
@@ -106,18 +119,17 @@ class DpiAwareImageLabel(QLabel):
     def __init__(
         self,
         image_path: str | Path,
-        size: int,
+        size: int | QSize,
         *,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        if size <= 0:
-            raise ValueError("size must be greater than 0")
+        logical_size = _logical_raster_size(size)
 
         self._image_path = Path(image_path)
-        self._logical_size = size
+        self._logical_size = logical_size
         self._dpi_pixmap = QPixmap()
-        self.setFixedSize(size, size)
+        self.setFixedSize(logical_size)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.refresh_pixmap()
 

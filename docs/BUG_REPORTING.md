@@ -1,119 +1,96 @@
 # Bug-Report Diagnostics
 
-A useful XCC report is reproducible, versioned, and sanitized. Use the repository bug-report template whenever possible.
+Report the smallest reproducible, sanitized case. Prefer the repository bug-report template.
 
-## Required environment details
+## Required details
 
 ```text
 XCC version:
-Distribution: packaged portable ZIP or source checkout
-Windows version, build, and architecture:
-Collection mode or affected component:
-Compact mode:
-Max output chars:
-Outcome shown by XCC:
-Warnings / errors counters:
+Distribution: packaged ZIP or source checkout
+Windows version/build/architecture:
+Windows display scale:
+XCC Interface scale:
+Monitor arrangement, if relevant:
+Affected mode/component:
 Expected behavior:
 Actual behavior:
 Minimal reproduction steps:
 ```
 
-For a packaged build, read the version from the About page or `VERSION.txt`.
-
-For an editable source install:
+Read packaged version from About or `VERSION.txt`. For source:
 
 ```powershell
 python -c "import xcc; print(xcc.__version__)"
 ```
 
-## Collection defects
+## Collection / Git defects
 
-When reporting a collection or formatting problem, describe the smallest sanitized project shape needed to reproduce it:
-
-```text
-project/
-├── src/
-│   └── example.py
-└── .xccignore
-```
-
-State which files should have been included or excluded and which mode was used. Do not paste the real collected context unless every line is intentionally public and reviewed.
-
-For Git mode, include sanitized status information when relevant:
+Describe only the minimal sanitized project shape and the expected include/exclude behavior. For Git issues, sanitized summaries are usually enough:
 
 ```powershell
 git status --short
+```
+
+```powershell
 git diff --stat
+```
+
+```powershell
 git diff --cached --stat
 ```
 
-Do not attach confidential diffs.
+Do not attach confidential diffs or generated XCC context unless every line is intentionally public.
 
-## GUI, tray, and hotkey defects
+## UI / DPI / window defects
 
 Include:
 
-- whether XCC was maximized, minimized, hidden to tray, or restored;
-- whether **Start minimized to tray**, **Close to tray**, or **Start with Windows** was enabled;
-- whether `Ctrl+Alt+X` was already used by another process;
-- display scale and monitor arrangement for DPI or icon-rendering issues;
-- a cropped screenshot or short recording with credentials, user-profile names, private repository names, client data, and unrelated clipboard content removed;
-- for sidebar wheel defects, whether the input came from a wheel or touchpad, the starting page, direction, cursor location inside the sidebar, resulting page, and whether a second focus highlight remained.
+- window state: normal, maximized, minimized, tray-hidden, restored;
+- Windows scale and XCC Interface scale;
+- resolution and monitor arrangement;
+- whether the issue survives a full XCC restart;
+- a cropped screenshot/recording with private paths and project content removed;
+- for multi-monitor issues, which monitor the window moved from/to;
+- for sidebar issues, input type, starting page, direction, cursor location, and resulting page.
 
-For single-instance problems, confirm whether an XCC process remains in Task Manager and whether the tray icon is present.
+## Tray / hotkey / single-instance defects
 
-## Build and CI diagnostics
+State whether the tray icon exists, whether another process owns `Ctrl+Alt+X`, and whether an XCC process remains in Task Manager after the visible window closes.
 
-Include the failing command and the final relevant error block. Standard gates are:
+## Build / release defects
+
+Include the exact failing command and final relevant error block.
 
 ```powershell
 python -m compileall -q src tests scripts gui.py
-python scripts\check_version_consistency.py
-python -m pytest -q
-powershell -ExecutionPolicy Bypass -File scripts\build_release.ps1
-powershell -ExecutionPolicy Bypass -File scripts\smoke_packaged_app.ps1
-powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
 ```
-
-For release-candidate failures:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0
+python scripts\check_version_consistency.py
 ```
 
-Report whether a packaged XCC process was still running when build cleanup failed. Quit it from the tray before repeating a build.
+```powershell
+python -m pytest -q
+```
 
-## Config-recovery defects
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.1
+```
 
-The default config path is:
+Quit every packaged/tray XCC instance before rebuilding.
+
+## Config recovery
+
+Default config:
 
 ```text
 %USERPROFILE%\.xcc\config.json
 ```
 
-Do not attach the full file when it contains private paths. Provide only the smallest sanitized keys needed to reproduce the issue.
+Do not attach the full file if it contains private paths. Share only the smallest sanitized keys required to reproduce the defect.
 
-## Sanitization checklist
+## Sanitize before posting
 
-Remove or replace:
+Remove credentials, tokens, private keys, connection strings, proprietary source, confidential diffs, usernames, private absolute paths, internal URLs, computer names, and unrelated clipboard content.
 
-- credentials, tokens, keys, and connection strings;
-- private or proprietary source;
-- confidential Git diffs;
-- usernames and absolute user-profile paths;
-- internal repository URLs;
-- clipboard content unrelated to the defect;
-- computer names and other personal identifiers.
-
-A deliberate path to a public demonstration repository is acceptable when it contains no personal profile segment or private project information.
-
-Usually sufficient:
-
-- XCC version;
-- Windows version/build;
-- relative paths;
-- warning categories and line numbers;
-- mode, outcome, counts, and timing;
-- the relevant exception or final command output.
-
-Security vulnerabilities must follow `SECURITY.md` and must not be filed publicly.
+Security vulnerabilities belong in GitHub private vulnerability reporting; see `SECURITY.md`.

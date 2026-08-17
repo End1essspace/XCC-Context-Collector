@@ -9,7 +9,14 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QDialog
+from PySide6.QtWidgets import (
+    QApplication,
+    QComboBox,
+    QDialog,
+    QGraphicsOpacityEffect,
+    QStyle,
+    QStyleOptionComboBox,
+)
 
 import xcc.gui as gui_module
 from xcc import __version__
@@ -338,3 +345,73 @@ def test_hidden_startup_restore_preserves_configured_maximized_mode(
     assert window.isVisible()
     assert not window.isMinimized()
     assert window._is_effectively_maximized()
+
+
+def test_interface_scale_setting_is_persistent_and_restart_gated(
+    qapp: QApplication,
+    window: XccMainWindow,
+) -> None:
+    combo = window.interface_scale_combo
+
+    assert combo.currentData() == "auto"
+    assert [
+        combo.itemData(index)
+        for index in range(combo.count())
+    ] == ["auto", "90", "100", "110", "120", "125", "150"]
+    assert combo.itemText(0) == "Auto (recommended)"
+    assert (
+        combo.sizeAdjustPolicy()
+        == QComboBox.SizeAdjustPolicy.AdjustToContents
+    )
+    assert combo.minimumContentsLength() == len("Auto (recommended)")
+
+    # Check the actual styled edit field rather than a hard-coded control
+    # width. This protects the longest label when padding, arrow chrome, font,
+    # or the optional XCC interface scale changes.
+    option = QStyleOptionComboBox()
+    combo.initStyleOption(option)
+    edit_rect = combo.style().subControlRect(
+        QStyle.ComplexControl.CC_ComboBox,
+        option,
+        QStyle.SubControl.SC_ComboBoxEditField,
+        combo,
+    )
+    longest_text_width = combo.fontMetrics().horizontalAdvance(
+        "Auto (recommended)"
+    )
+    assert edit_rect.width() >= longest_text_width
+
+    target_index = combo.findData("125")
+    assert target_index >= 0
+    combo.setCurrentIndex(target_index)
+    qapp.processEvents()
+
+    assert window.app_settings.interface_scale == "125"
+    assert "Restart XCC to apply" in window.status_label.text()
+
+def test_footer_series_wordmark_is_subtle_and_noninteractive(
+    window: XccMainWindow,
+) -> None:
+    brand = window.footer_series_brand
+
+    assert brand.objectName() == "FooterSeriesBrand"
+    assert brand.size() == gui_module.FOOTER_SERIES_WORDMARK_SIZE
+    assert brand.testAttribute(
+        Qt.WidgetAttribute.WA_TransparentForMouseEvents
+    )
+    assert brand.focusPolicy() == Qt.FocusPolicy.NoFocus
+    assert not brand.pixmap().isNull()
+
+    effect = brand.graphicsEffect()
+    assert isinstance(effect, QGraphicsOpacityEffect)
+    assert effect.opacity() == pytest.approx(
+        gui_module.FOOTER_SERIES_WORDMARK_OPACITY
+    )
+
+    status_index = window.status_bar_layout.indexOf(
+        window.sidebar_status_group
+    )
+    brand_index = window.status_bar_layout.indexOf(brand)
+    assert status_index >= 0
+    assert brand_index > status_index
+

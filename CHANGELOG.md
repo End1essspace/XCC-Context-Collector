@@ -6,6 +6,36 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-08-17
+
+### Added
+
+- User-selectable **Interface scale** with `Auto`, `90%`, `100%`, `110%`, `120%`, `125%`, and `150%`; explicit overrides are applied before `QApplication` starts and persist in the local config.
+- Dedicated responsive regression suites for breakpoint boundaries, height thresholds, large-screen workbench behavior, resize round-trips, widget/state preservation, dialogs, and horizontal-scroll invariants.
+- Subtle `X-SERIES` footer wordmark with DPI-aware rendering and packaged-asset validation.
+
+### Changed
+
+- Collect now uses independent width and height policies with a progressive Full-HD-referenced workbench on wide logical viewports.
+- Settings and History use the same responsive workbench policy; Settings reflows from two columns to one when constrained.
+- About keeps a readability-oriented bounded surface while respecting the explicit XCC Interface scale.
+- Paste Paths and Selected Files Review now clamp to the active screen work area and use vertical overflow instead of horizontal page scrolling.
+- Window restore/maximize behavior now fits the current work area and tracks screen/work-area changes.
+- Raster and SVG UI assets are rerendered for the active device-pixel ratio instead of relying on stale QLabel/QIcon raster state.
+
+### Fixed
+
+- QHD/125% and other scaled layouts no longer depend on physical-resolution branches or double-apply Windows DPI.
+- Hidden stacked pages no longer select responsive modes from stale `~640×480` child viewport geometry.
+- Responsive callbacks and Fitts-close event handling tolerate Qt teardown without stale-wrapper exceptions.
+- Interface-scale selector arrow, selected-row accent, and `Auto (recommended)` sizing now match the XCC design system without clipping.
+- Normal-window restore geometry is clamped to the current screen work area after maximize, tray/hotkey restore, and monitor changes.
+
+### Validation
+
+- Manual responsive/DPI review completed for the implemented v1.3.1 surfaces and correction cycle.
+- Release tooling now has an explicit responsive-regression gate and v1.3.1 manual evidence requirements.
+
 ## [1.3.0] - 2026-07-31
 
 ### Added
@@ -141,10 +171,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Initial Windows desktop release with Selected Files, Full Folder, and Git Changed Files workflows.
 
-[Unreleased]: https://github.com/End1essspace/xcc-context-collector/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/End1essspace/xcc-context-collector/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/End1essspace/xcc-context-collector/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/End1essspace/xcc-context-collector/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/End1essspace/xcc-context-collector/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.2
 [1.1.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.1.0
 [1.0.0]: https://github.com/End1essspace/xcc-context-collector/releases/tag/v1.0.0
-

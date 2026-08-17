@@ -5,12 +5,11 @@ import pytest
 from xcc.ui_responsive import (
     ABOUT_USEFUL_PAGE_MAX_WIDTH,
     DIALOG_WORK_AREA_MARGIN,
-    HISTORY_USEFUL_PAGE_MAX_WIDTH,
     LARGE_CONTENT_BREAKPOINT,
-    LARGE_USEFUL_PAGE_MAX_WIDTH,
+    WORKBENCH_HARD_MAX_WIDTH,
+    WORKBENCH_REFERENCE_PAGE_WIDTH,
     MEDIUM_CONTENT_BREAKPOINT,
     SETTINGS_TWO_COLUMN_BREAKPOINT,
-    SETTINGS_USEFUL_PAGE_MAX_WIDTH,
     STANDARD_VIEWPORT_HEIGHT,
     TALL_VIEWPORT_HEIGHT,
     CollectHeightMode,
@@ -156,33 +155,43 @@ def test_about_badge_breakpoint_triplet(
 
 
 @pytest.mark.parametrize(
-    ("max_width", "spec_factory"),
+    "spec_factory",
     (
-        (LARGE_USEFUL_PAGE_MAX_WIDTH, collect_page_width_spec),
-        (SETTINGS_USEFUL_PAGE_MAX_WIDTH, lambda width: settings_page_spec(width).width),
-        (HISTORY_USEFUL_PAGE_MAX_WIDTH, lambda width: history_page_spec(width).width),
-        (ABOUT_USEFUL_PAGE_MAX_WIDTH, lambda width: about_page_spec(width).width),
+        collect_page_width_spec,
+        lambda width: settings_page_spec(width).width,
+        lambda width: history_page_spec(width).width,
     ),
 )
-def test_useful_width_cap_triplets_are_centered(
-    max_width: int,
+def test_workbench_reference_boundary_starts_progressive_outer_space(
     spec_factory,
 ) -> None:
-    below = spec_factory(max_width - 1)
-    exact = spec_factory(max_width)
-    above = spec_factory(max_width + 1)
+    below = spec_factory(WORKBENCH_REFERENCE_PAGE_WIDTH - 1)
+    exact = spec_factory(WORKBENCH_REFERENCE_PAGE_WIDTH)
+    above = spec_factory(WORKBENCH_REFERENCE_PAGE_WIDTH + 1)
 
-    assert below.useful_width == max_width - 1
+    assert below.useful_width == WORKBENCH_REFERENCE_PAGE_WIDTH - 1
     assert below.left_inset == 0
     assert below.right_inset == 0
 
-    assert exact.useful_width == max_width
+    assert exact.useful_width == WORKBENCH_REFERENCE_PAGE_WIDTH
     assert exact.left_inset == 0
     assert exact.right_inset == 0
 
-    assert above.useful_width == max_width
+    # With integer 3/4 growth, the first extra logical pixel becomes centered
+    # breathing room. Larger viewports then expand progressively.
+    assert above.useful_width == WORKBENCH_REFERENCE_PAGE_WIDTH
     assert above.left_inset + above.right_inset == 1
-    assert abs(above.left_inset - above.right_inset) <= 1
+
+
+def test_about_fixed_readability_cap_triplet_remains_centered() -> None:
+    below = about_page_spec(ABOUT_USEFUL_PAGE_MAX_WIDTH - 1).width
+    exact = about_page_spec(ABOUT_USEFUL_PAGE_MAX_WIDTH).width
+    above = about_page_spec(ABOUT_USEFUL_PAGE_MAX_WIDTH + 1).width
+
+    assert below.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH - 1
+    assert exact.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
+    assert above.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
+    assert above.left_inset + above.right_inset == 1
 
 
 def test_sidebar_hysteresis_transition_triplets_are_explicit() -> None:
@@ -302,3 +311,70 @@ def test_dialog_preferred_size_boundary_triplet(
     assert spec.height == expected_height
     assert spec.width <= spec.usable_width
     assert spec.height <= spec.usable_height
+
+
+
+@pytest.mark.parametrize(
+    (
+        "label",
+        "physical_width",
+        "display_scale",
+        "expected_mode",
+        "expected_content_width",
+        "expected_useful_width",
+    ),
+    (
+        ("1366x768 @ 100%", 1366, 1.00, CollectLayoutMode.LARGE, 1138, 1138),
+        ("1920x1080 @ 100%", 1920, 1.00, CollectLayoutMode.LARGE, 1692, 1692),
+        ("1920x1080 @ 125%", 1920, 1.25, CollectLayoutMode.LARGE, 1308, 1308),
+        ("1920x1080 @ 150%", 1920, 1.50, CollectLayoutMode.MEDIUM, 1068, 1068),
+        ("2560x1440 @ 100%", 2560, 1.00, CollectLayoutMode.LARGE, 2332, 2172),
+        ("2560x1440 @ 125%", 2560, 1.25, CollectLayoutMode.LARGE, 1820, 1788),
+        ("2560x1440 @ 150%", 2560, 1.50, CollectLayoutMode.LARGE, 1479, 1479),
+        ("3840x2160 @ 100%", 3840, 1.00, CollectLayoutMode.LARGE, 3612, 3132),
+        ("3840x2160 @ 125%", 3840, 1.25, CollectLayoutMode.LARGE, 2844, 2556),
+        ("3840x2160 @ 150%", 3840, 1.50, CollectLayoutMode.LARGE, 2332, 2172),
+    ),
+)
+def test_major_windows_resolution_scaling_matrix_uses_qt_logical_width_once(
+    label: str,
+    physical_width: int,
+    display_scale: float,
+    expected_mode: CollectLayoutMode,
+    expected_content_width: int,
+    expected_useful_width: int,
+) -> None:
+    """Freeze the common-resolution/scaling behavior in Qt logical space.
+
+    Production code never branches on these physical resolutions or scales.
+    This matrix only translates common Windows setups into representative Qt
+    logical widths and verifies the progressive Full-HD-referenced workbench.
+    """
+
+    del label
+    logical_window_width = round(physical_width / display_scale)
+
+    # Resolve the sidebar/content pair to the same fixed point used by the
+    # application: the selected layout mode owns its sidebar width.
+    resolved = None
+    for sidebar_width in (196, 212, 228):
+        content_width = max(0, logical_window_width - sidebar_width)
+        spec = collect_layout_spec(content_width)
+        if spec.sidebar_width == sidebar_width:
+            resolved = (content_width, spec)
+            break
+
+    assert resolved is not None
+    content_width, layout_spec = resolved
+    page_width = collect_page_width_spec(content_width)
+
+    assert layout_spec.mode is expected_mode
+    assert content_width == expected_content_width
+    assert page_width.useful_width == expected_useful_width
+    assert page_width.useful_width <= WORKBENCH_HARD_MAX_WIDTH
+    assert (
+        page_width.left_inset
+        + page_width.useful_width
+        + page_width.right_inset
+        == content_width
+    )

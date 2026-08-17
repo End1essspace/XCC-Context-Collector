@@ -23,9 +23,11 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QButtonGroup,
     QCheckBox,
+    QComboBox,
     QDialog,
     QFileDialog,
     QFrame,
+    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -63,7 +65,14 @@ from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS, qt_context_file_filter
 from pathlib import Path
 from .clipboard import copy_to_clipboard
 from .git_utils import is_git_repository
-from .settings import AppSettings, load_settings_result, save_settings
+from .settings import (
+    AppSettings,
+    VALID_INTERFACE_SCALES,
+    apply_interface_scale_environment,
+    load_settings_result,
+    qt_scale_factor_for_interface_scale,
+    save_settings,
+)
 from .autostart import is_autostart_enabled, set_autostart_enabled
 from .native_hotkey import NativeHotkeyError, NativeHotkeyManager
 from .models import CollectionOutcome, CollectionRunRecord, SafetyWarning
@@ -155,6 +164,7 @@ APP_ICON_PATH = resource_path("assets", "xcc_app.ico")
 APP_IMAGE_PATH = resource_path("assets", "xcc_app.png")
 TRAY_ICON_PATH = resource_path("assets", "xcc_tray.ico")
 TRAY_IMAGE_PATH = resource_path("assets", "xcc_tray.png")
+X_SERIES_WORDMARK_PATH = resource_path("assets", "x-series.png")
 NAV_COLLECT_ICON_PATH = resource_path("assets", "nav-collect.svg")
 NAV_HISTORY_ICON_PATH = resource_path("assets", "nav-history.svg")
 NAV_SETTINGS_ICON_PATH = resource_path("assets", "nav-settings.svg")
@@ -187,6 +197,8 @@ HTBOTTOMRIGHT = 17
 HTCAPTION = 2
 FRAME_RESIZE_MARGIN = 6
 FULL_BRAND_MIN_SIDEBAR_WIDTH = 212
+FOOTER_SERIES_WORDMARK_SIZE = QSize(104, 11)
+FOOTER_SERIES_WORDMARK_OPACITY = 0.28
 
 PASTE_PATHS_DIALOG_PREFERRED_SIZE = QSize(820, 590)
 SELECTED_FILES_DIALOG_PREFERRED_SIZE = QSize(860, 610)
@@ -1348,6 +1360,34 @@ class XccMainWindow(QMainWindow):
         )
         status_bar_layout.addStretch(1)
 
+        self.footer_series_brand = DpiAwareImageLabel(
+            X_SERIES_WORDMARK_PATH,
+            FOOTER_SERIES_WORDMARK_SIZE,
+            parent=status_bar,
+        )
+        self.footer_series_brand.setObjectName("FooterSeriesBrand")
+        self.footer_series_brand.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.footer_series_brand.setAttribute(
+            Qt.WidgetAttribute.WA_TransparentForMouseEvents,
+            True,
+        )
+        self.footer_series_brand.setVisible(X_SERIES_WORDMARK_PATH.is_file())
+
+        self.footer_series_brand_opacity = QGraphicsOpacityEffect(
+            self.footer_series_brand
+        )
+        self.footer_series_brand_opacity.setOpacity(
+            FOOTER_SERIES_WORDMARK_OPACITY
+        )
+        self.footer_series_brand.setGraphicsEffect(
+            self.footer_series_brand_opacity
+        )
+        status_bar_layout.addWidget(
+            self.footer_series_brand,
+            0,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+        )
+
         sidebar_shell_layout.addWidget(self.sidebar_brand_header, 0)
         sidebar_shell_layout.addWidget(self.nav, 1)
 
@@ -1378,6 +1418,7 @@ class XccMainWindow(QMainWindow):
         self.close_to_tray_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.tray_notifications_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
         self.safety_confirmation_checkbox.stateChanged.connect(self._on_behavior_settings_changed)
+        self.interface_scale_combo.currentIndexChanged.connect(self._on_interface_scale_changed)
         self.paste_paths_button.clicked.connect(self._paste_paths_from_clipboard)
         self.source_input.clicked.connect(self._open_selected_files_review)
 
@@ -1626,7 +1667,11 @@ class XccMainWindow(QMainWindow):
         for icon_title in self.findChildren(IconTitle):
             icon_title.refresh_icon(ratio)
 
-        for label_name in ("sidebar_brand_icon", "about_app_icon"):
+        for label_name in (
+            "sidebar_brand_icon",
+            "about_app_icon",
+            "footer_series_brand",
+        ):
             label = getattr(self, label_name, None)
             if isinstance(label, DpiAwareImageLabel):
                 label.refresh_pixmap(ratio)
@@ -2015,6 +2060,19 @@ class XccMainWindow(QMainWindow):
         self._save_current_settings()
         self._set_event_status("Settings saved.")
 
+    def _on_interface_scale_changed(self) -> None:
+        if self._is_loading_settings:
+            return
+
+        selected = self._current_interface_scale()
+        if selected == self.app_settings.interface_scale:
+            return
+
+        self._save_current_settings()
+        self._set_event_status(
+            "Interface scale saved. Restart XCC to apply."
+        )
+
     def _on_settings_changed(self) -> None:
         if self._is_loading_settings:
             return
@@ -2043,6 +2101,13 @@ class XccMainWindow(QMainWindow):
 
         self.compact_checkbox.setChecked(self.app_settings.compact_mode)
         self.max_chars_input.setText(str(self.app_settings.max_chars))
+
+        if hasattr(self, "interface_scale_combo"):
+            scale_index = self.interface_scale_combo.findData(
+                self.app_settings.interface_scale
+            )
+            if scale_index >= 0:
+                self.interface_scale_combo.setCurrentIndex(scale_index)
 
         last_source = self.app_settings.last_source.strip()
         if last_source and self.app_settings.default_mode in {"folder", "git", "tree"}:
@@ -2076,6 +2141,7 @@ class XccMainWindow(QMainWindow):
             start_maximized=self.start_maximized_checkbox.isChecked(),
             show_tray_notifications=self.tray_notifications_checkbox.isChecked(),
             confirm_safety_warnings=self.safety_confirmation_checkbox.isChecked(),
+            interface_scale=self._current_interface_scale(),
         )
 
         save_settings(settings)
@@ -2093,6 +2159,25 @@ class XccMainWindow(QMainWindow):
             return MAX_OUTPUT_CHARS
 
         return value
+
+    def _current_interface_scale(self) -> str:
+        combo = getattr(self, "interface_scale_combo", None)
+        if combo is None:
+            return self.app_settings.interface_scale
+
+        value = combo.currentData()
+        if isinstance(value, str) and value in VALID_INTERFACE_SCALES:
+            return value
+
+        return self.app_settings.interface_scale
+
+    def _interface_scale_multiplier(self) -> float:
+        """Return only the explicit XCC scale override, never Windows DPI."""
+
+        factor = qt_scale_factor_for_interface_scale(
+            self.app_settings.interface_scale
+        )
+        return float(factor) if factor is not None else 1.0
 
     def _current_persisted_source(self) -> str:
         mode = self._current_mode()
@@ -2673,7 +2758,10 @@ class XccMainWindow(QMainWindow):
             self._apply_page_surface_geometry(self.history_page_layout, spec)
 
         if hasattr(self, "about_page_layout"):
-            spec = about_page_spec(content_width)
+            spec = about_page_spec(
+                content_width,
+                interface_scale=self._interface_scale_multiplier(),
+            )
             self._about_page_spec = spec
             self._apply_page_surface_geometry(self.about_page_layout, spec)
             if force or spec.columns != self._about_badge_columns:
@@ -4271,6 +4359,32 @@ class XccMainWindow(QMainWindow):
             self.app_settings.confirm_safety_warnings,
         )
 
+        self.interface_scale_combo = QComboBox()
+        self.interface_scale_combo.setObjectName("SettingsComboBox")
+        self.interface_scale_combo.setAccessibleName("Interface scale")
+        self.interface_scale_combo.setFixedHeight(34)
+        self.interface_scale_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
+        self.interface_scale_combo.setSizePolicy(
+            QSizePolicy.Policy.Minimum,
+            QSizePolicy.Policy.Fixed,
+        )
+        self.interface_scale_combo.addItem("Auto (recommended)", "auto")
+        for scale in VALID_INTERFACE_SCALES:
+            if scale == "auto":
+                continue
+            self.interface_scale_combo.addItem(f"{scale}%", scale)
+        self.interface_scale_combo.setMinimumContentsLength(
+            len("Auto (recommended)")
+        )
+
+        scale_index = self.interface_scale_combo.findData(
+            self.app_settings.interface_scale
+        )
+        if scale_index >= 0:
+            self.interface_scale_combo.setCurrentIndex(scale_index)
+
         behavior_group = self._settings_group(
             "Behavior",
             [
@@ -4298,6 +4412,11 @@ class XccMainWindow(QMainWindow):
                     "Tray notifications",
                     "Show a notification when XCC is minimized to tray.",
                     control=self.tray_notifications_checkbox,
+                ),
+                self._settings_row(
+                    "Interface scale",
+                    "Additional XCC scale on top of Windows display scaling. Restart required.",
+                    control=self.interface_scale_combo,
                 ),
                 self._settings_row(
                     "Double click restore",
@@ -4721,6 +4840,9 @@ class XccMainWindow(QMainWindow):
 
 
 def run_gui() -> None:
+    startup_settings = load_settings_result().settings
+    apply_interface_scale_environment(startup_settings.interface_scale)
+
     app = QApplication(sys.argv)
     if APP_ICON_PATH.exists():
         app.setWindowIcon(QIcon(str(APP_ICON_PATH)))

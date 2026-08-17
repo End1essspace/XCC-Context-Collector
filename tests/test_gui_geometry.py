@@ -10,6 +10,7 @@ pytest.importorskip("PySide6")
 from PySide6.QtCore import QEvent, QPoint, QRect, QSize, Qt
 from PySide6.QtWidgets import QApplication, QLabel, QSizePolicy
 
+import xcc.gui as gui_module
 from xcc.fitts_close import EDGE_CLOSE_POLL_INTERVAL_MS
 from xcc.models import CollectionOutcome, CollectionRunRecord
 from xcc.gui import (
@@ -21,12 +22,35 @@ from xcc.gui import (
     fit_window_geometry_to_available,
 )
 from xcc.ui_components import IconTitle
+from xcc.settings import AppSettings, SettingsLoadResult
 
 from xcc.ui_responsive import (
     ABOUT_USEFUL_PAGE_MAX_WIDTH,
-    LARGE_USEFUL_PAGE_MAX_WIDTH,
+    WORKBENCH_REFERENCE_PAGE_WIDTH,
     CollectLayoutMode,
 )
+
+
+
+
+@pytest.fixture(autouse=True)
+def isolate_gui_settings(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep geometry tests independent from the user's persisted XCC config."""
+    monkeypatch.setattr(
+        gui_module,
+        "load_settings_result",
+        lambda: SettingsLoadResult(
+            AppSettings(
+                start_maximized=False,
+                close_to_tray=False,
+                show_tray_notifications=False,
+                interface_scale="auto",
+            )
+        ),
+    )
+    monkeypatch.setattr(gui_module, "save_settings", lambda settings: None)
+    monkeypatch.setattr(gui_module, "is_autostart_enabled", lambda: False)
+    monkeypatch.setattr(XccMainWindow, "_setup_tray", lambda self: None)
 
 
 @pytest.fixture(scope="module")
@@ -283,7 +307,7 @@ def test_maximized_density_balances_setup_and_last_run(
     window._is_quitting = True
     window.close()
 
-def test_extreme_large_viewport_centers_bounded_collect_workspace(
+def test_extreme_large_viewport_centers_progressive_collect_workspace(
     qapp: QApplication,
 ) -> None:
     window = XccMainWindow()
@@ -300,9 +324,13 @@ def test_extreme_large_viewport_centers_bounded_collect_workspace(
     base_margin = window._collect_layout_spec.page_margin
     margins = window.collect_page_layout.contentsMargins()
 
-    assert viewport_width > LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert viewport_width > WORKBENCH_REFERENCE_PAGE_WIDTH
     assert page_width.available_width == viewport_width
-    assert page_width.useful_width == LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert (
+        WORKBENCH_REFERENCE_PAGE_WIDTH
+        < page_width.useful_width
+        < viewport_width
+    )
     assert page_width.left_inset > 0
     assert abs(page_width.left_inset - page_width.right_inset) <= 1
     assert (
@@ -314,9 +342,7 @@ def test_extreme_large_viewport_centers_bounded_collect_workspace(
     assert margins.left() == base_margin + page_width.left_inset
     assert margins.right() == base_margin + page_width.right_inset
 
-    expected_surface_width = (
-        LARGE_USEFUL_PAGE_MAX_WIDTH - (2 * base_margin)
-    )
+    expected_surface_width = page_width.useful_width - (2 * base_margin)
     assert window.setup_card.width() == expected_surface_width
     assert window.stats_card.width() == expected_surface_width
     assert window.collect_button.width() == expected_surface_width
@@ -575,6 +601,12 @@ def test_about_uses_information_width_and_two_by_two_badges_when_compact(
     assert window._about_page_spec.width.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
     assert window._about_page_spec.width.left_inset > 0
     assert window._about_badge_columns == 4
+
+    window.app_settings.interface_scale = "125"
+    window._apply_responsive_pages(force=True)
+    qapp.processEvents()
+    assert window._about_page_spec is not None
+    assert window._about_page_spec.width.useful_width == 1650
     assert (
         window.about_page_scroll.horizontalScrollBarPolicy()
         == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -637,3 +669,4 @@ def test_history_entries_grow_instead_of_clipping_wrapped_metadata(
 
     window._is_quitting = True
     window.close()
+

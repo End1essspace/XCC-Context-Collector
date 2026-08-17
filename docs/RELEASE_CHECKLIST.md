@@ -1,90 +1,77 @@
-# XCC v1.3.0 Release Checklist
+# XCC v1.3.1 Release Checklist
 
-Use this checklist with [`M15_VALIDATION.md`](M15_VALIDATION.md). It intentionally contains no duplicated procedures.
+Use with [`M16_VALIDATION.md`](M16_VALIDATION.md). Every checked item must refer to the same release commit and final ZIP SHA-256.
 
-Every checked item must refer to the same release commit and final ZIP SHA-256.
+## A. Freeze
 
-## A. Repository freeze
-
-- [ ] C1–C4 cleanup changes are committed and pushed
-- [ ] C5 documentation re-freeze is applied, source-tested, committed, and pushed
-- [ ] canonical version is `1.3.0`
-- [ ] README, changelog, architecture, UI reference, release notes, roadmap, and screenshots are final
-- [ ] `docs/M10_VALIDATION.md` is absent
-- [ ] `assets/original_icons/` is absent
-- [ ] source gate passes
-- [ ] branch is `main`
-- [ ] working tree is clean
-- [ ] local `main` equals `origin/main`
+- [ ] canonical version is `1.3.1`
+- [ ] README, changelog, architecture, UI reference, validation, release notes, roadmap are final
+- [ ] `python -m compileall -q src tests scripts gui.py` passes
+- [ ] `python scripts\check_version_consistency.py` passes
+- [ ] `python -m pytest -q` passes
+- [ ] branch is `main`, working tree clean, local `main == origin/main`
 - [ ] CI is green for the release commit
 
-Source gate:
+## B. v1.3.1 UI / DPI gate
+
+- [ ] `920×620` minimum window passes
+- [ ] Full HD baseline passes
+- [ ] QHD Windows scaling `100% / 125% / 150%` passes where available
+- [ ] Interface scale Auto/manual persistence + restart behavior passes
+- [ ] Collect responsive width/height behavior passes
+- [ ] Settings two-column → one-column reflow passes
+- [ ] History long metadata/path wrapping passes
+- [ ] About scale/badge reflow passes
+- [ ] Paste Paths and Selected Files Review fit the current work area
+- [ ] no normal horizontal page scrollbars
+- [ ] maximize/restore, minimize/restore, tray/hotkey restore pass
+- [ ] DPI-aware logo/SVG/window controls/X-SERIES footer render correctly
+- [ ] mixed-DPI/secondary monitor is PASS or explicitly NOT TESTED
+
+## C. Existing product regression
+
+- [ ] Paste Paths + guarded `Ctrl+V`
+- [ ] Selected Files Review transactionality
+- [ ] all four collection modes
+- [ ] source fidelity and Git staged/unstaged separation
+- [ ] ignore rules, safety, budget, cancellation
+- [ ] Last Run / Runtime History
+- [ ] tray, native hotkey, autostart, config recovery, single instance
+
+## D. Automated candidate
 
 ```powershell
-python -m compileall -q src tests scripts gui.py; python scripts\check_version_consistency.py; python -m pytest -q
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.1
 ```
 
-## B. Source UI and workflow
+- [ ] `XCC-Context-Collector-v1.3.1-win64.zip` exists
+- [ ] checksum exists and matches
+- [ ] automated report declares `xcc_version: 1.3.1`, `passed: true`
+- [ ] automated report includes `responsive_regression: true`
+- [ ] packaged asset smoke includes `x-series.png`
 
-- [ ] minimum, normal, maximized, 100%, 125%, and 150% layouts pass
-- [ ] shell, Setup, Last Run, dialogs, Settings, History, and About pass
-- [ ] mouse, keyboard, focus, disabled, long-path, mixed-location, and 100+ file states pass
-- [ ] complete-sidebar wheel navigation and independent page scrolling pass
-- [ ] Paste Paths and guarded `Ctrl+V` pass
-- [ ] Selected Files Review is transactional
-- [ ] all four collection modes pass
-- [ ] source fidelity, Git separation, ignore rules, safety, budget, and cancellation pass
-- [ ] tray, hotkey, autostart, config recovery, and single instance pass
-
-Detailed cases: sections 2–4 of `M15_VALIDATION.md`.
-
-## C. Automated candidate
-
-- [ ] `validate_release_candidate.ps1 -ExpectedVersion 1.3.0` passes
-- [ ] final ZIP exists
-- [ ] checksum exists and matches the ZIP
-- [ ] automated report declares `xcc_version: 1.3.0`
-- [ ] automated report declares `passed: true`
-- [ ] automated report binds the final filename and SHA-256
-
-```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0
-```
-
-## D. Packaged build
-
-- [ ] clean extraction contains executable, `_internal`, and `VERSION.txt`
-- [ ] packaged application starts without Python
-- [ ] version surfaces show `1.3.0`
-- [ ] all required assets are present
-- [ ] no console window appears
-- [ ] source UI and workflow checks also pass in the package
-
-## E. Release evidence and readiness
+## E. Clean-host evidence / readiness
 
 - [ ] Windows 10 evidence passes
 - [ ] Windows 11 evidence passes
 - [ ] both records reference the same final SHA-256
-- [ ] final readiness passes
+- [ ] responsive/DPI/interface-scale manual gates are present
+- [ ] final readiness command passes
 - [ ] evidence JSON remains private
 
-Commands and required arguments: sections 7–8 of `M15_VALIDATION.md`.
+## F. Publish
 
-## F. Publication
-
-- [ ] annotated `v1.3.0` tag is pushed
-- [ ] draft release uses `docs/releases/v1.3.0.md`
-- [ ] only ZIP and checksum are attached
-- [ ] release is published
+- [ ] annotated `v1.3.1` tag pushed
+- [ ] release uses `docs/releases/v1.3.1.md`
+- [ ] only ZIP and checksum attached
+- [ ] release published
 
 ## G. Public verification
 
-- [ ] public ZIP and checksum are downloaded independently
-- [ ] downloaded checksum passes
-- [ ] downloaded package extracts and starts
-- [ ] version, Paste Paths, one collection, and sidebar wheel/focus behavior pass
-- [ ] release badge resolves to v1.3.0
-- [ ] both public assets are present
-- [ ] roadmap is marked `DONE — RELEASED`
-- [ ] release announcement is published
-
+- [ ] public ZIP/checksum downloaded independently
+- [ ] downloaded SHA-256 passes
+- [ ] package extracts and starts
+- [ ] About and `VERSION.txt` show `1.3.1`
+- [ ] Interface scale, one collection, tray/hotkey restore pass
+- [ ] release badge resolves to v1.3.1
+- [ ] roadmap marked `DONE — RELEASED`

@@ -66,6 +66,7 @@ try {
         --add-data "assets\xcc_app.png;assets" `
         --add-data "assets\xcc_tray.ico;assets" `
         --add-data "assets\xcc_tray.png;assets" `
+        --add-data "assets\x-series.png;assets" `
         --add-data "assets\nav-collect.svg;assets" `
         --add-data "assets\nav-history.svg;assets" `
         --add-data "assets\nav-settings.svg;assets" `

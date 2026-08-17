@@ -1,4 +1,4 @@
-param(
+﻿param(
     [string]$PythonExecutable = "python",
     [string]$ArchivePath = "",
     [string]$OutputDirectory = "artifacts\manual-validation"
@@ -50,6 +50,15 @@ $Gates = [ordered]@{
     selected_files_mixed_locations = (Read-GateResult "Separate repositories display Mixed locations")
     selected_files_review_transactionality = (Read-GateResult "Selected Files Review remove, Delete, Clear, Cancel, and Apply pass")
     selected_files_relative_output = (Read-GateResult "Collected output uses the expected stable relative file headers")
+    responsive_minimum_window = (Read-GateResult "920x620 minimum window remains usable with no horizontal page scrolling")
+    responsive_full_hd_baseline = (Read-GateResult "Full HD baseline composition passes")
+    responsive_qhd_scaling = (Read-GateResult "QHD Windows scaling cases available on this host pass")
+    interface_scale_persistence_restart = (Read-GateResult "Interface scale persists and applies after a full restart")
+    settings_history_about_responsive = (Read-GateResult "Settings, History, and About responsive layouts pass")
+    responsive_dialogs = (Read-GateResult "Paste Paths and Selected Files Review fit the work area")
+    work_area_restore = (Read-GateResult "Maximize/restore, minimize/restore, and tray/hotkey restore stay inside the work area")
+    dpi_asset_rerender = (Read-GateResult "Raster/SVG branding and window controls remain sharp after DPI/screen changes")
+    footer_x_series_brand = (Read-GateResult "X-SERIES footer wordmark renders correctly and remains non-intrusive")
     full_folder_mode = (Read-GateResult "Full Folder mode passes")
     git_changed_files_mode = (Read-GateResult "Git Changed Files mode passes")
     project_tree_mode = (Read-GateResult "Project Tree mode passes")

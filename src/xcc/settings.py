@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+from collections.abc import MutableMapping
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
@@ -19,6 +21,25 @@ DEFAULT_CLOSE_TO_TRAY = True
 DEFAULT_START_MAXIMIZED = True
 DEFAULT_SHOW_TRAY_NOTIFICATIONS = True
 DEFAULT_CONFIRM_SAFETY_WARNINGS = True
+
+DEFAULT_INTERFACE_SCALE = "auto"
+VALID_INTERFACE_SCALES = (
+    "auto",
+    "90",
+    "100",
+    "110",
+    "120",
+    "125",
+    "150",
+)
+INTERFACE_SCALE_FACTORS = {
+    "90": "0.90",
+    "100": "1.00",
+    "110": "1.10",
+    "120": "1.20",
+    "125": "1.25",
+    "150": "1.50",
+}
 
 
 @dataclass(slots=True)
@@ -40,6 +61,7 @@ class AppSettings:
     start_maximized: bool = DEFAULT_START_MAXIMIZED
     show_tray_notifications: bool = DEFAULT_SHOW_TRAY_NOTIFICATIONS
     confirm_safety_warnings: bool = DEFAULT_CONFIRM_SAFETY_WARNINGS
+    interface_scale: str = DEFAULT_INTERFACE_SCALE
 
 
 def default_settings_path() -> Path:
@@ -135,6 +157,13 @@ def validate_settings(raw_data: dict[str, Any]) -> AppSettings:
         DEFAULT_CONFIRM_SAFETY_WARNINGS,
     )
 
+    interface_scale = raw_data.get(
+        "interface_scale",
+        DEFAULT_INTERFACE_SCALE,
+    )
+    if interface_scale not in VALID_INTERFACE_SCALES:
+        interface_scale = DEFAULT_INTERFACE_SCALE
+
     return AppSettings(
         default_mode=default_mode,
         max_chars=max_chars,
@@ -146,8 +175,32 @@ def validate_settings(raw_data: dict[str, Any]) -> AppSettings:
         start_maximized=start_maximized,
         show_tray_notifications=show_tray_notifications,
         confirm_safety_warnings=confirm_safety_warnings,
+        interface_scale=interface_scale,
     )
 
+
+
+def qt_scale_factor_for_interface_scale(interface_scale: str) -> str | None:
+    """Translate one persisted XCC scale choice to Qt's global multiplier."""
+
+    return INTERFACE_SCALE_FACTORS.get(interface_scale)
+
+
+def apply_interface_scale_environment(
+    interface_scale: str,
+    environment: MutableMapping[str, str] | None = None,
+) -> str | None:
+    """Apply a persisted XCC scale override before QApplication is created.
+
+    Auto deliberately leaves the process environment unchanged so Qt can
+    follow the platform-native display scaling without an XCC override.
+    """
+
+    target = os.environ if environment is None else environment
+    factor = qt_scale_factor_for_interface_scale(interface_scale)
+    if factor is not None:
+        target["QT_SCALE_FACTOR"] = factor
+    return factor
 
 def _read_bool(raw_data: dict[str, Any], key: str, default: bool) -> bool:
     value = raw_data.get(key, default)

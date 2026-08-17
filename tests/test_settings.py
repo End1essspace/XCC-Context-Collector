@@ -3,7 +3,14 @@ from __future__ import annotations
 from pathlib import Path
 
 from xcc.config import MAX_OUTPUT_CHARS
-from xcc.settings import AppSettings, load_settings_result, save_settings, validate_settings
+from xcc.settings import (
+    AppSettings,
+    apply_interface_scale_environment,
+    load_settings_result,
+    qt_scale_factor_for_interface_scale,
+    save_settings,
+    validate_settings,
+)
 
 def test_load_settings_result_reports_invalid_json(tmp_path: Path) -> None:
     path = tmp_path / "config.json"
@@ -48,6 +55,7 @@ def test_save_and_load_settings_result_roundtrip(tmp_path: Path) -> None:
         start_maximized=False,
         show_tray_notifications=False,
         confirm_safety_warnings=False,
+        interface_scale="125",
     )
 
     save_settings(original, path)
@@ -140,3 +148,43 @@ def test_safety_confirmation_defaults_to_enabled_for_older_configs() -> None:
     settings = validate_settings({"default_mode": "folder"})
 
     assert settings.confirm_safety_warnings is True
+
+
+def test_validate_settings_accepts_interface_scale() -> None:
+    settings = validate_settings({"interface_scale": "120"})
+
+    assert settings.interface_scale == "120"
+
+
+def test_validate_settings_falls_back_on_invalid_interface_scale() -> None:
+    settings = validate_settings({"interface_scale": "175"})
+
+    assert settings.interface_scale == "auto"
+
+
+def test_interface_scale_maps_to_qt_global_factor() -> None:
+    assert qt_scale_factor_for_interface_scale("auto") is None
+    assert qt_scale_factor_for_interface_scale("90") == "0.90"
+    assert qt_scale_factor_for_interface_scale("100") == "1.00"
+    assert qt_scale_factor_for_interface_scale("110") == "1.10"
+    assert qt_scale_factor_for_interface_scale("120") == "1.20"
+    assert qt_scale_factor_for_interface_scale("125") == "1.25"
+    assert qt_scale_factor_for_interface_scale("150") == "1.50"
+
+
+def test_auto_interface_scale_leaves_qt_environment_untouched() -> None:
+    environment = {"QT_SCALE_FACTOR": "1.75"}
+
+    factor = apply_interface_scale_environment("auto", environment)
+
+    assert factor is None
+    assert environment["QT_SCALE_FACTOR"] == "1.75"
+
+
+def test_explicit_interface_scale_sets_qt_environment() -> None:
+    environment: dict[str, str] = {}
+
+    factor = apply_interface_scale_environment("125", environment)
+
+    assert factor == "1.25"
+    assert environment["QT_SCALE_FACTOR"] == "1.25"

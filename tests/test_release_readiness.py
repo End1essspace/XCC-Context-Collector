@@ -15,8 +15,8 @@ from scripts.check_release_readiness import (
 def _write_report(
     path: Path,
     *,
-    version: str = "1.3.0",
-    archive_name: str = "XCC-Context-Collector-v1.3.0-win64.zip",
+    version: str = "1.3.1",
+    archive_name: str = "XCC-Context-Collector-v1.3.1-win64.zip",
     archive_hash: str = "a" * 64,
     passed: bool = True,
     failed_gate: str | None = None,
@@ -55,7 +55,7 @@ def _write_report(
 
 def test_automated_gate_report_matches_final_archive(tmp_path: Path) -> None:
     report = tmp_path / "automated.json"
-    archive_name = "XCC-Context-Collector-v1.3.0-win64.zip"
+    archive_name = "XCC-Context-Collector-v1.3.1-win64.zip"
     archive_hash = "b" * 64
     _write_report(
         report,
@@ -65,7 +65,7 @@ def test_automated_gate_report_matches_final_archive(tmp_path: Path) -> None:
 
     validate_automated_gate_report(
         report,
-        expected_version="1.3.0",
+        expected_version="1.3.1",
         expected_archive_name=archive_name,
         expected_archive_sha256=archive_hash,
     )
@@ -75,7 +75,7 @@ def test_automated_gate_report_rejects_archive_hash_mismatch(
     tmp_path: Path,
 ) -> None:
     report = tmp_path / "automated.json"
-    archive_name = "XCC-Context-Collector-v1.3.0-win64.zip"
+    archive_name = "XCC-Context-Collector-v1.3.1-win64.zip"
     _write_report(
         report,
         archive_name=archive_name,
@@ -85,7 +85,7 @@ def test_automated_gate_report_rejects_archive_hash_mismatch(
     with pytest.raises(ReleaseReadinessError, match="SHA-256"):
         validate_automated_gate_report(
             report,
-            expected_version="1.3.0",
+            expected_version="1.3.1",
             expected_archive_name=archive_name,
             expected_archive_sha256="d" * 64,
         )
@@ -95,7 +95,7 @@ def test_automated_gate_report_rejects_skipped_clean_install(
     tmp_path: Path,
 ) -> None:
     report = tmp_path / "automated.json"
-    archive_name = "XCC-Context-Collector-v1.3.0-win64.zip"
+    archive_name = "XCC-Context-Collector-v1.3.1-win64.zip"
     archive_hash = "e" * 64
     _write_report(
         report,
@@ -107,7 +107,7 @@ def test_automated_gate_report_rejects_skipped_clean_install(
     with pytest.raises(ReleaseReadinessError, match="clean_install"):
         validate_automated_gate_report(
             report,
-            expected_version="1.3.0",
+            expected_version="1.3.1",
             expected_archive_name=archive_name,
             expected_archive_sha256=archive_hash,
         )
@@ -117,7 +117,7 @@ def test_automated_gate_report_rejects_failed_release_gate(
     tmp_path: Path,
 ) -> None:
     report = tmp_path / "automated.json"
-    archive_name = "XCC-Context-Collector-v1.3.0-win64.zip"
+    archive_name = "XCC-Context-Collector-v1.3.1-win64.zip"
     archive_hash = "f" * 64
     _write_report(
         report,
@@ -129,11 +129,12 @@ def test_automated_gate_report_rejects_failed_release_gate(
     with pytest.raises(ReleaseReadinessError, match="did not pass"):
         validate_automated_gate_report(
             report,
-            expected_version="1.3.0",
+            expected_version="1.3.1",
             expected_archive_name=archive_name,
             expected_archive_sha256=archive_hash,
         )
 
 
-def test_required_automated_gates_include_selected_files_regression() -> None:
+def test_required_automated_gates_include_release_regressions() -> None:
     assert "selected_files_regression" in REQUIRED_AUTOMATED_GATES
+    assert "responsive_regression" in REQUIRED_AUTOMATED_GATES

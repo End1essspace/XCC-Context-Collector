@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>AI-ready project context for Windows.</strong><br>
-  Collect files, folders, Git changes, or a project tree into one structured clipboard block.
+  Collect selected files, a folder, Git changes, or a project tree into one structured clipboard block.
 </p>
 
 <p align="center">
@@ -15,128 +15,104 @@
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-blue.svg" alt="GPL-3.0"></a>
 </p>
 
-<p align="center">
-  <a href="#english">English</a> · <a href="#русский">Русский</a>
-</p>
+<p align="center"><a href="#english">English</a> · <a href="#русский">Русский</a></p>
 
 ---
 
 # English
 
-Current version: **v1.3.0**
+Current version: **v1.3.1**
 
 <p align="center">
   <a href="https://github.com/End1essspace/xcc-context-collector/releases"><strong>Download XCC</strong></a>
-  ·
-  <a href="docs/PORTABLE_ZIP.md">Portable guide</a>
-  ·
-  <a href="docs/releases/v1.3.0.md">Release notes</a>
+  · <a href="docs/PORTABLE_ZIP.md">Portable guide</a>
+  · <a href="docs/releases/v1.3.1.md">Release notes</a>
 </p>
 
 <p align="center">
   <img src="docs/screenshots/xcc-collect.png" alt="XCC Collect page" width="100%">
 </p>
 
-<p align="center"><sub>Collect a real repository, inspect coverage and result health, then copy the generated context in one action.</sub></p>
-
 ## What XCC does
-
-XCC turns project material into one structured context block for ChatGPT, Codex, Claude, and other coding assistants.
 
 | Mode | Result |
 |---|---|
-| **Selected Files** | A reviewed, ordered set of files selected manually or imported from an AI response. |
-| **Full Folder** | Supported files from a project folder, with ignore rules and a project tree. |
+| **Selected Files** | Ordered files selected manually or imported from an AI response. |
+| **Full Folder** | Supported files under a project root with ignore rules and a project tree. |
 | **Git Changed Files** | Supported changed files plus separate staged and unstaged Git diffs. |
 | **Project Tree** | Repository structure without file contents. |
 
-The generated block can include version metadata, collection statistics, safety-warning summaries, typed Git status, staged/unstaged diffs, a project tree, complete file sections, errors, and an explicit budget summary.
+Generated context can include version metadata, collection statistics, safety-warning summaries, Git status and diffs, project tree, complete file sections, errors, and an explicit budget summary.
 
-## Selected Files AI workflow
+## Selected Files workflow
 
 ```text
 AI returns the files it needs
         ↓
-Copy the path list
-        ↓
 Paste Paths or Ctrl+V
         ↓
-Resolve relative paths against a visible project root
+Resolve relative paths under a visible project root
         ↓
 Review the ordered selection
         ↓
 Collect & Copy
 ```
 
-The importer accepts plain lines, Markdown bullets, numbered lists, quotes, backticks, and fenced code blocks. It preserves order, applies Windows-aware deduplication, validates supported files, rejects traversal outside the chosen root, and reports missing, unsupported, external, or invalid paths.
+Paste Paths accepts plain lines, Markdown lists, quotes, backticks, and fenced code blocks. Relative traversal outside the selected root is rejected. Clicking the Source summary opens transactional **Selected Files Review**.
 
-Click the Source summary to open **Selected Files Review**. Changes remain transactional until **Apply Changes** is pressed.
+## v1.3.1 highlights
 
-## v1.3.0 highlights
+- Responsive composition from the supported `920×620` minimum through Full HD, QHD, 4K-class and wide logical viewports.
+- Independent width and height policies: reflow happens before controls are compressed.
+- Progressive large-screen workbench instead of unlimited card stretching.
+- Responsive Settings, History, About, Paste Paths, and Selected Files Review surfaces with no normal horizontal page scrolling.
+- Work-area-aware maximize/restore and dialog sizing for multi-monitor Windows setups.
+- DPI-aware raster and SVG rendering across screen changes.
+- **Interface scale**: `Auto`, `90%`, `100%`, `110%`, `120%`, `125%`, or `150%`; changes apply after restart.
+- XCC-styled scale selector and content-aware sizing for `Auto (recommended)`.
+- Subtle `X-SERIES` footer wordmark included in source and packaged builds.
+- Dedicated breakpoint, resize-round-trip, state-preservation, dialog, DPI, and responsive regression coverage.
 
-- **Paste Paths** and guarded `Ctrl+V` for direct AI-to-XCC file selection.
-- **Selected Files Review** with project-root visibility, `Mixed locations`, multi-select removal, `Delete`, `Clear All`, `Cancel`, and `Apply Changes`.
-- A final PySide6 design system across the shell, Collect page, dialogs, metrics, settings, history, and tray menu.
-- Responsive layouts from the supported `920×620` minimum through maximized 2K displays.
-- Keyboard navigation with visible focus states and accessible names for primary controls and status surfaces.
-- Fast wheel navigation across the complete sidebar: one wheel step changes one page, high-resolution touchpad deltas are accumulated, navigation stops at the first and last page, and focus follows the active tab.
-- Product-formatted `Ctrl+Alt+X` display without changing native hotkey registration.
+v1.3.1 does not change collection semantics. The v1.3.0 Selected Files, source-fidelity, Git, safety, budget, background-work, tray, and hotkey contracts remain intact.
 
 ## Output guarantees
 
-XCC is built around explicit boundaries:
-
-- collected source payloads and Git diffs are not trimmed, compacted, normalized, or rewritten;
-- Compact mode affects only XCC-generated structural text;
-- source files and Git diffs are not silently cut in the middle;
-- omissions, summaries, warnings, errors, and truncation are reported;
+- collected source payloads and Git diffs are not compacted, normalized, or rewritten;
+- Compact mode affects only XCC-generated structure;
+- files and Git diffs are not silently cut in the middle;
+- omissions, summaries, warnings, errors, and truncation are explicit;
 - safety detection is warning-only and never silently redacts source;
-- runtime history is in-memory and stores metadata only;
-- collection runs outside the Qt main thread and cancellation never copies a partial result.
+- Runtime History is in-memory and metadata-only;
+- cancellation never copies a partial result.
 
 ## Windows integration
 
-- Windows 10/11 x64
-- PySide6 desktop interface
-- portable ZIP package
-- system tray and close-to-tray
-- native `Ctrl+Alt+X` restore hotkey
-- `Esc` to hide to tray
-- single-instance restore behavior
-- optional Start with Windows
-- persistent local settings
-- no account, cloud upload, or telemetry
+- Windows 10/11 x64;
+- PySide6 desktop UI;
+- portable ZIP package;
+- tray, close-to-tray, `Esc` hide-to-tray;
+- native `Ctrl+Alt+X` restore hotkey;
+- single-instance restore behavior;
+- optional Start with Windows;
+- persistent local settings;
+- no account, cloud upload, or telemetry.
 
-Settings are stored at:
+Settings:
 
 ```text
 %USERPROFILE%\.xcc\config.json
 ```
 
-## Supported source types
-
-XCC supports common Python, JavaScript/TypeScript, frontend, backend, systems, data, documentation, configuration, and scripting formats, plus project files such as `Dockerfile`, `Makefile`, `CMakeLists.txt`, `pyproject.toml`, `package.json`, `.gitignore`, and `.xccignore`.
-
-Real `.env` files, private keys, certificates, databases, logs, archives, and binaries are excluded by default.
-
-Folder and tree modes respect root `.gitignore` and `.xccignore`. Git mode uses Git status plus `.xccignore`. Selected Files treats explicit user selection as intentional.
-
 ## Install
 
-Official v1.3.0 assets:
+Official v1.3.1 assets:
 
 ```text
-XCC-Context-Collector-v1.3.0-win64.zip
-XCC-Context-Collector-v1.3.0-win64.zip.sha256
+XCC-Context-Collector-v1.3.1-win64.zip
+XCC-Context-Collector-v1.3.1-win64.zip.sha256
 ```
 
-Verify the checksum, extract the complete `XCC Context Collector` directory, and run:
-
-```text
-XCC Context Collector.exe
-```
-
-Keep `_internal` and `VERSION.txt` beside the executable. Python is not required.
+Verify the checksum, extract the complete `XCC Context Collector` directory, and run `XCC Context Collector.exe`. Keep `_internal` and `VERSION.txt` beside the executable. Python is not required.
 
 See [Portable ZIP Usage](docs/PORTABLE_ZIP.md).
 
@@ -155,11 +131,7 @@ python -m pytest -q
 python gui.py
 ```
 
-Installed entry point:
-
-```powershell
-xcc-context-collector
-```
+Installed entry point: `xcc-context-collector`.
 
 ## Runtime History
 
@@ -167,22 +139,22 @@ xcc-context-collector
   <img src="docs/screenshots/xcc-history.png" alt="XCC Runtime History page" width="100%">
 </p>
 
-Runtime History records outcome, duration, source, coverage, truncation, warnings, and errors for the current session. It does not store collected source, Git diffs, detected values, or failure-message bodies.
+History records outcome, duration, source, coverage, truncation, warnings, and errors for the current session. It never stores collected source, Git diffs, detected values, or failure-message bodies.
 
 ## Documentation
 
 | Document | Purpose |
 |---|---|
-| [Architecture](docs/ARCHITECTURE.md) | Runtime layers and product boundaries |
-| [Final UI contract](docs/UI_REFERENCE_v1.3.0.md) | Frozen visual and interaction baseline |
+| [Architecture](docs/ARCHITECTURE.md) | Runtime, UI, responsive, DPI, and release boundaries |
+| [v1.3.1 UI reference](docs/UI_REFERENCE_v1.3.1.md) | Frozen visual and interaction contract |
+| [v1.3.1 validation](docs/M16_VALIDATION.md) | Release-candidate and clean-host procedure |
+| [Release checklist](docs/RELEASE_CHECKLIST.md) | Compact operational gate |
 | [Portable ZIP guide](docs/PORTABLE_ZIP.md) | Checksum, extraction, updates, removal |
-| [Bug-report diagnostics](docs/BUG_REPORTING.md) | Reproducible and sanitized reports |
-| [v1.3.0 validation](docs/M15_VALIDATION.md) | Release-candidate and clean-host procedure |
-| [Release checklist](docs/RELEASE_CHECKLIST.md) | Operational publication gate |
-| [v1.3.0 release notes](docs/releases/v1.3.0.md) | User-visible release summary |
-| [Roadmap](docs/roadmap.md) | Completed and planned milestones |
-| [Contributing](CONTRIBUTING.md) | Development and validation rules |
-| [Security policy](SECURITY.md) | Vulnerability reporting and security model |
+| [Bug-report diagnostics](docs/BUG_REPORTING.md) | Reproducible sanitized reports |
+| [v1.3.1 release notes](docs/releases/v1.3.1.md) | User-visible release summary |
+| [Roadmap](docs/roadmap.md) | Release status and next steps |
+| [Contributing](CONTRIBUTING.md) | Development rules |
+| [Security](SECURITY.md) | Security model and reporting |
 
 ## Author
 
@@ -200,84 +172,58 @@ Copyright (C) 2026 Rafael Xudoynazarov (End1essspace | RX)
 
 # Русский
 
-Текущая версия: **v1.3.0**
+Текущая версия: **v1.3.1**
 
 <p align="center">
   <a href="https://github.com/End1essspace/xcc-context-collector/releases"><strong>Скачать XCC</strong></a>
-  ·
-  <a href="docs/PORTABLE_ZIP.md">Portable-инструкция</a>
-  ·
-  <a href="docs/releases/v1.3.0.md">Описание релиза</a>
+  · <a href="docs/PORTABLE_ZIP.md">Portable-инструкция</a>
+  · <a href="docs/releases/v1.3.1.md">Описание релиза</a>
 </p>
 
-**XCC Context Collector** собирает файлы проекта, папку, Git-изменения или только дерево репозитория в один структурированный блок для AI-ассистента.
+**XCC Context Collector** собирает выбранные файлы, папку проекта, Git-изменения или только дерево репозитория в один структурированный блок для AI-ассистента.
 
 ## Режимы
 
 | Режим | Результат |
 |---|---|
-| **Selected Files** | Проверенный упорядоченный набор файлов, выбранных вручную или импортированных из ответа AI. |
+| **Selected Files** | Упорядоченный набор файлов, выбранных вручную или импортированных из ответа AI. |
 | **Full Folder** | Поддерживаемые файлы папки с ignore rules и деревом проекта. |
 | **Git Changed Files** | Изменённые файлы и раздельные staged/unstaged Git diff. |
 | **Project Tree** | Только структура проекта без содержимого файлов. |
 
-## AI-workflow для Selected Files
+## Главное в v1.3.1
 
-```text
-AI сообщает нужные файлы
-        ↓
-Копирование списка путей
-        ↓
-Paste Paths или Ctrl+V
-        ↓
-Разрешение относительных путей через project root
-        ↓
-Проверка итогового списка
-        ↓
-Collect & Copy
-```
+- адаптивный интерфейс от `920×620` до больших logical viewport без бесконтрольного растягивания;
+- отдельные width/height responsive policies и reflow без дублирования виджетов;
+- адаптивные Settings, History, About и оба Selected Files диалога;
+- корректный work-area restore/maximize и multi-monitor lifecycle;
+- DPI-aware raster/SVG rendering при смене экрана;
+- **Interface scale**: `Auto`, `90%`, `100%`, `110%`, `120%`, `125%`, `150%`, применяется после перезапуска;
+- XCC-style selector масштаба без clipping;
+- ненавязчивый `X-SERIES` wordmark в footer;
+- отдельная regression-матрица для breakpoint, resize, state preservation, dialogs и DPI.
 
-Импорт понимает обычные строки, Markdown-списки, нумерацию, кавычки, backticks и fenced code blocks. Порядок сохраняется, дубликаты удаляются по Windows-семантике, выход за выбранный root блокируется, а проблемные пути отображаются явно.
-
-Нажатие на Source открывает **Selected Files Review**. Изменения применяются только через **Apply Changes**.
-
-## Главное в v1.3.0
-
-- Paste Paths и безопасный `Ctrl+V` для прямого импорта списков из ответов AI.
-- Selected Files Review с project root, `Mixed locations`, множественным удалением, `Delete`, `Clear All`, `Cancel` и транзакционным применением.
-- Финальная единая тёмная UI-система для shell, Collect, диалогов, метрик, Settings, History и tray menu.
-- Адаптация от `920×620` до maximized 2K без дублирования виджетов и изменения логики.
-- Keyboard navigation, видимый focus и accessibility names.
-- Быстрое переключение вкладок колёсиком по всей области sidebar: один шаг — одна вкладка, touchpad-delta накапливается, переходы останавливаются на краях, focus следует за активной вкладкой.
-- Единое отображение `Ctrl+Alt+X` при сохранении прежней native registration.
+Семантика сбора не менялась: Paste Paths, Selected Files Review, source fidelity, Git, safety, budget, background collection, tray и `Ctrl+Alt+X` сохраняют контракты v1.3.0.
 
 ## Гарантии
 
-- содержимое файлов и Git diff не переписывается и не уплотняется;
-- Compact mode влияет только на структуру, которую генерирует XCC;
-- файлы и diff не обрываются молча посередине;
-- пропуски, warnings, errors и truncation отображаются явно;
-- safety detection только предупреждает и не редактирует код;
+- содержимое файлов и Git diff не переписывается;
+- Compact mode влияет только на XCC-generated structure;
+- files/diffs не обрываются молча посередине;
+- warnings, errors, omissions и truncation отображаются явно;
+- safety detection только предупреждает;
 - Runtime History хранит только metadata текущей сессии;
-- сбор выполняется вне Qt main thread, а отмена не копирует частичный результат;
-- XCC не требует аккаунта, не загружает данные в облако и не содержит telemetry.
+- отмена не копирует частичный результат;
+- нет аккаунта, cloud upload или telemetry.
 
 ## Установка
 
-Скачай оба файла релиза:
-
 ```text
-XCC-Context-Collector-v1.3.0-win64.zip
-XCC-Context-Collector-v1.3.0-win64.zip.sha256
+XCC-Context-Collector-v1.3.1-win64.zip
+XCC-Context-Collector-v1.3.1-win64.zip.sha256
 ```
 
-Проверь SHA-256, распакуй всю папку и запусти:
-
-```text
-XCC Context Collector.exe
-```
-
-`_internal` и `VERSION.txt` должны оставаться рядом с executable. Python для packaged build не нужен.
+Проверь SHA-256, распакуй всю папку и запусти `XCC Context Collector.exe`. `_internal` и `VERSION.txt` должны оставаться рядом с executable. Python для packaged build не нужен.
 
 Подробности: [Portable ZIP Usage](docs/PORTABLE_ZIP.md).
 
@@ -297,15 +243,15 @@ python gui.py
 ## Документация
 
 - [Архитектура](docs/ARCHITECTURE.md)
-- [Финальный UI-контракт](docs/UI_REFERENCE_v1.3.0.md)
+- [UI-контракт v1.3.1](docs/UI_REFERENCE_v1.3.1.md)
+- [Validation v1.3.1](docs/M16_VALIDATION.md)
+- [Release checklist](docs/RELEASE_CHECKLIST.md)
 - [Portable ZIP](docs/PORTABLE_ZIP.md)
 - [Диагностика bug reports](docs/BUG_REPORTING.md)
-- [Validation v1.3.0](docs/M15_VALIDATION.md)
-- [Release checklist](docs/RELEASE_CHECKLIST.md)
-- [Release notes v1.3.0](docs/releases/v1.3.0.md)
+- [Release notes v1.3.1](docs/releases/v1.3.1.md)
 - [Roadmap](docs/roadmap.md)
 - [Contributing](CONTRIBUTING.md)
-- [Security policy](SECURITY.md)
+- [Security](SECURITY.md)
 
 ## Автор и лицензия
 

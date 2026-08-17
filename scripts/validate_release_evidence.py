@@ -43,9 +43,21 @@ V130_REQUIRED_GATES = (
     "selected_files_relative_output",
 )
 
-# Current release tooling tests and the manual recorder use the complete v1.3
-# gate set. Version-aware validation keeps historical v1.2 evidence readable.
-REQUIRED_GATES = BASE_REQUIRED_GATES + V130_REQUIRED_GATES
+V131_REQUIRED_GATES = (
+    "responsive_minimum_window",
+    "responsive_full_hd_baseline",
+    "responsive_qhd_scaling",
+    "interface_scale_persistence_restart",
+    "settings_history_about_responsive",
+    "responsive_dialogs",
+    "work_area_restore",
+    "dpi_asset_rerender",
+    "footer_x_series_brand",
+)
+
+# Current tooling uses the full v1.3.1 set while version-aware validation keeps
+# historical v1.2/v1.3.0 evidence readable.
+REQUIRED_GATES = BASE_REQUIRED_GATES + V130_REQUIRED_GATES + V131_REQUIRED_GATES
 
 _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _VERSION_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$")
@@ -74,8 +86,10 @@ def required_gates_for_version(version: str) -> tuple[str, ...]:
         int(match.group(name))
         for name in ("major", "minor", "patch")
     )
-    if version_tuple >= (1, 3, 0):
+    if version_tuple >= (1, 3, 1):
         return REQUIRED_GATES
+    if version_tuple >= (1, 3, 0):
+        return BASE_REQUIRED_GATES + V130_REQUIRED_GATES
 
     return BASE_REQUIRED_GATES
 

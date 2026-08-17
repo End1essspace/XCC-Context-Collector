@@ -24,6 +24,7 @@ $RequiredAssets = @(
     "xcc_app.png",
     "xcc_tray.ico",
     "xcc_tray.png",
+    "x-series.png",
     "nav-collect.svg",
     "nav-history.svg",
     "nav-settings.svg",

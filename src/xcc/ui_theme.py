@@ -675,6 +675,69 @@ QScrollBar::sub-page:vertical {
 #SettingsToggle:hover {
     color: #D6A93A;
 }
+
+#SettingsComboBox {
+    background: #101113;
+    border: 1px solid #3B3E43;
+    border-radius: 8px;
+    color: #F2F2F2;
+    font-size: 9pt;
+    font-weight: 700;
+    padding: 0px 34px 0px 10px;
+}
+
+#SettingsComboBox:hover {
+    border: 1px solid #5A4820;
+}
+
+#SettingsComboBox:focus {
+    border: 1px solid #D6A93A;
+}
+
+#SettingsComboBox::drop-down {
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 28px;
+    border: none;
+    padding-right: 8px;
+}
+
+#SettingsComboBox::down-arrow {
+    width: 10px;
+    height: 10px;
+}
+
+#SettingsComboBox QAbstractItemView {
+    background: #17181A;
+    border: 1px solid #3B3E43;
+    border-radius: 10px;
+    color: #D6D6D6;
+    outline: 0px;
+    padding: 4px 0px;
+    selection-background-color: #2A2412;
+    selection-color: #F2F2F2;
+}
+
+#SettingsComboBox QAbstractItemView::item {
+    margin: 2px 6px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+}
+
+#SettingsComboBox QAbstractItemView::item:hover {
+    background: #1E1B12;
+    border: 1px solid #5A4820;
+}
+
+#SettingsComboBox QAbstractItemView::item:selected {
+    background: #2A2412;
+    border: 1px solid #5A4820;
+    border-left: 3px solid #D6A93A;
+    color: #F2F2F2;
+}
+
 #SettingsGroup {
     background: #141414;
     border: 1px solid #2F2A1C;

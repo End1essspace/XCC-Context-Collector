@@ -41,6 +41,8 @@ The supported application boundary is intentionally singular: `gui.py -> xcc.gui
 Read before cross-cutting changes:
 
 - `docs/ARCHITECTURE.md`
+- `docs/UI_REFERENCE_v1.3.1.md`
+- `docs/M16_VALIDATION.md`
 - `docs/roadmap.md`
 - `docs/BUG_REPORTING.md`
 - `SECURITY.md`
@@ -70,7 +72,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
 For a complete release-candidate validation:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.0
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.1
 ```
 
 ## Change guidelines
@@ -95,7 +97,9 @@ Do not log or persist detected secret values. Safety output may contain only san
 
 Collection work belongs outside the Qt main thread. Clipboard access, dialogs, and widget mutation remain on the GUI thread. Cancellation must be cooperative and must not publish partial output.
 
-Sidebar changes must preserve the final navigation contract:
+Responsive/UI changes must preserve the v1.3.1 UI contract.
+
+Sidebar changes must preserve the navigation contract:
 
 - real buttons rather than item-view rows;
 - exclusive selection;

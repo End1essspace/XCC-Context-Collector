@@ -199,6 +199,31 @@ def test_dpi_aware_raster_preserves_logical_size_at_fractional_scale(
     assert pixmap.deviceIndependentSize().height() == pytest.approx(32.0)
 
 
+def test_dpi_aware_raster_supports_rectangular_wordmarks(
+    qapp: QApplication,
+) -> None:
+    target = QSize(104, 11)
+    pixmap = render_dpi_aware_raster(
+        resource_path("assets", "x-series.png"),
+        target,
+        device_pixel_ratio=1.5,
+    )
+
+    assert not pixmap.isNull()
+    assert pixmap.devicePixelRatio() == pytest.approx(1.5)
+    logical = pixmap.deviceIndependentSize()
+    assert logical.width() <= target.width()
+    assert logical.height() <= target.height()
+    assert logical.width() > 95
+    assert logical.height() > 9
+
+    label = DpiAwareImageLabel(
+        resource_path("assets", "x-series.png"),
+        target,
+    )
+    assert label.size() == target
+
+
 def test_dpi_sensitive_labels_can_rerender_for_new_screen_scale(
     qapp: QApplication,
 ) -> None:

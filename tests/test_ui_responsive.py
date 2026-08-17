@@ -5,15 +5,16 @@ import pytest
 from xcc.ui_responsive import (
     ABOUT_USEFUL_PAGE_MAX_WIDTH,
     DIALOG_WORK_AREA_MARGIN,
-    HISTORY_USEFUL_PAGE_MAX_WIDTH,
     INLINE_PAGE_HEADER_HEIGHT,
     LARGE_CONTENT_BREAKPOINT,
-    LARGE_USEFUL_PAGE_MAX_WIDTH,
+    WORKBENCH_HARD_MAX_WIDTH,
+    WORKBENCH_REFERENCE_PAGE_WIDTH,
+    WORKBENCH_WIDE_EXPANSION_DENOMINATOR,
+    WORKBENCH_WIDE_EXPANSION_NUMERATOR,
     MEDIUM_CONTENT_BREAKPOINT,
     MINIMUM_SUPPORTED_WINDOW_HEIGHT,
     MINIMUM_SUPPORTED_WINDOW_WIDTH,
     SETTINGS_TWO_COLUMN_BREAKPOINT,
-    SETTINGS_USEFUL_PAGE_MAX_WIDTH,
     STANDARD_VIEWPORT_HEIGHT,
     TALL_VIEWPORT_HEIGHT,
     CollectHeightMode,
@@ -27,6 +28,7 @@ from xcc.ui_responsive import (
     collect_page_width_spec,
     collect_useful_page_width,
     collect_layout_mode,
+    progressive_page_width_spec,
     dialog_size_spec,
     collect_layout_spec,
     history_page_spec,
@@ -48,17 +50,27 @@ def test_collect_width_breakpoints_use_the_content_viewport() -> None:
     assert collect_layout_mode(2560) is CollectLayoutMode.LARGE
 
 
-def test_large_useful_width_is_bounded_without_a_resolution_specific_mode() -> None:
-    assert LARGE_USEFUL_PAGE_MAX_WIDTH == 1692
+def test_large_workbench_expands_progressively_without_resolution_modes() -> None:
+    assert WORKBENCH_REFERENCE_PAGE_WIDTH == 1692
+    assert WORKBENCH_WIDE_EXPANSION_NUMERATOR == 3
+    assert WORKBENCH_WIDE_EXPANSION_DENOMINATOR == 4
+    assert WORKBENCH_HARD_MAX_WIDTH == 3200
 
+    # The generic fixed-cap helper remains available for intentionally bounded
+    # information surfaces such as About.
     assert bounded_page_width(0, max_width=1692) == 0
-    assert bounded_page_width(1691, max_width=1692) == 1691
     assert bounded_page_width(1692, max_width=1692) == 1692
     assert bounded_page_width(1693, max_width=1692) == 1692
-    assert collect_useful_page_width(2560) == 1692
 
-    # Extreme logical widths remain the same LARGE composition. The useful
-    # width cap is distribution policy, not a QHD/4K-specific layout mode.
+    # Full HD is unchanged. Wider workbenches consume 75% of extra logical
+    # width, leaving 25% as centered breathing room.
+    assert collect_useful_page_width(1692) == 1692
+    assert collect_useful_page_width(1820) == 1788
+    assert collect_useful_page_width(2332) == 2172
+    assert collect_useful_page_width(3612) == 3132
+    assert collect_useful_page_width(5000) == WORKBENCH_HARD_MAX_WIDTH
+
+    # Width distribution never creates a QHD/4K-specific layout mode.
     assert collect_layout_mode(1692) is CollectLayoutMode.LARGE
     assert collect_layout_mode(2560) is CollectLayoutMode.LARGE
     assert collect_layout_mode(3840) is CollectLayoutMode.LARGE
@@ -67,6 +79,28 @@ def test_large_useful_width_is_bounded_without_a_resolution_specific_mode() -> N
 def test_bounded_page_width_rejects_invalid_maximum() -> None:
     with pytest.raises(ValueError, match="max_width must be greater than 0"):
         bounded_page_width(1000, max_width=0)
+
+
+def test_progressive_page_width_validates_calibration_contract() -> None:
+    with pytest.raises(ValueError, match="reference_width"):
+        progressive_page_width_spec(2000, reference_width=0)
+
+    with pytest.raises(ValueError, match="hard_max_width"):
+        progressive_page_width_spec(
+            2000,
+            reference_width=1692,
+            hard_max_width=1600,
+        )
+
+    with pytest.raises(ValueError, match="expansion_denominator"):
+        progressive_page_width_spec(2000, expansion_denominator=0)
+
+    with pytest.raises(ValueError, match="expansion_numerator"):
+        progressive_page_width_spec(
+            2000,
+            expansion_numerator=5,
+            expansion_denominator=4,
+        )
 
 
 def test_dialog_size_spec_preserves_preferred_size_when_work_area_allows() -> None:
@@ -170,9 +204,9 @@ def test_centered_page_width_spec_distributes_only_excess_width() -> None:
     )
 
     collect = collect_page_width_spec(2560)
-    assert collect.useful_width == LARGE_USEFUL_PAGE_MAX_WIDTH
-    assert collect.left_inset == 434
-    assert collect.right_inset == 434
+    assert collect.useful_width == 2343
+    assert collect.left_inset == 108
+    assert collect.right_inset == 109
 
 
 def test_sidebar_width_hysteresis_prevents_breakpoint_oscillation() -> None:
@@ -301,8 +335,6 @@ def test_height_changes_recalculate_geometry_inside_one_width_mode() -> None:
 
 def test_non_collect_surface_policy_reflows_and_bounds_by_viewport() -> None:
     assert SETTINGS_TWO_COLUMN_BREAKPOINT == LARGE_CONTENT_BREAKPOINT
-    assert SETTINGS_USEFUL_PAGE_MAX_WIDTH == LARGE_USEFUL_PAGE_MAX_WIDTH
-    assert HISTORY_USEFUL_PAGE_MAX_WIDTH == LARGE_USEFUL_PAGE_MAX_WIDTH
     assert ABOUT_USEFUL_PAGE_MAX_WIDTH == 1320
 
     assert responsive_page_margin(819) == 16
@@ -312,9 +344,9 @@ def test_non_collect_surface_policy_reflows_and_bounds_by_viewport() -> None:
 
     assert settings_page_spec(1119).columns == 1
     assert settings_page_spec(1120).columns == 2
-    assert settings_page_spec(2560).width.useful_width == LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert settings_page_spec(2560).width.useful_width == 2343
 
-    assert history_page_spec(2560).width.useful_width == LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert history_page_spec(2560).width.useful_width == 2343
 
     compact_about = about_page_spec(819)
     assert compact_about.columns == 2
@@ -325,3 +357,14 @@ def test_non_collect_surface_policy_reflows_and_bounds_by_viewport() -> None:
     assert large_about.width.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
     assert large_about.width.left_inset == 620
     assert large_about.width.right_inset == 620
+
+    scaled_about = about_page_spec(2560, interface_scale=1.25)
+    assert scaled_about.columns == 4
+    assert scaled_about.width.useful_width == 1650
+    assert scaled_about.width.left_inset == 455
+    assert scaled_about.width.right_inset == 455
+
+
+def test_about_interface_scale_rejects_invalid_multiplier() -> None:
+    with pytest.raises(ValueError, match="interface_scale"):
+        about_page_spec(1600, interface_scale=0)

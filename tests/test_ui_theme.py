@@ -301,3 +301,17 @@ def test_responsive_page_scroll_surfaces_disable_horizontal_scrollbars() -> None
     stylesheet = build_application_stylesheet()
     assert "#SettingsPageScroll QScrollBar:horizontal" in stylesheet
     assert "#AboutPageScroll QScrollBar:horizontal" in stylesheet
+
+
+def test_settings_interface_scale_combo_is_themed() -> None:
+    stylesheet = build_application_stylesheet()
+
+    assert "#SettingsComboBox {" in stylesheet
+    assert "padding: 0px 34px 0px 10px;" in stylesheet
+    assert "#SettingsComboBox:hover {" in stylesheet
+    assert "#SettingsComboBox:focus {" in stylesheet
+    assert "#SettingsComboBox::drop-down {" in stylesheet
+    assert "#SettingsComboBox::down-arrow {" in stylesheet
+    assert "#SettingsComboBox QAbstractItemView {" in stylesheet
+    assert "#SettingsComboBox QAbstractItemView::item:selected {" in stylesheet
+    assert f"border-left: 3px solid {PALETTE.accent};" in stylesheet

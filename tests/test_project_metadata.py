@@ -27,7 +27,7 @@ def test_pyproject_defines_canonical_project_metadata() -> None:
     assert project["gui-scripts"] == {
         "xcc-context-collector": "xcc.gui:run_gui"
     }
-    assert __version__ == "1.3.0"
+    assert __version__ == "1.3.1"
 
 
 def test_dependency_groups_match_the_supported_product_boundary() -> None:
@@ -83,9 +83,9 @@ def test_requirements_file_delegates_to_canonical_metadata() -> None:
 def test_current_release_documents_exist() -> None:
     required_paths = (
         "CHANGELOG.md",
-        "docs/releases/v1.3.0.md",
-        "docs/UI_REFERENCE_v1.3.0.md",
-        "docs/M15_VALIDATION.md",
+        "docs/releases/v1.3.1.md",
+        "docs/UI_REFERENCE_v1.3.1.md",
+        "docs/M16_VALIDATION.md",
         "docs/RELEASE_CHECKLIST.md",
     )
 

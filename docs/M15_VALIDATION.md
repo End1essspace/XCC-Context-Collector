@@ -1,8 +1,8 @@
-# XCC v1.3.0 Release Validation
+# XCC v1.3.0 Historical Release Validation
 
-Status: **ACTIVE — FINAL RELEASE CANDIDATE**
+Status: **HISTORICAL — NOT THE CURRENT RELEASE GATE**
 
-This is the canonical procedure for the exact commit and archive that will become XCC v1.3.0. The compact operational checklist is [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md).
+This file preserves the v1.3.0 release procedure. Current v1.3.1 release work uses [`M16_VALIDATION.md`](M16_VALIDATION.md) and [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md).
 
 ## Release invariant
 
@@ -208,4 +208,3 @@ After publication:
 - publish the release announcement.
 
 The release is complete only after the public downloadable artifact passes this verification.
-

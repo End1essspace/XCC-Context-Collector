@@ -1,6 +1,6 @@
-param(
+﻿param(
     [string]$PythonExecutable = "python",
-    [string]$ExpectedVersion = "1.3.0",
+    [string]$ExpectedVersion = "1.3.1",
     [string]$OutputDirectory = "artifacts",
     [switch]$SkipCleanInstall
 )
@@ -33,6 +33,9 @@ if ($LASTEXITCODE -ne 0) { throw "Version consistency failed." }
 
 & $PythonExecutable -m pytest -q tests\test_path_list_parser.py tests\test_selected_files_importer.py tests\test_selected_files_review.py tests\test_selected_files_workflow.py
 if ($LASTEXITCODE -ne 0) { throw "Selected Files regression tests failed." }
+
+& $PythonExecutable -m pytest -q tests\test_ui_responsive.py tests\test_responsive_regression_matrix.py tests\test_gui_responsive_regression.py tests\test_gui_geometry.py tests\test_ui_dialogs.py tests\test_ui_components.py
+if ($LASTEXITCODE -ne 0) { throw "Responsive/DPI regression tests failed." }
 
 & $PythonExecutable -m pytest -q
 if ($LASTEXITCODE -ne 0) { throw "Tests failed." }
@@ -87,6 +90,7 @@ $Report = [ordered]@{
         compileall = $true
         version_consistency = $true
         selected_files_regression = $true
+        responsive_regression = $true
         pytest = $true
         clean_install = (-not $SkipCleanInstall)
         pyinstaller_build = $true

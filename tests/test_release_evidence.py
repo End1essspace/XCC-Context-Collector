@@ -10,6 +10,7 @@ from scripts.validate_release_evidence import (
     BASE_REQUIRED_GATES,
     REQUIRED_GATES,
     V130_REQUIRED_GATES,
+    V131_REQUIRED_GATES,
     ReleaseEvidenceError,
     validate_release_evidence,
 )
@@ -23,7 +24,7 @@ def _write_evidence(
     *,
     os_release: str,
     archive_sha256: str,
-    version: str = "1.3.0",
+    version: str = "1.3.1",
     failed_gate: str | None = None,
     gate_names: tuple[str, ...] = REQUIRED_GATES,
 ) -> None:
@@ -76,11 +77,11 @@ def test_release_evidence_requires_matching_windows_10_and_11_records(
 
     summary = validate_release_evidence(
         [windows_10, windows_11],
-        expected_version="1.3.0",
+        expected_version="1.3.1",
         expected_archive_sha256=archive_hash,
     )
 
-    assert summary.version == "1.3.0"
+    assert summary.version == "1.3.1"
     assert summary.os_releases == {"Windows 10", "Windows 11"}
     assert summary.archive_sha256 == archive_hash
 
@@ -96,7 +97,7 @@ def test_release_evidence_rejects_missing_windows_10_record(tmp_path: Path) -> N
     with pytest.raises(ReleaseEvidenceError, match="Windows 10"):
         validate_release_evidence(
             [windows_11],
-            expected_version="1.3.0",
+            expected_version="1.3.1",
         )
 
 
@@ -112,7 +113,7 @@ def test_release_evidence_rejects_failed_manual_gate(tmp_path: Path) -> None:
     with pytest.raises(ReleaseEvidenceError, match="cooperative_cancellation"):
         validate_release_evidence(
             [windows_10],
-            expected_version="1.3.0",
+            expected_version="1.3.1",
         )
 
 
@@ -133,7 +134,7 @@ def test_release_evidence_rejects_different_archive_hashes(tmp_path: Path) -> No
     with pytest.raises(ReleaseEvidenceError, match="different release archive"):
         validate_release_evidence(
             [windows_10, windows_11],
-            expected_version="1.3.0",
+            expected_version="1.3.1",
         )
 
 
@@ -145,6 +146,7 @@ def test_v130_evidence_requires_selected_files_workflow_gates(
         windows_10,
         os_release="Windows 10",
         archive_sha256="f" * 64,
+        version="1.3.0",
         gate_names=BASE_REQUIRED_GATES,
     )
 
@@ -155,6 +157,24 @@ def test_v130_evidence_requires_selected_files_workflow_gates(
         validate_release_evidence(
             [windows_10],
             expected_version="1.3.0",
+        )
+
+
+def test_v131_evidence_requires_responsive_dpi_gates(
+    tmp_path: Path,
+) -> None:
+    windows_10 = tmp_path / "windows-10-v131.json"
+    _write_evidence(
+        windows_10,
+        os_release="Windows 10",
+        archive_sha256="8" * 64,
+        gate_names=BASE_REQUIRED_GATES + V130_REQUIRED_GATES,
+    )
+
+    with pytest.raises(ReleaseEvidenceError, match="responsive_minimum_window"):
+        validate_release_evidence(
+            [windows_10],
+            expected_version="1.3.1",
         )
 
 
@@ -186,15 +206,17 @@ def test_v120_evidence_keeps_historical_base_gate_compatibility(
     assert summary.version == "1.2.0"
 
 
-def test_v130_gate_set_contains_selected_files_release_checks() -> None:
+def test_versioned_gate_sets_cover_v130_and_v131_contracts() -> None:
     assert set(V130_REQUIRED_GATES).issubset(REQUIRED_GATES)
+    assert set(V131_REQUIRED_GATES).issubset(REQUIRED_GATES)
     assert "selected_files_review_transactionality" in V130_REQUIRED_GATES
-    assert "selected_files_relative_output" in V130_REQUIRED_GATES
+    assert "responsive_qhd_scaling" in V131_REQUIRED_GATES
+    assert "interface_scale_persistence_restart" in V131_REQUIRED_GATES
     assert "safety_confirmation_setting" in REQUIRED_GATES
 
 
 def test_current_release_documents_pass_the_readiness_validator() -> None:
-    assert __version__ == "1.3.0"
+    assert __version__ == "1.3.1"
     validate_release_documents(PROJECT_ROOT, version=__version__)
 
 
@@ -211,6 +233,8 @@ def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
         "check_version_consistency.py",
         "test_selected_files_workflow.py",
         "selected_files_regression",
+        "responsive_regression",
+        "test_responsive_regression_matrix.py",
         "pytest -q",
         "validate_clean_install.ps1",
         "build_release.ps1",

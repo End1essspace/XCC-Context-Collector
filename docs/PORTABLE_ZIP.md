@@ -1,37 +1,31 @@
 # Portable ZIP Usage
 
-XCC is distributed as a Windows x64 portable ZIP. It does not require an installer or a Python installation.
+XCC is distributed as a Windows x64 portable ZIP. No installer or Python runtime is required.
 
-## Release files
+## Download
 
-For v1.3.0, download both files from the official GitHub Release:
+Official v1.3.1 files:
 
 ```text
-XCC-Context-Collector-v1.3.0-win64.zip
-XCC-Context-Collector-v1.3.0-win64.zip.sha256
+XCC-Context-Collector-v1.3.1-win64.zip
+XCC-Context-Collector-v1.3.1-win64.zip.sha256
 ```
 
-Do not download executables or repackaged archives from third-party mirrors.
+Download only from the official GitHub Release.
 
 ## Verify SHA-256
 
-Place the ZIP and checksum file in the same folder, then run:
+Place both files together and run:
 
 ```powershell
-$Zip="XCC-Context-Collector-v1.3.0-win64.zip"; $Expected=((Get-Content "$Zip.sha256" -Raw).Trim() -split "\s+")[0]; $Actual=(Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant(); if ($Actual -ne $Expected.ToLowerInvariant()) { throw "Checksum mismatch" }; "Checksum verified: $Actual"
+$Zip="XCC-Context-Collector-v1.3.1-win64.zip"; $Expected=((Get-Content "$Zip.sha256" -Raw).Trim() -split "\s+")[0]; $Actual=(Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant(); if ($Actual -ne $Expected.ToLowerInvariant()) { throw "Checksum mismatch" }; "Checksum verified: $Actual"
 ```
 
-A checksum mismatch means the archive must not be used.
+Do not use an archive with a mismatched checksum.
 
 ## Extract and run
 
-1. Extract the complete ZIP to a writable folder.
-2. Keep the entire `XCC Context Collector` directory together.
-3. Start `XCC Context Collector.exe`.
-4. Do not run the executable directly from inside the ZIP.
-5. Do not move the executable away from `_internal` and `VERSION.txt`.
-
-Expected structure:
+Extract the complete directory and start `XCC Context Collector.exe`.
 
 ```text
 XCC Context Collector/
@@ -40,63 +34,44 @@ XCC Context Collector/
 └── _internal/
 ```
 
-`VERSION.txt` must contain `1.3.0` for the v1.3.0 package.
+Do not run the executable from inside the ZIP or move it away from `_internal` and `VERSION.txt`. `VERSION.txt` must contain `1.3.1`.
 
 ## Windows reputation warning
 
-v1.3.0 binaries are not code-signed. Windows may therefore display a reputation or SmartScreen warning even when the archive is unchanged.
+The binaries are not code-signed. Before proceeding through a SmartScreen/reputation warning, confirm the official download source, verify SHA-256, and confirm `VERSION.txt` matches the release tag.
 
-Before proceeding:
+## Settings boundary
 
-- confirm the download came from the official repository;
-- verify the SHA-256 checksum;
-- confirm `VERSION.txt` matches the release tag.
-
-Do not bypass a warning for an archive with an unknown origin or mismatched checksum.
-
-## Settings and portability boundary
-
-The application is portable in the distribution sense: no installer is required and the extracted application directory can be moved as a unit.
-
-Settings are not stored beside the executable. They remain under:
+The app directory is portable; settings are user-local:
 
 ```text
 %USERPROFILE%\.xcc\config.json
 ```
 
-Runtime history is in-memory and is cleared when XCC exits. A fully self-contained settings mode is outside the v1.3.0 scope.
+This includes behavior settings and **Interface scale**. An explicit Interface scale is applied at process startup, so restart XCC after changing it.
 
-## Update XCC
+Runtime History is in-memory and clears when XCC exits.
 
-1. Quit XCC from the tray.
-2. Download and verify the new versioned ZIP and checksum.
-3. Extract it into a new folder instead of overwriting files while XCC is running.
-4. Start the new executable and verify the About-page version.
-5. Delete the old extracted folder after confirming the new build works.
-
-Existing `%USERPROFILE%\.xcc\config.json` settings are reused when compatible.
-
-## Remove XCC
+## Update
 
 1. Quit XCC from the tray.
-2. Delete the extracted `XCC Context Collector` folder.
-3. Optionally delete `%USERPROFILE%\.xcc` to remove saved settings.
-4. If **Start with Windows** was enabled, disable it before removal or delete the XCC shortcut from `shell:startup`.
+2. Download and verify the new ZIP/checksum.
+3. Extract to a new folder.
+4. Launch the new build and confirm About/`VERSION.txt`.
+5. Delete the old extracted folder after validation.
+
+Compatible saved settings are reused automatically.
+
+## Remove
+
+1. Quit XCC from the tray.
+2. Delete the extracted application folder.
+3. Optionally delete `%USERPROFILE%\.xcc`.
+4. If Start with Windows was enabled, disable it first or remove the XCC shortcut from `shell:startup`.
 
 ## Troubleshooting
 
-### The application appears to remain open
-
-XCC may be hidden in the Windows notification area. Open the tray overflow menu and use **Quit** from the XCC tray menu.
-
-### A second launch does not open another window
-
-XCC is single-instance. The second launch asks the existing instance to restore.
-
-### `Ctrl+Alt+X` does not restore the window
-
-Another application may own the hotkey. XCC treats this as non-fatal and displays the hotkey state in Settings.
-
-### The tray icon is not visible
-
-Check the Windows notification-area overflow menu. If no XCC entry exists, restart the packaged application and report the issue using `docs/BUG_REPORTING.md`.
+**Window disappeared:** check the notification-area overflow; XCC may be hidden to tray.  
+**Second launch opens no second window:** XCC is single-instance and restores the existing process.  
+**`Ctrl+Alt+X` unavailable:** another app may own the hotkey; XCC treats that as non-fatal.  
+**Scale looks wrong:** set Settings → Interface scale to `Auto`, fully Quit from tray, and restart before reporting a DPI issue.

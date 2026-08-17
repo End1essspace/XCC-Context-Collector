@@ -80,7 +80,7 @@ The release process validates:
 - the companion SHA-256 checksum;
 - clean-host Windows 10 and Windows 11 evidence for the same archive hash.
 
-Users should verify the checksum before running a downloaded archive. v1.3.0 binaries are not code-signed; checksum verification and downloading only from the official repository are therefore especially important.
+Users should verify the checksum before running a downloaded archive. Current XCC binaries are not code-signed; checksum verification and downloading only from the official repository are therefore especially important.
 
 ## Clipboard and local-data considerations
 

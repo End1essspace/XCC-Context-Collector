@@ -29,6 +29,7 @@ REQUIRED_AUTOMATED_GATES = (
     "compileall",
     "version_consistency",
     "selected_files_regression",
+    "responsive_regression",
     "pytest",
     "clean_install",
     "pyinstaller_build",

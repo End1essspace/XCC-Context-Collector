@@ -9,16 +9,22 @@ MEDIUM_CONTENT_BREAKPOINT = 820
 MINIMUM_SUPPORTED_WINDOW_WIDTH = 920
 MINIMUM_SUPPORTED_WINDOW_HEIGHT = 620
 
-# Logical page-width cap calibrated from the approved maximized v1.3.0
-# Full HD composition: 1920 logical window width - 228 logical sidebar width.
-# This is a useful-width bound, not a monitor-resolution breakpoint.
-LARGE_USEFUL_PAGE_MAX_WIDTH = 1692
+# Full HD @100% is the reference workbench composition:
+# 1920 logical window width - 228 logical sidebar width = 1692.
+#
+# Wider logical viewports are allowed to use 75% of the width gained beyond
+# that reference instead of being frozen at 1692 forever. This keeps the
+# workbench visually consistent across common 1080p/QHD/4K + Windows scaling
+# combinations while still reserving real outer breathing room on large
+# displays. Qt already provides logical geometry after OS scaling; DPR is not
+# applied to layout widths here.
+WORKBENCH_REFERENCE_PAGE_WIDTH = 1692
+WORKBENCH_WIDE_EXPANSION_NUMERATOR = 3
+WORKBENCH_WIDE_EXPANSION_DENOMINATOR = 4
+WORKBENCH_HARD_MAX_WIDTH = 3200
 
-# Non-Collect surfaces preserve the approved Full HD workspace where useful.
-# About is intentionally narrower because it is an information surface, not a
-# dashboard/workbench; extra line length does not add utility there.
-SETTINGS_USEFUL_PAGE_MAX_WIDTH = LARGE_USEFUL_PAGE_MAX_WIDTH
-HISTORY_USEFUL_PAGE_MAX_WIDTH = LARGE_USEFUL_PAGE_MAX_WIDTH
+# About remains intentionally narrower because it is an information surface,
+# not a dashboard/workbench; extra line length does not add utility there.
 ABOUT_USEFUL_PAGE_MAX_WIDTH = 1320
 SETTINGS_TWO_COLUMN_BREAKPOINT = LARGE_CONTENT_BREAKPOINT
 
@@ -396,17 +402,69 @@ def centered_page_width_spec(
     )
 
 
-def collect_page_width_spec(content_width: int) -> PageWidthSpec:
-    """Return Collect's centered useful-width distribution."""
+def progressive_page_width_spec(
+    available_width: int,
+    *,
+    reference_width: int = WORKBENCH_REFERENCE_PAGE_WIDTH,
+    hard_max_width: int = WORKBENCH_HARD_MAX_WIDTH,
+    expansion_numerator: int = WORKBENCH_WIDE_EXPANSION_NUMERATOR,
+    expansion_denominator: int = WORKBENCH_WIDE_EXPANSION_DENOMINATOR,
+) -> PageWidthSpec:
+    """Grow a centered workbench progressively beyond the Full HD reference.
 
-    return centered_page_width_spec(
-        content_width,
-        max_width=LARGE_USEFUL_PAGE_MAX_WIDTH,
+    Up to the reference width, the page uses the complete logical viewport.
+    Above it, only a controlled share of additional width becomes useful page
+    width; the remainder becomes symmetric outer breathing room. The hard cap
+    protects extreme/ultrawide viewports without introducing resolution- or
+    DPR-specific layout branches.
+    """
+
+    if reference_width <= 0:
+        raise ValueError("reference_width must be greater than 0")
+    if hard_max_width < reference_width:
+        raise ValueError("hard_max_width must be at least reference_width")
+    if expansion_denominator <= 0:
+        raise ValueError("expansion_denominator must be greater than 0")
+    if not 0 <= expansion_numerator <= expansion_denominator:
+        raise ValueError(
+            "expansion_numerator must be between 0 and expansion_denominator"
+        )
+
+    width = max(0, available_width)
+
+    if width <= reference_width:
+        useful_width = width
+    else:
+        extra_width = width - reference_width
+        useful_extra = (
+            extra_width * expansion_numerator
+        ) // expansion_denominator
+        useful_width = min(
+            width,
+            hard_max_width,
+            reference_width + useful_extra,
+        )
+
+    spare_width = width - useful_width
+    left_inset = spare_width // 2
+    right_inset = spare_width - left_inset
+
+    return PageWidthSpec(
+        available_width=width,
+        useful_width=useful_width,
+        left_inset=left_inset,
+        right_inset=right_inset,
     )
 
 
+def collect_page_width_spec(content_width: int) -> PageWidthSpec:
+    """Return Collect's progressive Full-HD-referenced workbench width."""
+
+    return progressive_page_width_spec(content_width)
+
+
 def collect_useful_page_width(content_width: int) -> int:
-    """Bound Collect to the approved large-layout useful width."""
+    """Return Collect's progressive useful logical workbench width."""
 
     return collect_page_width_spec(content_width).useful_width
 
@@ -489,26 +547,57 @@ def page_surface_spec(
     )
 
 
+def workbench_page_surface_spec(
+    content_width: int,
+    *,
+    columns: int = 1,
+) -> PageSurfaceSpec:
+    if columns <= 0:
+        raise ValueError("columns must be greater than 0")
+
+    return PageSurfaceSpec(
+        page_margin=responsive_page_margin(content_width),
+        width=progressive_page_width_spec(content_width),
+        columns=columns,
+    )
+
+
 def settings_page_spec(content_width: int) -> PageSurfaceSpec:
     columns = 2 if max(0, content_width) >= SETTINGS_TWO_COLUMN_BREAKPOINT else 1
-    return page_surface_spec(
+    return workbench_page_surface_spec(
         content_width,
-        max_width=SETTINGS_USEFUL_PAGE_MAX_WIDTH,
         columns=columns,
     )
 
 
 def history_page_spec(content_width: int) -> PageSurfaceSpec:
-    return page_surface_spec(
-        content_width,
-        max_width=HISTORY_USEFUL_PAGE_MAX_WIDTH,
-    )
+    return workbench_page_surface_spec(content_width)
 
 
-def about_page_spec(content_width: int) -> PageSurfaceSpec:
+def about_page_spec(
+    content_width: int,
+    *,
+    interface_scale: float = 1.0,
+) -> PageSurfaceSpec:
+    """Return About geometry while respecting the explicit XCC UI scale.
+
+    About intentionally keeps a narrower readability surface than the main
+    workbench. Because that surface has its own logical max-width, it must also
+    follow the user's explicit XCC scale override; otherwise the fixed 1320px
+    cap visually cancels part of Interface scale on this page. Windows/Qt DPI
+    is already represented by ``content_width`` and is not multiplied here.
+    """
+
+    if interface_scale <= 0:
+        raise ValueError("interface_scale must be greater than 0")
+
     badge_columns = 4 if max(0, content_width) >= MEDIUM_CONTENT_BREAKPOINT else 2
+    scaled_max_width = max(
+        1,
+        round(ABOUT_USEFUL_PAGE_MAX_WIDTH * interface_scale),
+    )
     return page_surface_spec(
         content_width,
-        max_width=ABOUT_USEFUL_PAGE_MAX_WIDTH,
+        max_width=scaled_max_width,
         columns=badge_columns,
     )
