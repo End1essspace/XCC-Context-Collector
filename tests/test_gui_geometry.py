@@ -7,7 +7,7 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QEvent, QPoint, Qt
 from PySide6.QtWidgets import QApplication, QSizePolicy
 
 from xcc.fitts_close import EDGE_CLOSE_POLL_INTERVAL_MS
@@ -341,4 +341,32 @@ def test_close_request_is_queued_and_idempotent(
     controller._close_requested = False
     window._is_quitting = True
     window.close()
+
+def test_collect_event_filter_does_not_dereference_scroll_area_wrapper(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.show()
+    _settle(qapp, window)
+
+    viewport = window.collect_page_viewport
+    original_scroll = window.collect_page_scroll
+
+    class DeletedScrollAreaProbe:
+        def viewport(self):
+            raise RuntimeError("simulated deleted QScrollArea C++ object")
+
+    window.collect_page_scroll = DeletedScrollAreaProbe()
+    try:
+        # A non-resize teardown-style event must not ask the QScrollArea for
+        # its viewport. The cached viewport identity is sufficient.
+        handled = window.eventFilter(
+            viewport,
+            QEvent(QEvent.Type.Hide),
+        )
+        assert handled is False
+    finally:
+        window.collect_page_scroll = original_scroll
+        window._is_quitting = True
+        window.close()
 

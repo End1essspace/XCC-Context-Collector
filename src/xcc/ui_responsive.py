@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,6 +8,13 @@ from enum import Enum
 LARGE_CONTENT_BREAKPOINT = 1120
 MEDIUM_CONTENT_BREAKPOINT = 820
 MINIMUM_SUPPORTED_WINDOW_WIDTH = 920
+MINIMUM_SUPPORTED_WINDOW_HEIGHT = 620
+
+# Logical page-width cap calibrated from the approved maximized v1.3.0
+# Full HD composition: 1920 logical window width - 228 logical sidebar width.
+# This is a useful-width bound, not a monitor-resolution breakpoint.
+LARGE_USEFUL_PAGE_MAX_WIDTH = 1692
+
 INLINE_PAGE_HEADER_HEIGHT = 42
 COLLECT_PAGE_WIDGET_GAPS = 3
 
@@ -306,4 +314,26 @@ def collect_content_min_height(
         + geometry_spec.stats_card_min_height
         + layout_spec.primary_action_height
         + (geometry_spec.page_gap * COLLECT_PAGE_WIDGET_GAPS)
+    )
+
+
+def bounded_page_width(available_width: int, *, max_width: int) -> int:
+    """Return a non-negative logical page width bounded by product usefulness.
+
+    The helper deliberately does not select a layout from a physical display
+    resolution. Callers pass the actual logical content viewport width.
+    """
+
+    if max_width <= 0:
+        raise ValueError("max_width must be greater than 0")
+
+    return min(max(0, available_width), max_width)
+
+
+def collect_useful_page_width(content_width: int) -> int:
+    """Bound Collect to the approved large-layout useful width."""
+
+    return bounded_page_width(
+        content_width,
+        max_width=LARGE_USEFUL_PAGE_MAX_WIDTH,
     )

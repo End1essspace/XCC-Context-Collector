@@ -1,17 +1,24 @@
+
 from __future__ import annotations
+
+import pytest
 
 from xcc.ui_responsive import (
     INLINE_PAGE_HEADER_HEIGHT,
     LARGE_CONTENT_BREAKPOINT,
+    LARGE_USEFUL_PAGE_MAX_WIDTH,
     MEDIUM_CONTENT_BREAKPOINT,
+    MINIMUM_SUPPORTED_WINDOW_HEIGHT,
     MINIMUM_SUPPORTED_WINDOW_WIDTH,
     STANDARD_VIEWPORT_HEIGHT,
     TALL_VIEWPORT_HEIGHT,
     CollectHeightMode,
     CollectLayoutMode,
+    bounded_page_width,
     collect_content_min_height,
     collect_geometry_spec,
     collect_height_mode,
+    collect_useful_page_width,
     collect_layout_mode,
     collect_layout_spec,
 )
@@ -19,6 +26,7 @@ from xcc.ui_responsive import (
 
 def test_collect_width_breakpoints_use_the_content_viewport() -> None:
     assert MINIMUM_SUPPORTED_WINDOW_WIDTH == 920
+    assert MINIMUM_SUPPORTED_WINDOW_HEIGHT == 620
     assert MEDIUM_CONTENT_BREAKPOINT == 820
     assert LARGE_CONTENT_BREAKPOINT == 1120
 
@@ -27,6 +35,27 @@ def test_collect_width_breakpoints_use_the_content_viewport() -> None:
     assert collect_layout_mode(1119) is CollectLayoutMode.MEDIUM
     assert collect_layout_mode(1120) is CollectLayoutMode.LARGE
     assert collect_layout_mode(2560) is CollectLayoutMode.LARGE
+
+
+def test_large_useful_width_is_bounded_without_a_resolution_specific_mode() -> None:
+    assert LARGE_USEFUL_PAGE_MAX_WIDTH == 1692
+
+    assert bounded_page_width(0, max_width=1692) == 0
+    assert bounded_page_width(1691, max_width=1692) == 1691
+    assert bounded_page_width(1692, max_width=1692) == 1692
+    assert bounded_page_width(1693, max_width=1692) == 1692
+    assert collect_useful_page_width(2560) == 1692
+
+    # Extreme logical widths remain the same LARGE composition. The useful
+    # width cap is distribution policy, not a QHD/4K-specific layout mode.
+    assert collect_layout_mode(1692) is CollectLayoutMode.LARGE
+    assert collect_layout_mode(2560) is CollectLayoutMode.LARGE
+    assert collect_layout_mode(3840) is CollectLayoutMode.LARGE
+
+
+def test_bounded_page_width_rejects_invalid_maximum() -> None:
+    with pytest.raises(ValueError, match="max_width must be greater than 0"):
+        bounded_page_width(1000, max_width=0)
 
 
 def test_sidebar_width_hysteresis_prevents_breakpoint_oscillation() -> None:

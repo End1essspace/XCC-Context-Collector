@@ -2044,9 +2044,15 @@ class XccMainWindow(QMainWindow):
             QTimer.singleShot(0, self._apply_collect_layout)
 
     def eventFilter(self, watched, event) -> bool:
+        # Keep a direct reference to the viewport instead of asking the
+        # QScrollArea for it from inside an event-filter callback. During Qt
+        # teardown the Python wrapper for collect_page_scroll can outlive its
+        # C++ object, and calling viewport() on that stale wrapper raises from
+        # the Python override even though the test itself has already passed.
+        collect_viewport = getattr(self, "collect_page_viewport", None)
         if (
-            hasattr(self, "collect_page_scroll")
-            and watched is self.collect_page_scroll.viewport()
+            collect_viewport is not None
+            and watched is collect_viewport
             and event.type() == QEvent.Type.Resize
         ):
             QTimer.singleShot(0, self._apply_collect_layout)
@@ -2054,11 +2060,17 @@ class XccMainWindow(QMainWindow):
         return super().eventFilter(watched, event)
 
     def _collect_viewport_size(self) -> QSize:
-        if not hasattr(self, "collect_page_scroll"):
+        viewport = getattr(self, "collect_page_viewport", None)
+        if viewport is None:
             return QSize(max(0, self.width()), max(0, self.height()))
 
-        viewport = self.collect_page_scroll.viewport()
-        size = viewport.size()
+        try:
+            size = viewport.size()
+        except RuntimeError:
+            # A queued responsive callback can race Qt object destruction. No
+            # layout work is useful once the viewport's C++ object is gone.
+            return QSize()
+
         if size.width() <= 0:
             size.setWidth(max(0, self.pages.width()))
         if size.height() <= 0:
@@ -2081,6 +2093,9 @@ class XccMainWindow(QMainWindow):
 
     def _apply_collect_layout(self, *, force: bool = False) -> None:
         viewport_size = self._collect_viewport_size()
+        if viewport_size.isEmpty():
+            return
+
         spec = collect_layout_spec(
             viewport_size.width(),
             current_mode=self._collect_layout_mode,
@@ -2215,7 +2230,15 @@ class XccMainWindow(QMainWindow):
 
         spec = self._collect_layout_spec
         geometry = self._collect_geometry_spec
-        available_height = self.collect_page_scroll.viewport().height()
+        viewport = getattr(self, "collect_page_viewport", None)
+        if viewport is None:
+            return
+
+        try:
+            available_height = viewport.height()
+        except RuntimeError:
+            return
+
         required_height = (
             collect_content_min_height(spec, geometry)
             + max(0, self._effective_setup_height - geometry.setup_card_height)
@@ -2353,9 +2376,10 @@ class XccMainWindow(QMainWindow):
             QSizePolicy.Policy.Expanding,
         )
         self.collect_page_scroll = scroll
+        self.collect_page_viewport = scroll.viewport()
         self.collect_page_content = page
         self.collect_page_layout = layout
-        scroll.viewport().installEventFilter(self)
+        self.collect_page_viewport.installEventFilter(self)
 
         self.header_status = make_runtime_status_capsule("Ready")
         self.header_status.set_state(RuntimeState.READY.semantic_state)
@@ -4218,3 +4242,4 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
+
