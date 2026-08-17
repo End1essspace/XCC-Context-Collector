@@ -906,6 +906,18 @@ QScrollBar::sub-page:vertical {
     background: #0F0F10;
 }
 
+#DialogBodyScroll,
+#DialogBodyScroll > QWidget,
+#DialogBodyScroll > QWidget > QWidget,
+#DialogBodyContent {
+    background: transparent;
+    border: none;
+}
+
+#DialogBodyScroll QScrollBar:horizontal {
+    height: 0px;
+}
+
 #DialogHeader,
 #DialogFooter,
 #DialogTitleRow,

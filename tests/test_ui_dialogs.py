@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import os
@@ -9,6 +8,7 @@ import pytest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication
 
 from xcc.gui import PastePathsDialog, SelectedFilesReviewDialog
@@ -39,7 +39,23 @@ def test_paste_paths_dialog_exposes_success_validation_state(
     qapp.processEvents()
 
     assert dialog.objectName() == "PastePathsDialog"
-    assert dialog.minimumWidth() >= 720
+    assert dialog._dialog_size_spec is not None
+    assert dialog.minimumWidth() == dialog._dialog_size_spec.minimum_width
+    assert dialog.minimumHeight() == dialog._dialog_size_spec.minimum_height
+    assert dialog.width() <= dialog._dialog_size_spec.usable_width
+    assert dialog.height() <= dialog._dialog_size_spec.usable_height
+    assert (
+        dialog.body_scroll.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+    assert (
+        dialog.body_scroll.verticalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAsNeeded
+    )
+    assert (
+        dialog.paths_input.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
     assert dialog.summary_label.property("state") == "success"
     assert dialog.summary_label.text().startswith("Ready ·")
     assert dialog.add_button.isEnabled()
@@ -84,6 +100,23 @@ def test_selected_files_review_preserves_transactional_actions(
     qapp.processEvents()
 
     assert dialog.objectName() == "SelectedFilesReviewDialog"
+    assert dialog._dialog_size_spec is not None
+    assert dialog.minimumWidth() == dialog._dialog_size_spec.minimum_width
+    assert dialog.minimumHeight() == dialog._dialog_size_spec.minimum_height
+    assert dialog.width() <= dialog._dialog_size_spec.usable_width
+    assert dialog.height() <= dialog._dialog_size_spec.usable_height
+    assert (
+        dialog.body_scroll.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+    assert (
+        dialog.body_scroll.verticalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAsNeeded
+    )
+    assert (
+        dialog.files_list.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
     assert dialog.count_label.text() == "2 files"
     assert dialog.root_value.property("scope") == "project"
     assert dialog.files_list.count() == 2
@@ -177,6 +210,10 @@ def test_selected_files_review_handles_large_selection_and_empty_state(
 
     assert dialog.count_label.text() == "101 files"
     assert dialog.files_list.count() == 101
+    assert (
+        dialog.files_list.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
     assert dialog.root_value.toolTip() == str(project_root)
 
     dialog._clear_all()

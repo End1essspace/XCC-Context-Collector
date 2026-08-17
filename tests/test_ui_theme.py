@@ -96,6 +96,8 @@ def test_application_stylesheet_contains_shared_component_selectors() -> None:
         "#SelectSourceButton",
         "#PastePathsDialog",
         "#SelectedFilesReviewDialog",
+        "#DialogBodyScroll",
+        "#DialogBodyContent",
         "#DialogHeader",
         "#DialogSection",
         "#DialogSectionTitle",
@@ -299,4 +301,3 @@ def test_responsive_page_scroll_surfaces_disable_horizontal_scrollbars() -> None
     stylesheet = build_application_stylesheet()
     assert "#SettingsPageScroll QScrollBar:horizontal" in stylesheet
     assert "#AboutPageScroll QScrollBar:horizontal" in stylesheet
-

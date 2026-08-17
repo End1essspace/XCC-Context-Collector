@@ -125,6 +125,7 @@ from .ui_responsive import (
     CollectGeometrySpec,
     CollectLayoutMode,
     CollectLayoutSpec,
+    DialogSizeSpec,
     PageSurfaceSpec,
     PageWidthSpec,
     about_page_spec,
@@ -132,6 +133,7 @@ from .ui_responsive import (
     collect_geometry_spec,
     collect_layout_spec,
     collect_page_width_spec,
+    dialog_size_spec,
     history_page_spec,
     settings_page_spec,
 )
@@ -183,6 +185,52 @@ HTBOTTOMRIGHT = 17
 HTCAPTION = 2
 FRAME_RESIZE_MARGIN = 6
 FULL_BRAND_MIN_SIDEBAR_WIDTH = 212
+
+PASTE_PATHS_DIALOG_PREFERRED_SIZE = QSize(820, 590)
+SELECTED_FILES_DIALOG_PREFERRED_SIZE = QSize(860, 610)
+RESPONSIVE_DIALOG_MINIMUM_SIZE = QSize(640, 420)
+
+
+def _dialog_work_area_size(dialog: QDialog) -> QSize:
+    parent = dialog.parentWidget()
+    screen = parent.screen() if parent is not None else dialog.screen()
+    if screen is None:
+        screen = QApplication.primaryScreen()
+
+    if screen is None:
+        return QSize()
+
+    return screen.availableGeometry().size()
+
+
+def _fit_dialog_to_work_area(
+    dialog: QDialog,
+    *,
+    preferred_size: QSize,
+    minimum_size: QSize = RESPONSIVE_DIALOG_MINIMUM_SIZE,
+) -> DialogSizeSpec:
+    work_area = _dialog_work_area_size(dialog)
+    if work_area.isEmpty():
+        # No QScreen is unusual but possible during synthetic teardown. Keep
+        # the normal preferred desktop contract rather than manufacturing a
+        # monitor-resolution assumption.
+        work_area = QSize(
+            preferred_size.width() + 48,
+            preferred_size.height() + 48,
+        )
+
+    spec = dialog_size_spec(
+        work_area.width(),
+        work_area.height(),
+        preferred_width=preferred_size.width(),
+        preferred_height=preferred_size.height(),
+        minimum_width=minimum_size.width(),
+        minimum_height=minimum_size.height(),
+    )
+    dialog.setMinimumSize(spec.minimum_width, spec.minimum_height)
+    dialog.resize(spec.width, spec.height)
+    return spec
+
 
 def _notify_existing_instance() -> bool:
     socket = QLocalSocket()
@@ -501,8 +549,7 @@ class SelectedFilesReviewDialog(QDialog):
         self.setObjectName("SelectedFilesReviewDialog")
         self.setWindowTitle("Selected Files")
         self.setModal(True)
-        self.setMinimumSize(740, 520)
-        self.resize(860, 610)
+        self._dialog_size_spec: DialogSizeSpec | None = None
 
         self._original_paths = tuple(paths)
         self._selected_paths = list(paths)
@@ -511,8 +558,33 @@ class SelectedFilesReviewDialog(QDialog):
             preferred_root=project_root,
         )
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(26, 24, 26, 22)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        self.body_scroll = QScrollArea()
+        self.body_scroll.setObjectName("DialogBodyScroll")
+        self.body_scroll.setWidgetResizable(True)
+        self.body_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.body_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.body_scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+
+        body = QWidget()
+        self.body_content = body
+        body.setObjectName("DialogBodyContent")
+        body.setMinimumWidth(0)
+        body.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
+
+        layout = QVBoxLayout(body)
+        self.body_layout = layout
+        layout.setContentsMargins(26, 24, 26, 16)
         layout.setSpacing(16)
 
         header = QFrame()
@@ -565,6 +637,8 @@ class SelectedFilesReviewDialog(QDialog):
 
         root_hint = QLabel("Project root or mixed locations")
         root_hint.setObjectName("DialogSectionMeta")
+        root_hint.setWordWrap(True)
+        root_hint.setMinimumWidth(0)
         root_header.addWidget(root_hint)
         root_layout.addLayout(root_header)
 
@@ -593,6 +667,8 @@ class SelectedFilesReviewDialog(QDialog):
 
         files_hint = QLabel("Ctrl/Shift for multi-select · Delete to remove")
         files_hint.setObjectName("DialogSectionMeta")
+        files_hint.setWordWrap(True)
+        files_hint.setMinimumWidth(0)
         files_header.addWidget(files_hint)
         files_layout.addLayout(files_header)
 
@@ -602,7 +678,11 @@ class SelectedFilesReviewDialog(QDialog):
             QAbstractItemView.SelectionMode.ExtendedSelection
         )
         self.files_list.setAlternatingRowColors(False)
-        self.files_list.setMinimumHeight(250)
+        self.files_list.setMinimumHeight(170)
+        self.files_list.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.files_list.setTextElideMode(Qt.TextElideMode.ElideMiddle)
         self.files_list.setAccessibleName("Selected files list")
         self.files_list.itemSelectionChanged.connect(
             self._refresh_action_states
@@ -633,10 +713,13 @@ class SelectedFilesReviewDialog(QDialog):
         files_layout.addLayout(actions_row)
         layout.addWidget(files_section, 1)
 
+        self.body_scroll.setWidget(body)
+        outer_layout.addWidget(self.body_scroll, 1)
+
         footer = QFrame()
         footer.setObjectName("DialogFooter")
         footer_row = QHBoxLayout(footer)
-        footer_row.setContentsMargins(0, 14, 0, 0)
+        footer_row.setContentsMargins(26, 14, 26, 22)
         footer_row.setSpacing(10)
         footer_row.addStretch(1)
 
@@ -654,7 +737,7 @@ class SelectedFilesReviewDialog(QDialog):
 
         footer_row.addWidget(self.cancel_button)
         footer_row.addWidget(self.apply_button)
-        layout.addWidget(footer)
+        outer_layout.addWidget(footer, 0)
 
         self.remove_button.clicked.connect(self._remove_selected)
         self.clear_button.clicked.connect(self._clear_all)
@@ -675,6 +758,17 @@ class SelectedFilesReviewDialog(QDialog):
         self.setTabOrder(self.cancel_button, self.apply_button)
 
         self._render_files()
+        self._apply_work_area_geometry()
+
+    def _apply_work_area_geometry(self) -> None:
+        self._dialog_size_spec = _fit_dialog_to_work_area(
+            self,
+            preferred_size=SELECTED_FILES_DIALOG_PREFERRED_SIZE,
+        )
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._apply_work_area_geometry()
 
     @property
     def selected_paths(self) -> list[Path]:
@@ -759,15 +853,39 @@ class PastePathsDialog(QDialog):
         self.setObjectName("PastePathsDialog")
         self.setWindowTitle("Paste File Paths")
         self.setModal(True)
-        self.setMinimumSize(720, 520)
-        self.resize(820, 590)
+        self._dialog_size_spec: DialogSizeSpec | None = None
 
         self._existing_paths = list(existing_paths)
         self.import_result = SelectedFilesImportResult()
         self.project_root: Path | None = None
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(26, 24, 26, 22)
+        outer_layout = QVBoxLayout(self)
+        outer_layout.setContentsMargins(0, 0, 0, 0)
+        outer_layout.setSpacing(0)
+
+        self.body_scroll = QScrollArea()
+        self.body_scroll.setObjectName("DialogBodyScroll")
+        self.body_scroll.setWidgetResizable(True)
+        self.body_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.body_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.body_scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+
+        body = QWidget()
+        self.body_content = body
+        body.setObjectName("DialogBodyContent")
+        body.setMinimumWidth(0)
+        body.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
+
+        layout = QVBoxLayout(body)
+        self.body_layout = layout
+        layout.setContentsMargins(26, 24, 26, 16)
         layout.setSpacing(16)
 
         header = QFrame()
@@ -812,6 +930,8 @@ class PastePathsDialog(QDialog):
 
         root_hint = QLabel("Required for relative paths")
         root_hint.setObjectName("DialogSectionMeta")
+        root_hint.setWordWrap(True)
+        root_hint.setMinimumWidth(0)
         root_header.addWidget(root_hint)
         root_layout.addLayout(root_header)
 
@@ -825,6 +945,7 @@ class PastePathsDialog(QDialog):
         self.root_input.setObjectName("DialogPathInput")
         self.root_input.setPlaceholderText("Select the repository or project folder")
         self.root_input.setFixedHeight(42)
+        self.root_input.setMinimumWidth(0)
         self.root_input.setAccessibleName("Project root")
 
         self.browse_button = make_secondary_button(
@@ -857,6 +978,8 @@ class PastePathsDialog(QDialog):
 
         paths_hint = QLabel("Plain text, Markdown lists, quotes, or code blocks")
         paths_hint.setObjectName("DialogSectionMeta")
+        paths_hint.setWordWrap(True)
+        paths_hint.setMinimumWidth(0)
         paths_header.addWidget(paths_hint)
         paths_layout.addLayout(paths_header)
 
@@ -866,7 +989,11 @@ class PastePathsDialog(QDialog):
         self.paths_input.setPlaceholderText(
             "src/package/module.py\ndocs/ROADMAP.md"
         )
-        self.paths_input.setMinimumHeight(210)
+        self.paths_input.setMinimumHeight(150)
+        self.paths_input.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+        self.paths_input.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self.paths_input.setAccessibleName("Pasted file paths")
         paths_layout.addWidget(self.paths_input, 1)
 
@@ -874,14 +1001,18 @@ class PastePathsDialog(QDialog):
         self.summary_label.setObjectName("DialogSummary")
         self.summary_label.setWordWrap(True)
         self.summary_label.setMinimumHeight(44)
+        self.summary_label.setMinimumWidth(0)
         self.summary_label.setAccessibleName("Path validation summary")
         paths_layout.addWidget(self.summary_label)
         layout.addWidget(paths_section, 1)
 
+        self.body_scroll.setWidget(body)
+        outer_layout.addWidget(self.body_scroll, 1)
+
         footer = QFrame()
         footer.setObjectName("DialogFooter")
         button_row = QHBoxLayout(footer)
-        button_row.setContentsMargins(0, 14, 0, 0)
+        button_row.setContentsMargins(26, 14, 26, 22)
         button_row.setSpacing(10)
         button_row.addStretch(1)
 
@@ -899,7 +1030,7 @@ class PastePathsDialog(QDialog):
 
         button_row.addWidget(self.cancel_button)
         button_row.addWidget(self.add_button)
-        layout.addWidget(footer)
+        outer_layout.addWidget(footer, 0)
 
         self.browse_button.clicked.connect(self._browse_root)
         self.cancel_button.clicked.connect(self.reject)
@@ -913,6 +1044,17 @@ class PastePathsDialog(QDialog):
         self.setTabOrder(self.cancel_button, self.add_button)
 
         self._refresh_preview()
+        self._apply_work_area_geometry()
+
+    def _apply_work_area_geometry(self) -> None:
+        self._dialog_size_spec = _fit_dialog_to_work_area(
+            self,
+            preferred_size=PASTE_PATHS_DIALOG_PREFERRED_SIZE,
+        )
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._apply_work_area_geometry()
 
     def _browse_root(self) -> None:
         initial = self.root_input.text().strip()

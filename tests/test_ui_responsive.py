@@ -4,6 +4,7 @@ import pytest
 
 from xcc.ui_responsive import (
     ABOUT_USEFUL_PAGE_MAX_WIDTH,
+    DIALOG_WORK_AREA_MARGIN,
     HISTORY_USEFUL_PAGE_MAX_WIDTH,
     INLINE_PAGE_HEADER_HEIGHT,
     LARGE_CONTENT_BREAKPOINT,
@@ -26,6 +27,7 @@ from xcc.ui_responsive import (
     collect_page_width_spec,
     collect_useful_page_width,
     collect_layout_mode,
+    dialog_size_spec,
     collect_layout_spec,
     history_page_spec,
     responsive_page_margin,
@@ -65,6 +67,89 @@ def test_large_useful_width_is_bounded_without_a_resolution_specific_mode() -> N
 def test_bounded_page_width_rejects_invalid_maximum() -> None:
     with pytest.raises(ValueError, match="max_width must be greater than 0"):
         bounded_page_width(1000, max_width=0)
+
+
+def test_dialog_size_spec_preserves_preferred_size_when_work_area_allows() -> None:
+    spec = dialog_size_spec(
+        1920,
+        1040,
+        preferred_width=820,
+        preferred_height=590,
+        minimum_width=640,
+        minimum_height=420,
+    )
+
+    assert DIALOG_WORK_AREA_MARGIN == 24
+    assert spec.usable_width == 1872
+    assert spec.usable_height == 992
+    assert spec.minimum_width == 640
+    assert spec.minimum_height == 420
+    assert spec.width == 820
+    assert spec.height == 590
+
+
+def test_dialog_size_spec_clamps_to_constrained_work_area() -> None:
+    spec = dialog_size_spec(
+        700,
+        500,
+        preferred_width=860,
+        preferred_height=610,
+        minimum_width=640,
+        minimum_height=420,
+    )
+
+    assert spec.usable_width == 652
+    assert spec.usable_height == 452
+    assert spec.minimum_width == 640
+    assert spec.minimum_height == 420
+    assert spec.width == 652
+    assert spec.height == 452
+
+    tiny = dialog_size_spec(
+        500,
+        350,
+        preferred_width=860,
+        preferred_height=610,
+        minimum_width=640,
+        minimum_height=420,
+    )
+    assert tiny.minimum_width == tiny.usable_width == 452
+    assert tiny.minimum_height == tiny.usable_height == 302
+    assert tiny.width == 452
+    assert tiny.height == 302
+
+
+def test_dialog_size_spec_rejects_invalid_geometry_contract() -> None:
+    with pytest.raises(ValueError, match="preferred dialog size"):
+        dialog_size_spec(
+            1920,
+            1080,
+            preferred_width=0,
+            preferred_height=590,
+            minimum_width=640,
+            minimum_height=420,
+        )
+
+    with pytest.raises(ValueError, match="minimum dialog size"):
+        dialog_size_spec(
+            1920,
+            1080,
+            preferred_width=820,
+            preferred_height=590,
+            minimum_width=0,
+            minimum_height=420,
+        )
+
+    with pytest.raises(ValueError, match="edge_margin"):
+        dialog_size_spec(
+            1920,
+            1080,
+            preferred_width=820,
+            preferred_height=590,
+            minimum_width=640,
+            minimum_height=420,
+            edge_margin=-1,
+        )
 
 
 def test_centered_page_width_spec_distributes_only_excess_width() -> None:
@@ -240,4 +325,3 @@ def test_non_collect_surface_policy_reflows_and_bounds_by_viewport() -> None:
     assert large_about.width.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
     assert large_about.width.left_inset == 620
     assert large_about.width.right_inset == 620
-

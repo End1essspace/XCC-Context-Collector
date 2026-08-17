@@ -27,6 +27,7 @@ COLLECT_PAGE_WIDGET_GAPS = 3
 
 TALL_VIEWPORT_HEIGHT = 800
 STANDARD_VIEWPORT_HEIGHT = 700
+DIALOG_WORK_AREA_MARGIN = 24
 
 
 class CollectLayoutMode(str, Enum):
@@ -95,6 +96,20 @@ class PageSurfaceSpec:
     page_margin: int
     width: PageWidthSpec
     columns: int = 1
+
+
+@dataclass(frozen=True, slots=True)
+class DialogSizeSpec:
+    """Work-area-aware logical size contract for a modal dialog."""
+
+    work_area_width: int
+    work_area_height: int
+    usable_width: int
+    usable_height: int
+    minimum_width: int
+    minimum_height: int
+    width: int
+    height: int
 
 
 _LAYOUT_SPECS = {
@@ -395,6 +410,58 @@ def collect_useful_page_width(content_width: int) -> int:
 
     return collect_page_width_spec(content_width).useful_width
 
+def dialog_size_spec(
+    work_area_width: int,
+    work_area_height: int,
+    *,
+    preferred_width: int,
+    preferred_height: int,
+    minimum_width: int,
+    minimum_height: int,
+    edge_margin: int = DIALOG_WORK_AREA_MARGIN,
+) -> DialogSizeSpec:
+    """Clamp one dialog to the current logical screen work area.
+
+    ``availableGeometry()`` already excludes taskbars/docks. The additional
+    edge margin keeps the modal visually detached from the work-area edge while
+    preserving its preferred desktop size whenever enough room exists.
+    """
+
+    if preferred_width <= 0 or preferred_height <= 0:
+        raise ValueError("preferred dialog size must be greater than 0")
+    if minimum_width <= 0 or minimum_height <= 0:
+        raise ValueError("minimum dialog size must be greater than 0")
+    if edge_margin < 0:
+        raise ValueError("edge_margin must not be negative")
+
+    area_width = max(1, work_area_width)
+    area_height = max(1, work_area_height)
+    usable_width = max(1, area_width - (edge_margin * 2))
+    usable_height = max(1, area_height - (edge_margin * 2))
+
+    fitted_minimum_width = min(minimum_width, usable_width)
+    fitted_minimum_height = min(minimum_height, usable_height)
+    width = max(
+        fitted_minimum_width,
+        min(preferred_width, usable_width),
+    )
+    height = max(
+        fitted_minimum_height,
+        min(preferred_height, usable_height),
+    )
+
+    return DialogSizeSpec(
+        work_area_width=area_width,
+        work_area_height=area_height,
+        usable_width=usable_width,
+        usable_height=usable_height,
+        minimum_width=fitted_minimum_width,
+        minimum_height=fitted_minimum_height,
+        width=width,
+        height=height,
+    )
+
+
 def responsive_page_margin(content_width: int) -> int:
     """Return the shared horizontal page margin for a logical viewport."""
 
@@ -445,4 +512,3 @@ def about_page_spec(content_width: int) -> PageSurfaceSpec:
         max_width=ABOUT_USEFUL_PAGE_MAX_WIDTH,
         columns=badge_columns,
     )
-
