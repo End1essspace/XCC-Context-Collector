@@ -206,7 +206,7 @@ def test_content_canvas_and_header_backgrounds_are_unified() -> None:
         assert f'border-bottom: 1px solid {PALETTE.shell_divider};' in header_rule.group('body')
 
     content_rule = re.search(
-        r'(?ms)^#CollectPage,\n#HistoryPage,\n#SettingsPage,\n#AboutPage,\n#CollectPageScroll,\n#CollectPageScroll > QWidget,\n#CollectPageScroll > QWidget > QWidget\s*\{(?P<body>.*?)^\}',
+        r'(?ms)^#CollectPage,\n#HistoryPage,\n#SettingsPage,\n#AboutPage,\n#CollectPageScroll,\n#CollectPageScroll > QWidget,\n#CollectPageScroll > QWidget > QWidget,\n#SettingsPageScroll,\n#SettingsPageScroll > QWidget,\n#SettingsPageScroll > QWidget > QWidget,\n#AboutPageScroll,\n#AboutPageScroll > QWidget,\n#AboutPageScroll > QWidget > QWidget\s*\{(?P<body>.*?)^\}',
         stylesheet,
     )
     assert content_rule is not None
@@ -294,3 +294,9 @@ def test_custom_header_styles_drop_legacy_subtitle_and_footer_version() -> None:
 
     assert "#WindowBrandSubtitle" not in stylesheet
     assert "#StatusVersion" not in stylesheet
+
+def test_responsive_page_scroll_surfaces_disable_horizontal_scrollbars() -> None:
+    stylesheet = build_application_stylesheet()
+    assert "#SettingsPageScroll QScrollBar:horizontal" in stylesheet
+    assert "#AboutPageScroll QScrollBar:horizontal" in stylesheet
+

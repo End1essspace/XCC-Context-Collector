@@ -3,16 +3,21 @@ from __future__ import annotations
 import pytest
 
 from xcc.ui_responsive import (
+    ABOUT_USEFUL_PAGE_MAX_WIDTH,
+    HISTORY_USEFUL_PAGE_MAX_WIDTH,
     INLINE_PAGE_HEADER_HEIGHT,
     LARGE_CONTENT_BREAKPOINT,
     LARGE_USEFUL_PAGE_MAX_WIDTH,
     MEDIUM_CONTENT_BREAKPOINT,
     MINIMUM_SUPPORTED_WINDOW_HEIGHT,
     MINIMUM_SUPPORTED_WINDOW_WIDTH,
+    SETTINGS_TWO_COLUMN_BREAKPOINT,
+    SETTINGS_USEFUL_PAGE_MAX_WIDTH,
     STANDARD_VIEWPORT_HEIGHT,
     TALL_VIEWPORT_HEIGHT,
     CollectHeightMode,
     CollectLayoutMode,
+    about_page_spec,
     bounded_page_width,
     centered_page_width_spec,
     collect_content_min_height,
@@ -22,6 +27,9 @@ from xcc.ui_responsive import (
     collect_useful_page_width,
     collect_layout_mode,
     collect_layout_spec,
+    history_page_spec,
+    responsive_page_margin,
+    settings_page_spec,
 )
 
 
@@ -205,3 +213,31 @@ def test_height_changes_recalculate_geometry_inside_one_width_mode() -> None:
         > standard.metric_preferred_height
         > short.metric_preferred_height
     )
+
+def test_non_collect_surface_policy_reflows_and_bounds_by_viewport() -> None:
+    assert SETTINGS_TWO_COLUMN_BREAKPOINT == LARGE_CONTENT_BREAKPOINT
+    assert SETTINGS_USEFUL_PAGE_MAX_WIDTH == LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert HISTORY_USEFUL_PAGE_MAX_WIDTH == LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert ABOUT_USEFUL_PAGE_MAX_WIDTH == 1320
+
+    assert responsive_page_margin(819) == 16
+    assert responsive_page_margin(820) == 22
+    assert responsive_page_margin(1119) == 22
+    assert responsive_page_margin(1120) == 28
+
+    assert settings_page_spec(1119).columns == 1
+    assert settings_page_spec(1120).columns == 2
+    assert settings_page_spec(2560).width.useful_width == LARGE_USEFUL_PAGE_MAX_WIDTH
+
+    assert history_page_spec(2560).width.useful_width == LARGE_USEFUL_PAGE_MAX_WIDTH
+
+    compact_about = about_page_spec(819)
+    assert compact_about.columns == 2
+    assert compact_about.page_margin == 16
+
+    large_about = about_page_spec(2560)
+    assert large_about.columns == 4
+    assert large_about.width.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
+    assert large_about.width.left_inset == 620
+    assert large_about.width.right_inset == 620
+

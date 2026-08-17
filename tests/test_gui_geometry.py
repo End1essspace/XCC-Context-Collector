@@ -8,9 +8,10 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import QEvent, QPoint, Qt
-from PySide6.QtWidgets import QApplication, QSizePolicy
+from PySide6.QtWidgets import QApplication, QLabel, QSizePolicy
 
 from xcc.fitts_close import EDGE_CLOSE_POLL_INTERVAL_MS
+from xcc.models import CollectionOutcome, CollectionRunRecord
 from xcc.gui import (
     HTBOTTOMRIGHT,
     HTCAPTION,
@@ -19,6 +20,7 @@ from xcc.gui import (
     XccMainWindow,
 )
 from xcc.ui_responsive import (
+    ABOUT_USEFUL_PAGE_MAX_WIDTH,
     LARGE_USEFUL_PAGE_MAX_WIDTH,
     CollectLayoutMode,
 )
@@ -36,6 +38,7 @@ def _settle(qapp: QApplication, window: XccMainWindow) -> None:
     for _ in range(4):
         qapp.processEvents()
         window._apply_collect_layout(force=True)
+        window._apply_responsive_pages(force=True)
 
 
 def test_maximized_geometry_has_no_scrollbar_and_keeps_cta_visible(
@@ -420,3 +423,134 @@ def test_collect_event_filter_does_not_dereference_scroll_area_wrapper(
         window.collect_page_scroll = original_scroll
         window._is_quitting = True
         window.close()
+
+def test_settings_reflows_to_one_column_and_scrolls_at_minimum_window(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(920, 620)
+    window.show()
+    window._change_page(2)
+    _settle(qapp, window)
+
+    assert window.pages.currentWidget() is window.settings_page
+    assert window._settings_page_spec is not None
+    assert window._settings_page_spec.columns == 1
+    assert window._settings_columns == 1
+    assert (
+        window.settings_page_scroll.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+    assert (
+        window.settings_page_scroll.verticalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAsNeeded
+    )
+    assert window.settings_behavior_group.geometry().x() == window.settings_context_group.geometry().x()
+    assert window.settings_context_group.geometry().y() > window.settings_behavior_group.geometry().y()
+    assert window.settings_page_content.minimumHeight() > window.settings_page_viewport.height()
+
+    descriptions = window.settings_page_content.findChildren(
+        QLabel,
+        "SettingsRowDescription",
+    )
+    assert descriptions
+    assert all(label.wordWrap() for label in descriptions)
+
+    window._is_quitting = True
+    window.close()
+
+
+def test_settings_preserves_two_column_full_hd_composition(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(1920, 1080)
+    window.show()
+    window._change_page(2)
+    _settle(qapp, window)
+
+    assert window.pages.currentWidget() is window.settings_page
+    assert window._settings_page_spec is not None
+    assert window._settings_page_spec.columns == 2
+    assert window._settings_columns == 2
+    assert window.settings_behavior_group.geometry().y() == window.settings_context_group.geometry().y()
+    assert window.settings_context_group.geometry().x() > window.settings_behavior_group.geometry().x()
+
+    window._is_quitting = True
+    window.close()
+
+
+def test_about_uses_information_width_and_two_by_two_badges_when_compact(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(2560, 1000)
+    window.show()
+    _settle(qapp, window)
+
+    assert window._about_page_spec is not None
+    assert window._about_page_spec.width.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
+    assert window._about_page_spec.width.left_inset > 0
+    assert window._about_badge_columns == 4
+    assert (
+        window.about_page_scroll.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+
+    window.resize(920, 620)
+    _settle(qapp, window)
+    assert window._about_page_spec is not None
+    assert window._about_page_spec.columns == 2
+    assert window._about_badge_columns == 2
+    positions = [
+        window.about_badges_layout.getItemPosition(index)[:2]
+        for index in range(len(window.about_badges))
+    ]
+    assert positions == [(0, 0), (0, 1), (1, 0), (1, 1)]
+
+    window._is_quitting = True
+    window.close()
+
+
+def test_history_entries_grow_instead_of_clipping_wrapped_metadata(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(920, 620)
+    window.show()
+    _settle(qapp, window)
+
+    record = CollectionRunRecord(
+        timestamp="11:53:00",
+        mode_name="Git Changed Files",
+        source=("D:/very/long/project/path/" * 12) + "repository",
+        outcome=CollectionOutcome.SUCCESS_WITH_WARNINGS,
+        duration_seconds=1.25,
+        files=108,
+        lines=22140,
+        source_chars=688558,
+        output_chars=696965,
+        output_tokens=174241,
+        included_files=108,
+        warning_count=10,
+    )
+    row = window._history_entry_widget(record)
+    window.history_list_layout.insertWidget(0, row)
+    qapp.processEvents()
+
+    source = row.findChild(QLabel, "HistorySource")
+    assert source is not None and source.wordWrap()
+    assert all(
+        label.wordWrap()
+        for label in row.findChildren(QLabel)
+        if label.objectName() in {"HistoryStats", "HistoryHealth"}
+    )
+    assert row.minimumHeight() == 142
+    assert row.maximumHeight() > 142
+    assert (
+        window.history_scroll_area.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+
+    window._is_quitting = True
+    window.close()

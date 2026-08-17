@@ -14,6 +14,14 @@ MINIMUM_SUPPORTED_WINDOW_HEIGHT = 620
 # This is a useful-width bound, not a monitor-resolution breakpoint.
 LARGE_USEFUL_PAGE_MAX_WIDTH = 1692
 
+# Non-Collect surfaces preserve the approved Full HD workspace where useful.
+# About is intentionally narrower because it is an information surface, not a
+# dashboard/workbench; extra line length does not add utility there.
+SETTINGS_USEFUL_PAGE_MAX_WIDTH = LARGE_USEFUL_PAGE_MAX_WIDTH
+HISTORY_USEFUL_PAGE_MAX_WIDTH = LARGE_USEFUL_PAGE_MAX_WIDTH
+ABOUT_USEFUL_PAGE_MAX_WIDTH = 1320
+SETTINGS_TWO_COLUMN_BREAKPOINT = LARGE_CONTENT_BREAKPOINT
+
 INLINE_PAGE_HEADER_HEIGHT = 42
 COLLECT_PAGE_WIDGET_GAPS = 3
 
@@ -78,6 +86,15 @@ class PageWidthSpec:
     useful_width: int
     left_inset: int
     right_inset: int
+
+
+@dataclass(frozen=True, slots=True)
+class PageSurfaceSpec:
+    """Responsive geometry for a non-Collect page surface."""
+
+    page_margin: int
+    width: PageWidthSpec
+    columns: int = 1
 
 
 _LAYOUT_SPECS = {
@@ -377,3 +394,55 @@ def collect_useful_page_width(content_width: int) -> int:
     """Bound Collect to the approved large-layout useful width."""
 
     return collect_page_width_spec(content_width).useful_width
+
+def responsive_page_margin(content_width: int) -> int:
+    """Return the shared horizontal page margin for a logical viewport."""
+
+    width = max(0, content_width)
+    if width >= LARGE_CONTENT_BREAKPOINT:
+        return 28
+    if width >= MEDIUM_CONTENT_BREAKPOINT:
+        return 22
+    return 16
+
+
+def page_surface_spec(
+    content_width: int,
+    *,
+    max_width: int,
+    columns: int = 1,
+) -> PageSurfaceSpec:
+    if columns <= 0:
+        raise ValueError("columns must be greater than 0")
+
+    return PageSurfaceSpec(
+        page_margin=responsive_page_margin(content_width),
+        width=centered_page_width_spec(content_width, max_width=max_width),
+        columns=columns,
+    )
+
+
+def settings_page_spec(content_width: int) -> PageSurfaceSpec:
+    columns = 2 if max(0, content_width) >= SETTINGS_TWO_COLUMN_BREAKPOINT else 1
+    return page_surface_spec(
+        content_width,
+        max_width=SETTINGS_USEFUL_PAGE_MAX_WIDTH,
+        columns=columns,
+    )
+
+
+def history_page_spec(content_width: int) -> PageSurfaceSpec:
+    return page_surface_spec(
+        content_width,
+        max_width=HISTORY_USEFUL_PAGE_MAX_WIDTH,
+    )
+
+
+def about_page_spec(content_width: int) -> PageSurfaceSpec:
+    badge_columns = 4 if max(0, content_width) >= MEDIUM_CONTENT_BREAKPOINT else 2
+    return page_surface_spec(
+        content_width,
+        max_width=ABOUT_USEFUL_PAGE_MAX_WIDTH,
+        columns=badge_columns,
+    )
+

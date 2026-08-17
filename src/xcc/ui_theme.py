@@ -163,12 +163,20 @@ QWidget {
 #AboutPage,
 #CollectPageScroll,
 #CollectPageScroll > QWidget,
-#CollectPageScroll > QWidget > QWidget {
+#CollectPageScroll > QWidget > QWidget,
+#SettingsPageScroll,
+#SettingsPageScroll > QWidget,
+#SettingsPageScroll > QWidget > QWidget,
+#AboutPageScroll,
+#AboutPageScroll > QWidget,
+#AboutPageScroll > QWidget > QWidget {
     background: transparent;
     border: none;
 }
 
-#CollectPageScroll QScrollBar:horizontal {
+#CollectPageScroll QScrollBar:horizontal,
+#SettingsPageScroll QScrollBar:horizontal,
+#AboutPageScroll QScrollBar:horizontal {
     height: 0px;
 }
 

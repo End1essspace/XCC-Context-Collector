@@ -125,11 +125,15 @@ from .ui_responsive import (
     CollectGeometrySpec,
     CollectLayoutMode,
     CollectLayoutSpec,
+    PageSurfaceSpec,
     PageWidthSpec,
+    about_page_spec,
     collect_content_min_height,
     collect_geometry_spec,
     collect_layout_spec,
     collect_page_width_spec,
+    history_page_spec,
+    settings_page_spec,
 )
 from .path_list_parser import parse_path_list
 from .selected_files_importer import (
@@ -1030,6 +1034,11 @@ class XccMainWindow(QMainWindow):
         self._collect_layout_spec: CollectLayoutSpec | None = None
         self._collect_geometry_spec: CollectGeometrySpec | None = None
         self._collect_page_width_spec: PageWidthSpec | None = None
+        self._settings_page_spec: PageSurfaceSpec | None = None
+        self._history_page_spec: PageSurfaceSpec | None = None
+        self._about_page_spec: PageSurfaceSpec | None = None
+        self._settings_columns: int | None = None
+        self._about_badge_columns: int | None = None
         self._effective_setup_height = 0
         self._effective_stats_min_height = 0
         self._is_custom_maximized = False
@@ -1046,6 +1055,7 @@ class XccMainWindow(QMainWindow):
             is_effectively_maximized=self._is_effectively_maximized,
         )
         self._apply_collect_layout(force=True)
+        self._apply_responsive_pages(force=True)
         self._apply_loaded_settings()
         if settings_result.recovered_from_error:
             self._set_event_status(self._settings_recovery_message)
@@ -1773,11 +1783,15 @@ class XccMainWindow(QMainWindow):
     def _build_history_page(self) -> QWidget:
         page = QWidget()
         page.setObjectName("HistoryPage")
+        page.setMinimumWidth(0)
         layout = self._page_layout(page)
+        self.history_page_content = page
+        self.history_page_layout = layout
 
         layout.addWidget(self._section_title("History"))
 
         history_card = self._card()
+        self.history_card = history_card
         history_card.setMinimumHeight(260)
 
         history_layout = self._card_layout(history_card)
@@ -2045,6 +2059,8 @@ class XccMainWindow(QMainWindow):
         super().resizeEvent(event)
         if hasattr(self, "collect_page_layout"):
             QTimer.singleShot(0, self._apply_collect_layout)
+        if hasattr(self, "settings_page_layout"):
+            QTimer.singleShot(0, self._apply_responsive_pages)
 
     def eventFilter(self, watched, event) -> bool:
         # Keep a direct reference to the viewport instead of asking the
@@ -2123,6 +2139,7 @@ class XccMainWindow(QMainWindow):
 
         self._apply_collect_geometry(spec, geometry, page_width)
         QTimer.singleShot(0, self._sync_collect_scroll_policy)
+        QTimer.singleShot(0, self._apply_responsive_pages)
 
         if width_mode_changed:
             QTimer.singleShot(0, self._apply_collect_layout)
@@ -2267,6 +2284,139 @@ class XccMainWindow(QMainWindow):
 
         if self.collect_page_scroll.verticalScrollBarPolicy() != policy:
             self.collect_page_scroll.setVerticalScrollBarPolicy(policy)
+
+    @staticmethod
+    def _safe_widget_width(widget: QWidget | None, fallback: int = 0) -> int:
+        if widget is None:
+            return max(0, fallback)
+        try:
+            width = widget.width()
+        except RuntimeError:
+            return max(0, fallback)
+        return max(0, width or fallback)
+
+    @staticmethod
+    def _apply_page_surface_geometry(
+        layout: QVBoxLayout,
+        spec: PageSurfaceSpec,
+    ) -> None:
+        layout.setContentsMargins(
+            spec.page_margin + spec.width.left_inset,
+            24,
+            spec.page_margin + spec.width.right_inset,
+            24,
+        )
+
+    @staticmethod
+    def _sync_scroll_content_min_height(
+        content: QWidget,
+        layout: QVBoxLayout,
+    ) -> None:
+        # Reset the previous width-dependent minimum before recalculating it.
+        # A one-column Settings page becomes naturally taller and therefore
+        # scrolls; a two-column/full-height page remains scrollbar-free.
+        content.setMinimumHeight(0)
+        layout.activate()
+        content.setMinimumHeight(max(0, layout.minimumSize().height()))
+
+    def _apply_responsive_pages(self, *, force: bool = False) -> None:
+        if not hasattr(self, "pages"):
+            return
+
+        # QStackedWidget keeps non-current pages hidden, and Qt may leave a
+        # hidden QScrollArea viewport at its default ~640x480 geometry. Using
+        # those child widths would therefore make responsive policy depend on
+        # which page happens to be visible. PageStack is the stable logical
+        # content viewport shared by every page and is also independent of
+        # vertical-scrollbar appearance, avoiding width-policy feedback loops.
+        content_width = self._safe_widget_width(self.pages, 0)
+        if content_width <= 0:
+            return
+
+        if hasattr(self, "settings_page_layout"):
+            spec = settings_page_spec(content_width)
+            self._settings_page_spec = spec
+            self._apply_page_surface_geometry(self.settings_page_layout, spec)
+            if force or spec.columns != self._settings_columns:
+                self._arrange_settings_groups(spec.columns)
+                self._settings_columns = spec.columns
+            self._sync_scroll_content_min_height(
+                self.settings_page_content,
+                self.settings_page_layout,
+            )
+
+        if hasattr(self, "history_page_layout"):
+            spec = history_page_spec(content_width)
+            self._history_page_spec = spec
+            self._apply_page_surface_geometry(self.history_page_layout, spec)
+
+        if hasattr(self, "about_page_layout"):
+            spec = about_page_spec(content_width)
+            self._about_page_spec = spec
+            self._apply_page_surface_geometry(self.about_page_layout, spec)
+            if force or spec.columns != self._about_badge_columns:
+                self._arrange_about_badges(spec.columns)
+                self._about_badge_columns = spec.columns
+            self._sync_scroll_content_min_height(
+                self.about_page_content,
+                self.about_page_layout,
+            )
+
+    def _arrange_settings_groups(self, columns: int) -> None:
+        self._take_layout_items(self.settings_groups_layout)
+        self._reset_grid_stretches(self.settings_groups_layout, columns=3, rows=2)
+
+        if columns >= 2:
+            self.settings_groups_layout.addWidget(
+                self.settings_behavior_group,
+                0,
+                0,
+                Qt.AlignmentFlag.AlignTop,
+            )
+            self.settings_groups_layout.addWidget(
+                self.settings_context_group,
+                0,
+                1,
+                Qt.AlignmentFlag.AlignTop,
+            )
+            self.settings_groups_layout.setColumnStretch(0, 1)
+            self.settings_groups_layout.setColumnStretch(1, 1)
+            return
+
+        self.settings_groups_layout.addWidget(
+            self.settings_behavior_group,
+            0,
+            0,
+            Qt.AlignmentFlag.AlignTop,
+        )
+        self.settings_groups_layout.addWidget(
+            self.settings_context_group,
+            1,
+            0,
+            Qt.AlignmentFlag.AlignTop,
+        )
+        self.settings_groups_layout.setColumnStretch(0, 1)
+
+    def _arrange_about_badges(self, columns: int) -> None:
+        columns = max(1, columns)
+        self._take_layout_items(self.about_badges_layout)
+        self._reset_grid_stretches(
+            self.about_badges_layout,
+            columns=max(5, columns + 1),
+            rows=2,
+        )
+
+        for index, badge in enumerate(self.about_badges):
+            row = index // columns
+            column = index % columns
+            self.about_badges_layout.addWidget(
+                badge,
+                row,
+                column,
+                Qt.AlignmentFlag.AlignLeft,
+            )
+
+        self.about_badges_layout.setColumnStretch(columns, 1)
 
     def _arrange_mode_buttons(self, spec: CollectLayoutSpec) -> None:
         self._take_layout_items(self.mode_buttons_layout)
@@ -2795,6 +2945,7 @@ class XccMainWindow(QMainWindow):
             self._refresh_settings_page()
 
         self.pages.setCurrentIndex(index)
+        QTimer.singleShot(0, self._apply_responsive_pages)
 
     def _current_mode_name(self) -> str:
         mode = self._current_mode()
@@ -2839,8 +2990,8 @@ class XccMainWindow(QMainWindow):
     ) -> QFrame:
         row = QFrame()
         row.setObjectName("SettingsRow")
-        row.setFixedHeight(58)
-        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        row.setMinimumHeight(58)
+        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         layout = QHBoxLayout(row)
         layout.setContentsMargins(14, 8, 14, 8)
@@ -2857,6 +3008,8 @@ class XccMainWindow(QMainWindow):
 
         description_label = QLabel(description)
         description_label.setObjectName("SettingsRowDescription")
+        description_label.setWordWrap(True)
+        description_label.setMinimumWidth(0)
 
         text_layout.addWidget(title_label)
         text_layout.addWidget(description_label)
@@ -2886,7 +3039,7 @@ class XccMainWindow(QMainWindow):
     def _settings_group(self, title: str, rows: list[QWidget]) -> QFrame:
         group = QFrame()
         group.setObjectName("SettingsGroup")
-        group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        group.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
 
         layout = QVBoxLayout(group)
         layout.setContentsMargins(16, 14, 16, 16)
@@ -3752,9 +3905,22 @@ class XccMainWindow(QMainWindow):
         self.collect_button.setText("Collect && Copy")
 
     def _build_settings_page(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setObjectName("SettingsPageScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
         page = QWidget()
         page.setObjectName("SettingsPage")
+        page.setMinimumWidth(0)
+        page.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         layout = self._page_layout(page)
+        self.settings_page_scroll = scroll
+        self.settings_page_viewport = scroll.viewport()
+        self.settings_page_content = page
+        self.settings_page_layout = layout
 
         layout.addWidget(self._settings_header())
 
@@ -3819,6 +3985,8 @@ class XccMainWindow(QMainWindow):
             ],
         )
 
+        self.settings_behavior_group = behavior_group
+
         self.settings_current_mode = self._settings_row(
             "Default mode",
             "Collection mode used for the current saved session.",
@@ -3866,27 +4034,37 @@ class XccMainWindow(QMainWindow):
             ],
         )
 
+        self.settings_context_group = context_group
+
         groups_row = QWidget()
         groups_row.setObjectName("TransparentWidget")
+        self.settings_groups_row = groups_row
 
-        groups_layout = QHBoxLayout(groups_row)
+        groups_layout = QGridLayout(groups_row)
+        self.settings_groups_layout = groups_layout
         groups_layout.setContentsMargins(0, 0, 0, 0)
-        groups_layout.setSpacing(18)
+        groups_layout.setHorizontalSpacing(18)
+        groups_layout.setVerticalSpacing(18)
         groups_layout.addWidget(
             behavior_group,
-            1,
+            0,
+            0,
             Qt.AlignmentFlag.AlignTop,
         )
         groups_layout.addWidget(
             context_group,
+            0,
             1,
             Qt.AlignmentFlag.AlignTop,
         )
+        groups_layout.setColumnStretch(0, 1)
+        groups_layout.setColumnStretch(1, 1)
 
         layout.addWidget(groups_row)
         layout.addStretch(1)
 
-        return page
+        scroll.setWidget(page)
+        return scroll
                 
     def _settings_section_title(self, text: str) -> QLabel:
         label = QLabel(text)
@@ -3901,9 +4079,22 @@ class XccMainWindow(QMainWindow):
         return layout
 
     def _build_about_page(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setObjectName("AboutPageScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
         page = QWidget()
         page.setObjectName("AboutPage")
+        page.setMinimumWidth(0)
+        page.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         layout = self._page_layout(page)
+        self.about_page_scroll = scroll
+        self.about_page_viewport = scroll.viewport()
+        self.about_page_content = page
+        self.about_page_layout = layout
 
         layout.addWidget(self._section_title("About"))
 
@@ -3973,14 +4164,24 @@ class XccMainWindow(QMainWindow):
         badges_row = QWidget()
         badges_row.setObjectName("TransparentWidget")
 
-        badges_layout = QHBoxLayout(badges_row)
+        badges_layout = QGridLayout(badges_row)
+        self.about_badges_layout = badges_layout
         badges_layout.setContentsMargins(0, 0, 0, 0)
-        badges_layout.setSpacing(10)
+        badges_layout.setHorizontalSpacing(10)
+        badges_layout.setVerticalSpacing(8)
 
-        for badge_text in ["Local-first", "No cloud", "Windows utility", "Tray-ready"]:
-            badges_layout.addWidget(self._about_badge(badge_text))
-
-        badges_layout.addStretch(1)
+        self.about_badges = [
+            self._about_badge(text)
+            for text in ["Local-first", "No cloud", "Windows utility", "Tray-ready"]
+        ]
+        for index, badge in enumerate(self.about_badges):
+            badges_layout.addWidget(
+                badge,
+                0,
+                index,
+                Qt.AlignmentFlag.AlignLeft,
+            )
+        badges_layout.setColumnStretch(4, 1)
         card_layout.addWidget(badges_row)
 
         paths_title = QLabel("Paths")
@@ -4013,7 +4214,8 @@ class XccMainWindow(QMainWindow):
         layout.addWidget(card)
         layout.addStretch(1)
 
-        return page
+        scroll.setWidget(page)
+        return scroll
 
     def _section_title(self, text: str) -> QLabel:
         return make_section_title(text)
@@ -4054,8 +4256,8 @@ class XccMainWindow(QMainWindow):
     def _history_entry_widget(self, record: CollectionRunRecord) -> QWidget:
         row = QFrame()
         row.setObjectName("HistoryEntry")
-        row.setFixedHeight(142)
-        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        row.setMinimumHeight(142)
+        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         layout = QVBoxLayout(row)
         layout.setContentsMargins(16, 12, 16, 12)
@@ -4087,7 +4289,8 @@ class XccMainWindow(QMainWindow):
 
         source_label = QLabel(record.source)
         source_label.setObjectName("HistorySource")
-        source_label.setWordWrap(False)
+        source_label.setWordWrap(True)
+        source_label.setMinimumWidth(0)
 
         stats_label = QLabel(
             f"Files {record.files} · Included {record.included_files} · "
@@ -4095,6 +4298,8 @@ class XccMainWindow(QMainWindow):
             f"{record.summarized_files} · Partial {record.partial_files}"
         )
         stats_label.setObjectName("HistoryStats")
+        stats_label.setWordWrap(True)
+        stats_label.setMinimumWidth(0)
 
         output_label = QLabel(
             f"Source {record.source_chars} chars · "
@@ -4103,6 +4308,8 @@ class XccMainWindow(QMainWindow):
             f"Truncated {'Yes' if record.truncated else 'No'}"
         )
         output_label.setObjectName("HistoryStats")
+        output_label.setWordWrap(True)
+        output_label.setMinimumWidth(0)
 
         health_label = QLabel(
             f"Duration {record.duration_label} · "
@@ -4110,6 +4317,8 @@ class XccMainWindow(QMainWindow):
             f"Errors {record.error_count}"
         )
         health_label.setObjectName("HistoryHealth")
+        health_label.setWordWrap(True)
+        health_label.setMinimumWidth(0)
 
         layout.addLayout(top_row)
         layout.addWidget(source_label)
@@ -4122,7 +4331,8 @@ class XccMainWindow(QMainWindow):
     def _about_info_row(self, label: str, value: str) -> QFrame:
         row = QFrame()
         row.setObjectName("AboutInfoRow")
-        row.setFixedHeight(42)
+        row.setMinimumHeight(42)
+        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         layout = QHBoxLayout(row)
         layout.setContentsMargins(14, 6, 14, 6)
@@ -4133,6 +4343,8 @@ class XccMainWindow(QMainWindow):
 
         value_widget = QLabel(value)
         value_widget.setObjectName("AboutInfoValue")
+        value_widget.setWordWrap(True)
+        value_widget.setMinimumWidth(0)
         value_widget.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
         layout.addWidget(label_widget)
