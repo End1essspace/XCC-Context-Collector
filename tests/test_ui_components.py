@@ -220,8 +220,17 @@ def test_dpi_aware_raster_supports_rectangular_wordmarks(
     label = DpiAwareImageLabel(
         resource_path("assets", "x-series.png"),
         target,
+        opacity=0.28,
     )
     assert label.size() == target
+    assert label.image_opacity == pytest.approx(0.28)
+    assert label.graphicsEffect() is None
+
+    label.set_image_opacity(0.5)
+    assert label.image_opacity == pytest.approx(0.5)
+
+    with pytest.raises(ValueError, match="opacity must be between"):
+        label.set_image_opacity(1.1)
 
 
 def test_dpi_sensitive_labels_can_rerender_for_new_screen_scale(

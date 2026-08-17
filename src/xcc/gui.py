@@ -27,7 +27,6 @@ from PySide6.QtWidgets import (
     QDialog,
     QFileDialog,
     QFrame,
-    QGraphicsOpacityEffect,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -1363,6 +1362,7 @@ class XccMainWindow(QMainWindow):
         self.footer_series_brand = DpiAwareImageLabel(
             X_SERIES_WORDMARK_PATH,
             FOOTER_SERIES_WORDMARK_SIZE,
+            opacity=FOOTER_SERIES_WORDMARK_OPACITY,
             parent=status_bar,
         )
         self.footer_series_brand.setObjectName("FooterSeriesBrand")
@@ -1373,15 +1373,6 @@ class XccMainWindow(QMainWindow):
         )
         self.footer_series_brand.setVisible(X_SERIES_WORDMARK_PATH.is_file())
 
-        self.footer_series_brand_opacity = QGraphicsOpacityEffect(
-            self.footer_series_brand
-        )
-        self.footer_series_brand_opacity.setOpacity(
-            FOOTER_SERIES_WORDMARK_OPACITY
-        )
-        self.footer_series_brand.setGraphicsEffect(
-            self.footer_series_brand_opacity
-        )
         status_bar_layout.addWidget(
             self.footer_series_brand,
             0,

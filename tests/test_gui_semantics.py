@@ -13,7 +13,6 @@ from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
     QDialog,
-    QGraphicsOpacityEffect,
     QStyle,
     QStyleOptionComboBox,
 )
@@ -402,9 +401,8 @@ def test_footer_series_wordmark_is_subtle_and_noninteractive(
     assert brand.focusPolicy() == Qt.FocusPolicy.NoFocus
     assert not brand.pixmap().isNull()
 
-    effect = brand.graphicsEffect()
-    assert isinstance(effect, QGraphicsOpacityEffect)
-    assert effect.opacity() == pytest.approx(
+    assert brand.graphicsEffect() is None
+    assert brand.image_opacity == pytest.approx(
         gui_module.FOOTER_SERIES_WORDMARK_OPACITY
     )
 
@@ -414,4 +412,3 @@ def test_footer_series_wordmark_is_subtle_and_noninteractive(
     brand_index = window.status_bar_layout.indexOf(brand)
     assert status_index >= 0
     assert brand_index > status_index
-

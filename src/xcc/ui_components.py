@@ -121,6 +121,7 @@ class DpiAwareImageLabel(QLabel):
         image_path: str | Path,
         size: int | QSize,
         *,
+        opacity: float = 1.0,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -129,9 +130,28 @@ class DpiAwareImageLabel(QLabel):
         self._image_path = Path(image_path)
         self._logical_size = logical_size
         self._dpi_pixmap = QPixmap()
+        self._image_opacity = self._validated_opacity(opacity)
         self.setFixedSize(logical_size)
         self.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.refresh_pixmap()
+
+    @staticmethod
+    def _validated_opacity(value: float) -> float:
+        opacity = float(value)
+        if not 0.0 <= opacity <= 1.0:
+            raise ValueError("opacity must be between 0.0 and 1.0")
+        return opacity
+
+    @property
+    def image_opacity(self) -> float:
+        return self._image_opacity
+
+    def set_image_opacity(self, opacity: float) -> None:
+        value = self._validated_opacity(opacity)
+        if self._image_opacity == value:
+            return
+        self._image_opacity = value
+        self.update()
 
     def pixmap(self) -> QPixmap:
         """Return the currently rendered DPR-aware pixmap by value."""
@@ -161,6 +181,7 @@ class DpiAwareImageLabel(QLabel):
             return
 
         painter = QPainter(self)
+        painter.setOpacity(self._image_opacity)
         logical_size = self._dpi_pixmap.deviceIndependentSize()
         target = QRectF(
             (self.width() - logical_size.width()) / 2.0,
