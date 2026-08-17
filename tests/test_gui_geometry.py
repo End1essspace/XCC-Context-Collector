@@ -18,7 +18,10 @@ from xcc.gui import (
     HTTOPLEFT,
     XccMainWindow,
 )
-from xcc.ui_responsive import CollectLayoutMode
+from xcc.ui_responsive import (
+    LARGE_USEFUL_PAGE_MAX_WIDTH,
+    CollectLayoutMode,
+)
 
 
 @pytest.fixture(scope="module")
@@ -51,6 +54,11 @@ def test_maximized_geometry_has_no_scrollbar_and_keeps_cta_visible(
     assert window.setup_card.height() >= 278
     assert window.stats_card.height() >= 292
     assert window.stats_card.height() <= 340
+    assert window._collect_page_width_spec is not None
+    assert window._collect_page_width_spec.left_inset == 0
+    assert window._collect_page_width_spec.right_inset == 0
+    assert window.collect_page_layout.contentsMargins().left() == 28
+    assert window.collect_page_layout.contentsMargins().right() == 28
     assert all(button.isVisible() for button in window.nav.buttons)
     assert window.nav.button(2).text() == "Settings"
     assert window.nav.button(2).height() == 50
@@ -188,6 +196,49 @@ def test_maximized_density_balances_setup_and_last_run(
 
     window._is_quitting = True
     window.close()
+
+def test_extreme_large_viewport_centers_bounded_collect_workspace(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(2560, 1000)
+    window.show()
+    _settle(qapp, window)
+
+    assert window._collect_layout_mode is CollectLayoutMode.LARGE
+    assert window._collect_layout_spec is not None
+    assert window._collect_page_width_spec is not None
+
+    viewport_width = window.collect_page_viewport.width()
+    page_width = window._collect_page_width_spec
+    base_margin = window._collect_layout_spec.page_margin
+    margins = window.collect_page_layout.contentsMargins()
+
+    assert viewport_width > LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert page_width.available_width == viewport_width
+    assert page_width.useful_width == LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert page_width.left_inset > 0
+    assert abs(page_width.left_inset - page_width.right_inset) <= 1
+    assert (
+        page_width.left_inset
+        + page_width.useful_width
+        + page_width.right_inset
+        == viewport_width
+    )
+    assert margins.left() == base_margin + page_width.left_inset
+    assert margins.right() == base_margin + page_width.right_inset
+
+    expected_surface_width = (
+        LARGE_USEFUL_PAGE_MAX_WIDTH - (2 * base_margin)
+    )
+    assert window.setup_card.width() == expected_surface_width
+    assert window.stats_card.width() == expected_surface_width
+    assert window.collect_button.width() == expected_surface_width
+    assert window._collect_layout_spec.metric_columns == 4
+
+    window._is_quitting = True
+    window.close()
+
 
 def test_large_mode_selector_remains_compact_and_left_aligned(
     qapp: QApplication,
@@ -369,4 +420,3 @@ def test_collect_event_filter_does_not_dereference_scroll_area_wrapper(
         window.collect_page_scroll = original_scroll
         window._is_quitting = True
         window.close()
-

@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import pytest
@@ -15,9 +14,11 @@ from xcc.ui_responsive import (
     CollectHeightMode,
     CollectLayoutMode,
     bounded_page_width,
+    centered_page_width_spec,
     collect_content_min_height,
     collect_geometry_spec,
     collect_height_mode,
+    collect_page_width_spec,
     collect_useful_page_width,
     collect_layout_mode,
     collect_layout_spec,
@@ -56,6 +57,29 @@ def test_large_useful_width_is_bounded_without_a_resolution_specific_mode() -> N
 def test_bounded_page_width_rejects_invalid_maximum() -> None:
     with pytest.raises(ValueError, match="max_width must be greater than 0"):
         bounded_page_width(1000, max_width=0)
+
+
+def test_centered_page_width_spec_distributes_only_excess_width() -> None:
+    narrow = centered_page_width_spec(1200, max_width=1692)
+    assert narrow.available_width == 1200
+    assert narrow.useful_width == 1200
+    assert narrow.left_inset == 0
+    assert narrow.right_inset == 0
+
+    wide = centered_page_width_spec(2001, max_width=1692)
+    assert wide.available_width == 2001
+    assert wide.useful_width == 1692
+    assert wide.left_inset == 154
+    assert wide.right_inset == 155
+    assert (
+        wide.left_inset + wide.useful_width + wide.right_inset
+        == wide.available_width
+    )
+
+    collect = collect_page_width_spec(2560)
+    assert collect.useful_width == LARGE_USEFUL_PAGE_MAX_WIDTH
+    assert collect.left_inset == 434
+    assert collect.right_inset == 434
 
 
 def test_sidebar_width_hysteresis_prevents_breakpoint_oscillation() -> None:

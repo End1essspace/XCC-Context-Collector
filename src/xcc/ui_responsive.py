@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -69,6 +68,16 @@ class CollectGeometrySpec:
     metric_min_height: int
     metric_preferred_height: int
     metric_max_height: int
+
+
+@dataclass(frozen=True, slots=True)
+class PageWidthSpec:
+    """Centered logical page-width distribution inside a viewport."""
+
+    available_width: int
+    useful_width: int
+    left_inset: int
+    right_inset: int
 
 
 _LAYOUT_SPECS = {
@@ -330,10 +339,41 @@ def bounded_page_width(available_width: int, *, max_width: int) -> int:
     return min(max(0, available_width), max_width)
 
 
-def collect_useful_page_width(content_width: int) -> int:
-    """Bound Collect to the approved large-layout useful width."""
+def centered_page_width_spec(
+    available_width: int,
+    *,
+    max_width: int,
+) -> PageWidthSpec:
+    """Return centered insets for one bounded logical page surface.
 
-    return bounded_page_width(
+    The viewport remains the source of truth for responsive mode selection.
+    This helper only distributes width that is no longer useful to the page.
+    """
+
+    width = max(0, available_width)
+    useful_width = bounded_page_width(width, max_width=max_width)
+    spare_width = width - useful_width
+    left_inset = spare_width // 2
+    right_inset = spare_width - left_inset
+
+    return PageWidthSpec(
+        available_width=width,
+        useful_width=useful_width,
+        left_inset=left_inset,
+        right_inset=right_inset,
+    )
+
+
+def collect_page_width_spec(content_width: int) -> PageWidthSpec:
+    """Return Collect's centered useful-width distribution."""
+
+    return centered_page_width_spec(
         content_width,
         max_width=LARGE_USEFUL_PAGE_MAX_WIDTH,
     )
+
+
+def collect_useful_page_width(content_width: int) -> int:
+    """Bound Collect to the approved large-layout useful width."""
+
+    return collect_page_width_spec(content_width).useful_width

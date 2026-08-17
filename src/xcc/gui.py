@@ -125,9 +125,11 @@ from .ui_responsive import (
     CollectGeometrySpec,
     CollectLayoutMode,
     CollectLayoutSpec,
+    PageWidthSpec,
     collect_content_min_height,
     collect_geometry_spec,
     collect_layout_spec,
+    collect_page_width_spec,
 )
 from .path_list_parser import parse_path_list
 from .selected_files_importer import (
@@ -1027,6 +1029,7 @@ class XccMainWindow(QMainWindow):
         self._collect_layout_mode: CollectLayoutMode | None = None
         self._collect_layout_spec: CollectLayoutSpec | None = None
         self._collect_geometry_spec: CollectGeometrySpec | None = None
+        self._collect_page_width_spec: PageWidthSpec | None = None
         self._effective_setup_height = 0
         self._effective_stats_min_height = 0
         self._is_custom_maximized = False
@@ -2101,11 +2104,13 @@ class XccMainWindow(QMainWindow):
             current_mode=self._collect_layout_mode,
         )
         geometry = collect_geometry_spec(spec, viewport_size.height())
+        page_width = collect_page_width_spec(viewport_size.width())
         width_mode_changed = force or spec.mode is not self._collect_layout_mode
 
         self._collect_layout_mode = spec.mode
         self._collect_layout_spec = spec
         self._collect_geometry_spec = geometry
+        self._collect_page_width_spec = page_width
         self._set_shell_sidebar_width(spec.sidebar_width)
 
         if width_mode_changed:
@@ -2116,7 +2121,7 @@ class XccMainWindow(QMainWindow):
             self._arrange_source_controls(spec)
             self._arrange_metric_groups(spec)
 
-        self._apply_collect_geometry(spec, geometry)
+        self._apply_collect_geometry(spec, geometry, page_width)
         QTimer.singleShot(0, self._sync_collect_scroll_policy)
 
         if width_mode_changed:
@@ -2126,14 +2131,18 @@ class XccMainWindow(QMainWindow):
         self,
         spec: CollectLayoutSpec,
         geometry: CollectGeometrySpec,
+        page_width: PageWidthSpec,
     ) -> None:
         compact = spec.mode is CollectLayoutMode.COMPACT
         medium = spec.mode is CollectLayoutMode.MEDIUM
 
+        # Keep responsive mode selection tied to the real viewport while
+        # centering only the width that exceeds Collect's useful workspace.
+        # Full HD and narrower viewports retain their approved base margins.
         self.collect_page_layout.setContentsMargins(
-            spec.page_margin,
+            spec.page_margin + page_width.left_inset,
             geometry.page_top_margin,
-            spec.page_margin,
+            spec.page_margin + page_width.right_inset,
             geometry.page_bottom_margin,
         )
         self.collect_page_layout.setSpacing(geometry.page_gap)
@@ -4242,4 +4251,3 @@ def run_gui() -> None:
         instance_lock.unlock()
 
     sys.exit(exit_code)
-
