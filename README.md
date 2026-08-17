@@ -5,8 +5,8 @@
 <h1 align="center">XCC Context Collector</h1>
 
 <p align="center">
-  <strong>AI-ready project context for Windows.</strong><br>
-  Collect selected files, a folder, Git changes, or a project tree into one structured clipboard block.
+  <strong>Turn your Windows project into clean, AI-ready context in seconds.</strong><br>
+  Select exactly what an AI assistant needs — files, a folder, Git changes, or just the project tree — and copy one structured context block without manually assembling prompts.
 </p>
 
 <p align="center">
@@ -23,28 +23,57 @@
 
 Current version: **v1.3.1**
 
-<p align="center">
-  <a href="https://github.com/End1essspace/xcc-context-collector/releases"><strong>Download XCC</strong></a>
-  · <a href="docs/PORTABLE_ZIP.md">Portable guide</a>
-  · <a href="docs/releases/v1.3.1.md">Release notes</a>
-</p>
+## Give AI the project context it actually needs
+
+Coding assistants work best when they see the right source files, repository structure, and current Git state. Collecting that context by hand is slow, repetitive, and easy to get wrong.
+
+**XCC Context Collector** turns that workflow into one local desktop action:
+
+```text
+Choose the relevant project context
+        ↓
+XCC collects and structures it
+        ↓
+One clipboard block is ready for your AI assistant
+```
+
+Use the whole folder when you need broad context, Git mode when you are debugging current changes, Project Tree when structure is enough, or Selected Files when you want precise control.
 
 <p align="center">
   <img src="docs/screenshots/xcc-collect.png" alt="XCC Collect page" width="100%">
 </p>
 
-## What XCC does
+## Download
 
-| Mode | Result |
-|---|---|
-| **Selected Files** | Ordered files selected manually or imported from an AI response. |
-| **Full Folder** | Supported files under a project root with ignore rules and a project tree. |
-| **Git Changed Files** | Supported changed files plus separate staged and unstaged Git diffs. |
-| **Project Tree** | Repository structure without file contents. |
+<p align="center">
+  <a href="https://github.com/End1essspace/xcc-context-collector/releases"><strong>⬇ Download XCC for Windows</strong></a>
+  · <a href="docs/PORTABLE_ZIP.md">Portable guide</a>
+  · <a href="docs/releases/v1.3.1.md">Release notes</a>
+</p>
 
-Generated context can include version metadata, collection statistics, safety-warning summaries, Git status and diffs, project tree, complete file sections, errors, and an explicit budget summary.
+**Windows 10/11 x64 · Portable ZIP · No Python required**
 
-## Selected Files workflow
+Official v1.3.1 assets:
+
+```text
+XCC-Context-Collector-v1.3.1-win64.zip
+XCC-Context-Collector-v1.3.1-win64.zip.sha256
+```
+
+Extract the complete `XCC Context Collector` directory and run `XCC Context Collector.exe`.
+
+## What you can collect
+
+| Mode | Best for | Result |
+|---|---|---|
+| **Selected Files** | Precise AI requests and focused debugging | Ordered files selected manually or imported from an AI response |
+| **Full Folder** | Broad project understanding | Supported files under a project root, ignore rules, and a project tree |
+| **Git Changed Files** | Reviewing or debugging current work | Changed files plus separate staged and unstaged Git diffs |
+| **Project Tree** | Showing architecture without source contents | Repository structure only |
+
+### AI → XCC → AI workflow
+
+When an assistant tells you which files it needs, you do not have to browse for them one by one:
 
 ```text
 AI returns the files it needs
@@ -59,6 +88,29 @@ Collect & Copy
 ```
 
 Paste Paths accepts plain lines, Markdown lists, quotes, backticks, and fenced code blocks. Relative traversal outside the selected root is rejected. Clicking the Source summary opens transactional **Selected Files Review**.
+
+## Local-first by design
+
+XCC is built for source code and repository context, so privacy is part of the product boundary rather than an optional mode.
+
+- **No account required.**
+- **No cloud upload.** Collection and formatting happen locally on your machine.
+- **No telemetry.** XCC does not send usage analytics.
+- **Clipboard output is explicit.** Context is copied only when collection completes successfully.
+- **Runtime History is metadata-only and in-memory.** It never stores collected source, Git diffs, detected values, or failure-message bodies.
+- **Safety detection is warning-only.** Potentially sensitive material is surfaced instead of silently rewritten or redacted.
+
+## Why XCC is reliable for code context
+
+Generated context can include version metadata, collection statistics, safety-warning summaries, Git status and diffs, project tree, complete file sections, errors, and an explicit budget summary.
+
+XCC keeps the important payload trustworthy:
+
+- collected source payloads and Git diffs are not compacted, normalized, or rewritten;
+- Compact mode affects only XCC-generated structure;
+- files and Git diffs are not silently cut in the middle;
+- omissions, summaries, warnings, errors, and truncation are explicit;
+- cancellation never copies a partial result.
 
 ## v1.3.1 highlights
 
@@ -75,16 +127,6 @@ Paste Paths accepts plain lines, Markdown lists, quotes, backticks, and fenced c
 
 v1.3.1 does not change collection semantics. The v1.3.0 Selected Files, source-fidelity, Git, safety, budget, background-work, tray, and hotkey contracts remain intact.
 
-## Output guarantees
-
-- collected source payloads and Git diffs are not compacted, normalized, or rewritten;
-- Compact mode affects only XCC-generated structure;
-- files and Git diffs are not silently cut in the middle;
-- omissions, summaries, warnings, errors, and truncation are explicit;
-- safety detection is warning-only and never silently redacts source;
-- Runtime History is in-memory and metadata-only;
-- cancellation never copies a partial result.
-
 ## Windows integration
 
 - Windows 10/11 x64;
@@ -94,8 +136,7 @@ v1.3.1 does not change collection semantics. The v1.3.0 Selected Files, source-f
 - native `Ctrl+Alt+X` restore hotkey;
 - single-instance restore behavior;
 - optional Start with Windows;
-- persistent local settings;
-- no account, cloud upload, or telemetry.
+- persistent local settings.
 
 Settings:
 
@@ -104,13 +145,6 @@ Settings:
 ```
 
 ## Install
-
-Official v1.3.1 assets:
-
-```text
-XCC-Context-Collector-v1.3.1-win64.zip
-XCC-Context-Collector-v1.3.1-win64.zip.sha256
-```
 
 Verify the checksum, extract the complete `XCC Context Collector` directory, and run `XCC Context Collector.exe`. Keep `_internal` and `VERSION.txt` beside the executable. Python is not required.
 
@@ -174,60 +208,136 @@ Copyright (C) 2026 Rafael Xudoynazarov (End1essspace | RX)
 
 Текущая версия: **v1.3.1**
 
+## Дай AI именно тот контекст проекта, который ему нужен
+
+AI-ассистент работает заметно лучше, когда видит нужные исходники, структуру проекта и текущее состояние Git. Собирать всё это вручную — медленно, однообразно и легко ошибиться.
+
+**XCC Context Collector** превращает это в одно локальное действие:
+
+```text
+Выбираешь нужный контекст проекта
+        ↓
+XCC собирает и структурирует его
+        ↓
+Один готовый блок копируется для AI-ассистента
+```
+
+Нужен широкий обзор проекта — собирай папку. Нужно разобрать текущие изменения — используй Git mode. Нужна только архитектура — Project Tree. Нужен точный набор файлов — Selected Files.
+
 <p align="center">
-  <a href="https://github.com/End1essspace/xcc-context-collector/releases"><strong>Скачать XCC</strong></a>
+  <img src="docs/screenshots/xcc-collect.png" alt="XCC Collect page" width="100%">
+</p>
+
+## Скачать
+
+<p align="center">
+  <a href="https://github.com/End1essspace/xcc-context-collector/releases"><strong>⬇ Скачать XCC для Windows</strong></a>
   · <a href="docs/PORTABLE_ZIP.md">Portable-инструкция</a>
   · <a href="docs/releases/v1.3.1.md">Описание релиза</a>
 </p>
 
-**XCC Context Collector** собирает выбранные файлы, папку проекта, Git-изменения или только дерево репозитория в один структурированный блок для AI-ассистента.
+**Windows 10/11 x64 · Portable ZIP · Python не требуется**
 
-## Режимы
-
-| Режим | Результат |
-|---|---|
-| **Selected Files** | Упорядоченный набор файлов, выбранных вручную или импортированных из ответа AI. |
-| **Full Folder** | Поддерживаемые файлы папки с ignore rules и деревом проекта. |
-| **Git Changed Files** | Изменённые файлы и раздельные staged/unstaged Git diff. |
-| **Project Tree** | Только структура проекта без содержимого файлов. |
-
-## Главное в v1.3.1
-
-- адаптивный интерфейс от `920×620` до больших logical viewport без бесконтрольного растягивания;
-- отдельные width/height responsive policies и reflow без дублирования виджетов;
-- адаптивные Settings, History, About и оба Selected Files диалога;
-- корректный work-area restore/maximize и multi-monitor lifecycle;
-- DPI-aware raster/SVG rendering при смене экрана;
-- **Interface scale**: `Auto`, `90%`, `100%`, `110%`, `120%`, `125%`, `150%`, применяется после перезапуска;
-- XCC-style selector масштаба без clipping;
-- ненавязчивый `X-SERIES` wordmark в footer;
-- отдельная regression-матрица для breakpoint, resize, state preservation, dialogs и DPI.
-
-Семантика сбора не менялась: Paste Paths, Selected Files Review, source fidelity, Git, safety, budget, background collection, tray и `Ctrl+Alt+X` сохраняют контракты v1.3.0.
-
-## Гарантии
-
-- содержимое файлов и Git diff не переписывается;
-- Compact mode влияет только на XCC-generated structure;
-- files/diffs не обрываются молча посередине;
-- warnings, errors, omissions и truncation отображаются явно;
-- safety detection только предупреждает;
-- Runtime History хранит только metadata текущей сессии;
-- отмена не копирует частичный результат;
-- нет аккаунта, cloud upload или telemetry.
-
-## Установка
+Официальные файлы v1.3.1:
 
 ```text
 XCC-Context-Collector-v1.3.1-win64.zip
 XCC-Context-Collector-v1.3.1-win64.zip.sha256
 ```
 
+Распакуй целиком папку `XCC Context Collector` и запусти `XCC Context Collector.exe`.
+
+## Что можно собрать
+
+| Режим | Когда использовать | Результат |
+|---|---|---|
+| **Selected Files** | Точный запрос AI или локальная отладка | Упорядоченный набор файлов, выбранных вручную или импортированных из ответа AI |
+| **Full Folder** | Нужен широкий контекст проекта | Поддерживаемые файлы папки, ignore rules и дерево проекта |
+| **Git Changed Files** | Нужно разобрать текущую работу | Изменённые файлы и раздельные staged/unstaged Git diff |
+| **Project Tree** | Нужна структура без исходников | Только дерево репозитория |
+
+### AI → XCC → AI
+
+Если ассистент уже перечислил нужные файлы, не нужно искать каждый вручную:
+
+```text
+AI возвращает список файлов
+        ↓
+Paste Paths или Ctrl+V
+        ↓
+XCC разрешает пути относительно видимого project root
+        ↓
+Проверяешь итоговый порядок
+        ↓
+Collect & Copy
+```
+
+Paste Paths понимает обычные строки, Markdown-списки, кавычки, backticks и fenced code blocks. Выход по относительному пути за пределы выбранного root отклоняется. Нажатие на Source открывает транзакционный **Selected Files Review**.
+
+## Local-first по умолчанию
+
+XCC работает с исходным кодом и содержимым репозиториев, поэтому приватность заложена в саму границу продукта.
+
+- **Аккаунт не нужен.**
+- **Нет cloud upload.** Сбор и форматирование происходят локально на компьютере.
+- **Нет telemetry.** XCC не отправляет аналитику использования.
+- **Копирование в clipboard происходит явно.** Контекст копируется только после успешного завершения сбора.
+- **Runtime History хранит только metadata текущей сессии в памяти.** Исходники, Git diff, обнаруженные значения и тексты ошибок туда не записываются.
+- **Safety detection только предупреждает.** Потенциально чувствительные данные не переписываются и не скрываются молча.
+
+## Почему контексту XCC можно доверять
+
+Сформированный блок может включать version metadata, статистику сбора, safety warnings, Git status и diff, project tree, полные file sections, errors и явный budget summary.
+
+Основные гарантии:
+
+- содержимое файлов и Git diff не compact-ится, не нормализуется и не переписывается;
+- Compact mode влияет только на XCC-generated structure;
+- files/diffs не обрываются молча посередине;
+- warnings, errors, omissions и truncation отображаются явно;
+- отмена не копирует частичный результат.
+
+## Главное в v1.3.1
+
+- адаптивный интерфейс от `920×620` до Full HD, QHD, 4K-class и широких logical viewport;
+- независимые width/height policies: reflow происходит раньше сжатия controls;
+- progressive large-screen workbench вместо бесконечного растягивания cards;
+- адаптивные Settings, History, About, Paste Paths и Selected Files Review без нормального horizontal page scrolling;
+- корректный work-area maximize/restore и dialog sizing для multi-monitor Windows;
+- DPI-aware raster/SVG rendering при смене экранов;
+- **Interface scale**: `Auto`, `90%`, `100%`, `110%`, `120%`, `125%`, `150%`; применяется после перезапуска;
+- XCC-style selector масштаба и content-aware sizing для `Auto (recommended)`;
+- ненавязчивый `X-SERIES` wordmark в footer source и packaged builds;
+- отдельное regression-покрытие для breakpoints, resize round-trip, state preservation, dialogs, DPI и responsive поведения.
+
+Семантика сбора в v1.3.1 не менялась: Selected Files, source fidelity, Git, safety, budget, background collection, tray и hotkey сохраняют контракты v1.3.0.
+
+## Windows integration
+
+- Windows 10/11 x64;
+- PySide6 desktop UI;
+- portable ZIP;
+- tray, close-to-tray, `Esc` hide-to-tray;
+- native `Ctrl+Alt+X` restore hotkey;
+- single-instance restore;
+- optional Start with Windows;
+- локальные persistent settings.
+
+Настройки:
+
+```text
+%USERPROFILE%\.xcc\config.json
+```
+
+## Установка
+
 Проверь SHA-256, распакуй всю папку и запусти `XCC Context Collector.exe`. `_internal` и `VERSION.txt` должны оставаться рядом с executable. Python для packaged build не нужен.
 
 Подробности: [Portable ZIP Usage](docs/PORTABLE_ZIP.md).
 
 ## Запуск из исходников
+
+Поддерживаемая development-среда: **CPython 3.13.x** на Windows 10/11 x64.
 
 ```powershell
 py -3.13 -m venv .venv
@@ -240,18 +350,30 @@ python -m pytest -q
 python gui.py
 ```
 
+Installed entry point: `xcc-context-collector`.
+
+## Runtime History
+
+<p align="center">
+  <img src="docs/screenshots/xcc-history.png" alt="XCC Runtime History page" width="100%">
+</p>
+
+History хранит outcome, duration, source, coverage, truncation, warnings и errors только для текущей сессии. Collected source, Git diff, detected values и failure-message bodies не сохраняются.
+
 ## Документация
 
-- [Архитектура](docs/ARCHITECTURE.md)
-- [UI-контракт v1.3.1](docs/UI_REFERENCE_v1.3.1.md)
-- [Validation v1.3.1](docs/M16_VALIDATION.md)
-- [Release checklist](docs/RELEASE_CHECKLIST.md)
-- [Portable ZIP](docs/PORTABLE_ZIP.md)
-- [Диагностика bug reports](docs/BUG_REPORTING.md)
-- [Release notes v1.3.1](docs/releases/v1.3.1.md)
-- [Roadmap](docs/roadmap.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security](SECURITY.md)
+| Документ | Назначение |
+|---|---|
+| [Архитектура](docs/ARCHITECTURE.md) | Runtime, UI, responsive, DPI и release boundaries |
+| [UI-контракт v1.3.1](docs/UI_REFERENCE_v1.3.1.md) | Зафиксированный visual и interaction contract |
+| [Validation v1.3.1](docs/M16_VALIDATION.md) | Release-candidate и clean-host procedure |
+| [Release checklist](docs/RELEASE_CHECKLIST.md) | Компактный operational gate |
+| [Portable ZIP](docs/PORTABLE_ZIP.md) | Checksum, extraction, updates и removal |
+| [Диагностика bug reports](docs/BUG_REPORTING.md) | Воспроизводимые sanitized reports |
+| [Release notes v1.3.1](docs/releases/v1.3.1.md) | User-visible release summary |
+| [Roadmap](docs/roadmap.md) | Статус релиза и следующие шаги |
+| [Contributing](CONTRIBUTING.md) | Правила разработки |
+| [Security](SECURITY.md) | Security model и reporting |
 
 ## Автор и лицензия
 
