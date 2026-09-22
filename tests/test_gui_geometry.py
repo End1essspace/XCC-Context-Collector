@@ -25,7 +25,6 @@ from xcc.ui_components import IconTitle
 from xcc.settings import AppSettings, SettingsLoadResult
 
 from xcc.ui_responsive import (
-    ABOUT_USEFUL_PAGE_MAX_WIDTH,
     WORKBENCH_REFERENCE_PAGE_WIDTH,
     CollectLayoutMode,
 )
@@ -170,8 +169,8 @@ def test_maximized_geometry_has_no_scrollbar_and_keeps_cta_visible(
     assert window.collect_page_layout.contentsMargins().left() == 28
     assert window.collect_page_layout.contentsMargins().right() == 28
     assert all(button.isVisible() for button in window.nav.buttons)
-    assert window.nav.button(2).text() == "Settings"
-    assert window.nav.button(2).height() == 50
+    assert window.nav.button(3).text() == "Settings"
+    assert window.nav.button(3).height() == 50
 
     button_bottom = window.collect_button.mapTo(
         window.collect_page_scroll.viewport(),
@@ -539,7 +538,7 @@ def test_settings_reflows_to_one_column_and_scrolls_at_minimum_window(
     window = XccMainWindow()
     window.resize(920, 620)
     window.show()
-    window._change_page(2)
+    window._change_page(3)
     _settle(qapp, window)
 
     assert window.pages.currentWidget() is window.settings_page
@@ -575,7 +574,7 @@ def test_settings_preserves_two_column_full_hd_composition(
     window = XccMainWindow()
     window.resize(1920, 1080)
     window.show()
-    window._change_page(2)
+    window._change_page(3)
     _settle(qapp, window)
 
     assert window.pages.currentWidget() is window.settings_page
@@ -589,7 +588,7 @@ def test_settings_preserves_two_column_full_hd_composition(
     window.close()
 
 
-def test_about_uses_information_width_and_two_by_two_badges_when_compact(
+def test_about_uses_shared_workbench_width_and_compact_badge_reflow(
     qapp: QApplication,
 ) -> None:
     window = XccMainWindow()
@@ -598,15 +597,28 @@ def test_about_uses_information_width_and_two_by_two_badges_when_compact(
     _settle(qapp, window)
 
     assert window._about_page_spec is not None
-    assert window._about_page_spec.width.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
+    assert window._settings_page_spec is not None
+    assert window._history_page_spec is not None
+
+    # About now inherits the same outer progressive workbench contract as the
+    # other full product pages instead of keeping a separate 1320 px cap.
+    assert window._about_page_spec.width == window._settings_page_spec.width
+    assert window._about_page_spec.width == window._history_page_spec.width
     assert window._about_page_spec.width.left_inset > 0
+    assert window._about_page_spec.columns == 2
     assert window._about_badge_columns == 4
 
+    wide_width = window._about_page_spec.width
+
+    # Interface scale is restart-gated and already represented by Qt logical
+    # geometry. Mutating the persisted value in-process must not apply a second
+    # About-specific width multiplier.
     window.app_settings.interface_scale = "125"
     window._apply_responsive_pages(force=True)
     qapp.processEvents()
+
     assert window._about_page_spec is not None
-    assert window._about_page_spec.width.useful_width == 1650
+    assert window._about_page_spec.width == wide_width
     assert (
         window.about_page_scroll.horizontalScrollBarPolicy()
         == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -614,9 +626,15 @@ def test_about_uses_information_width_and_two_by_two_badges_when_compact(
 
     window.resize(920, 620)
     _settle(qapp, window)
+
     assert window._about_page_spec is not None
-    assert window._about_page_spec.columns == 2
+    assert window._settings_page_spec is not None
+    assert window._history_page_spec is not None
+    assert window._about_page_spec.width == window._settings_page_spec.width
+    assert window._about_page_spec.width == window._history_page_spec.width
+    assert window._about_page_spec.columns == 1
     assert window._about_badge_columns == 2
+
     positions = [
         window.about_badges_layout.getItemPosition(index)[:2]
         for index in range(len(window.about_badges))

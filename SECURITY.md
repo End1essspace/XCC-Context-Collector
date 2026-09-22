@@ -44,7 +44,8 @@ XCC is a local-first utility:
 - it does not include cloud upload or telemetry;
 - generated context is copied to the local Windows clipboard;
 - settings are stored under `%USERPROFILE%\.xcc\config.json`;
-- runtime history is in-memory and stores metadata only.
+- Runtime History persists as metadata only under `%USERPROFILE%\.xcc\history.json`;
+- XCC-managed attachment bundles may be created under `%USERPROFILE%\.xcc\attachment-bundles\`.
 
 The application may read files explicitly selected by the user or discovered under a selected project root. Users remain responsible for reviewing the selected source and the final clipboard content before sharing it with an external AI service.
 
@@ -84,6 +85,8 @@ Users should verify the checksum before running a downloaded archive. Current XC
 
 ## Clipboard and local-data considerations
 
-After a successful collection, the generated context remains in the Windows clipboard until another application replaces it. Clear or replace the clipboard after sharing sensitive project context.
+After a successful collection, generated context remains in the Windows clipboard until another application replaces it. After Copy Files / Send One-by-One / Create ZIP & Copy, Windows clipboard state may also reference the selected original file or generated bundle. Clear or replace the clipboard after sharing sensitive project material.
 
-Deleting the extracted portable folder does not remove saved settings. Remove `%USERPROFILE%\.xcc` separately when local configuration should also be deleted.
+Persistent History stores only sanitized metadata; it does not store collected source bodies, Git diff bodies, detected secret values, attachment contents, raw failure bodies, or Attachment Handoff target-window identity.
+
+Deleting the extracted portable folder does not remove `%USERPROFILE%\.xcc`. Remove that directory separately when settings, persistent History, and XCC-managed attachment bundles should also be deleted.

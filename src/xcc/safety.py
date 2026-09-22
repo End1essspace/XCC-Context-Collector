@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .cancellation import CollectionCancelled
 from .config import EXCLUDED_DIRS
-from .ignore import ProjectIgnoreMatcher
+from .ignore import ProjectIgnoreMatcher, walk_project_entries
 from .models import FileContent, GitContext, SafetyWarning
 
 WARNING_SENSITIVE_FILENAME = "Sensitive filename"
@@ -190,19 +190,13 @@ def scan_project_filename_warnings(
 
     processed_files = 0
 
-    for path in root.rglob("*"):
+    for path, relative, is_dir in walk_project_entries(
+        root,
+        excluded_dirs=excluded,
+    ):
         if cancel_check is not None and cancel_check():
             raise CollectionCancelled("Collection cancelled.")
-
-        if not path.is_file():
-            continue
-
-        try:
-            relative = path.relative_to(root)
-        except ValueError:
-            continue
-
-        if any(part in excluded for part in relative.parts[:-1]):
+        if is_dir:
             continue
 
         if matcher.is_ignored(relative, is_dir=False):
@@ -532,3 +526,55 @@ def _append_unique(
 
         seen.add(key)
         target.append(warning)
+
+
+def scan_attachment_paths_for_warnings(
+    paths: Sequence[str | Path],
+    *,
+    project_root: str | Path | None = None,
+) -> list[SafetyWarning]:
+    """Return path-only warnings for original-file attachment handoff.
+
+    Attachment contents are intentionally not read. Only filenames are checked
+    against the existing sensitive-name heuristics.
+    """
+
+    root: Path | None = None
+    if project_root is not None:
+        try:
+            candidate = Path(project_root).resolve(strict=False)
+        except (OSError, RuntimeError):
+            candidate = None
+        if candidate is not None:
+            root = candidate
+
+    warnings: list[SafetyWarning] = []
+    for raw in paths:
+        path = Path(raw)
+        display = path.name
+        if root is not None:
+            try:
+                display = path.resolve(strict=False).relative_to(root).as_posix()
+            except (OSError, RuntimeError, ValueError):
+                display = path.name
+        warnings.extend(scan_filename_for_warnings(path, display_path=display))
+    return merge_warnings(warnings)
+
+
+def build_attachment_warning_confirmation_text(
+    warnings: Sequence[SafetyWarning],
+    *,
+    max_items: int = 20,
+) -> str:
+    lines = [
+        "XCC found potentially sensitive attachment filenames.",
+        "",
+        *format_warning_lines(warnings, max_items=max_items),
+        "",
+        "Attachment contents are not scanned or modified.",
+        "Only filename/path heuristics are used for this warning.",
+        "Detection is heuristic and may produce false positives.",
+        "",
+        "Continue with this file transfer?",
+    ]
+    return "\n".join(lines)

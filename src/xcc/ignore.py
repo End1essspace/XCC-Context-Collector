@@ -1,8 +1,50 @@
 from __future__ import annotations
 
+import os
 import re
+from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
+
+
+
+def walk_project_entries(
+    root: str | Path,
+    *,
+    excluded_dirs: Iterable[str],
+) -> Iterator[tuple[Path, Path, bool]]:
+    """Yield project entries while pruning built-in excluded directories.
+
+    Only the explicit ``excluded_dirs`` set is pruned before descent. Project
+    .gitignore/.xccignore rules stay caller-side because a later negation rule
+    may intentionally re-include a descendant of an ignored directory.
+    """
+
+    root_path = Path(root)
+    excluded = frozenset(excluded_dirs)
+
+    for current_raw, dir_names, file_names in os.walk(
+        root_path,
+        topdown=True,
+        followlinks=False,
+    ):
+        current = Path(current_raw)
+
+        # Mutating dir_names is the os.walk pruning contract: excluded trees are
+        # never descended into, avoiding filesystem work for .git, .venv,
+        # node_modules, build, dist, and other built-in exclusions.
+        dir_names[:] = sorted(
+            (name for name in dir_names if name not in excluded),
+            key=str.casefold,
+        )
+
+        for name in dir_names:
+            path = current / name
+            yield path, path.relative_to(root_path), True
+
+        for name in sorted(file_names, key=str.casefold):
+            path = current / name
+            yield path, path.relative_to(root_path), False
 
 
 @dataclass(frozen=True, slots=True)

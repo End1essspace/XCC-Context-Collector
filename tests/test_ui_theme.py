@@ -279,6 +279,26 @@ def test_final_polish_keeps_resting_surfaces_quiet_and_states_clear() -> None:
     assert "@status_text" not in stylesheet
 
 
+def test_application_stylesheet_resolves_qss_tokens_without_prefix_corruption() -> None:
+    stylesheet = build_application_stylesheet()
+
+    # No semantic token may survive rendering, and replacing a shorter token
+    # must never corrupt a longer one (the historical failure produced
+    # ``#D2A533_hover`` from ``@accent_hover``).
+    assert not re.search(r"@[A-Za-z_][A-Za-z0-9_]*", stylesheet)
+    assert not re.search(r"#[0-9A-Fa-f]{3,8}_[A-Za-z0-9_]+", stylesheet)
+
+    hover_rule = re.search(
+        r"(?ms)^#AttachmentsPastePathsButton:hover,\n"
+        r"#AttachmentsPastePathsButton:focus\s*\{(?P<body>.*?)^\}",
+        stylesheet,
+    )
+    assert hover_rule is not None
+    assert f"border: 1px solid {PALETTE.accent};" in hover_rule.group("body")
+    assert f"color: {PALETTE.accent_hover};" in hover_rule.group("body")
+
+
+
 def test_tray_menu_uses_shared_palette() -> None:
     stylesheet = build_tray_menu_stylesheet()
 
@@ -315,3 +335,42 @@ def test_settings_interface_scale_combo_is_themed() -> None:
     assert "#SettingsComboBox QAbstractItemView {" in stylesheet
     assert "#SettingsComboBox QAbstractItemView::item:selected {" in stylesheet
     assert f"border-left: 3px solid {PALETTE.accent};" in stylesheet
+
+def test_attachment_selected_cells_do_not_repeat_the_accent_border() -> None:
+    stylesheet = build_application_stylesheet()
+    match = re.search(
+        r"(?ms)^#AttachmentsFileList::item:selected\s*\{(?P<body>.*?)^\}",
+        stylesheet,
+    )
+
+    assert match is not None
+    selected_rule = match.group("body")
+    assert f"background: {PALETTE.selected_surface};" in selected_rule
+    assert "border-left:" not in selected_rule
+
+
+def test_about_product_surface_has_distinct_hero_detail_and_runtime_styles() -> None:
+    stylesheet = build_application_stylesheet()
+
+    cards = re.search(
+        r"(?ms)^#AboutHeroCard,\n#AboutCapabilityCard,\n#AboutPrivacyCard,\n#AboutRuntimeCard\s*\{(?P<body>.*?)^\}",
+        stylesheet,
+    )
+    assert cards is not None
+    assert f"background: {PALETTE.card_surface};" in cards.group("body")
+    assert f"border: 1px solid {PALETTE.quiet_border};" in cards.group("body")
+    assert "border-radius: 14px;" in cards.group("body")
+
+    for selector in (
+        "#AboutVersionCapsule",
+        "#AboutCardTitle",
+        "#AboutDetailRow",
+        "#AboutDetailTitle",
+        "#AboutDetailDescription",
+        "#AboutInfoRow",
+        "#AboutInfoValue",
+    ):
+        assert f"{selector} {{" in stylesheet
+
+    assert "#AboutWorkspace {" in stylesheet
+    assert "#AboutCard {" not in stylesheet

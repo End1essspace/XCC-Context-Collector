@@ -32,3 +32,12 @@ def test_qt_filter_contains_new_extensions() -> None:
     assert ".env.example" in file_filter
     assert ".xccignore" in file_filter
 
+def test_allowed_filename_matching_is_case_insensitive_for_defaults_and_overrides() -> None:
+    assert is_allowed_context_file(Path("dockerFILE")) is True
+    assert (
+        is_allowed_context_file(
+            Path("CUSTOM.CONFIG"),
+            allowed_filenames={"custom.config"},
+        )
+        is True
+    )

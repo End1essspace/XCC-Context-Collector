@@ -1,3 +1,4 @@
+
 param(
     [string]$PythonLauncher = "py",
     [switch]$KeepEnvironment
@@ -42,6 +43,11 @@ try {
     & $VenvPython -c "from importlib.metadata import version; import xcc; assert version('xcc-context-collector') == xcc.__version__; import xcc.gui; import xcc.qt_worker"
     if ($LASTEXITCODE -ne 0) {
         throw "Installed package metadata or GUI imports are invalid."
+    }
+
+    & $VenvPython -c "from xcc.hotkeys import normalize_hotkey; from xcc.settings import AppSettings; s=AppSettings(); assert normalize_hotkey('Alt+Control+X') == 'ctrl+alt+x'; assert s.restore_hotkey_enabled is True; assert s.restore_hotkey == 'ctrl+alt+x'; assert s.collect_hotkey_enabled is False; assert s.collect_hotkey == 'ctrl+alt+c'"
+    if ($LASTEXITCODE -ne 0) {
+        throw "Installed global hotkey settings contract is invalid."
     }
 
     & $VenvPython -c "import importlib.util; assert importlib.util.find_spec('keyboard') is None, 'unsupported keyboard package must not be installed'"

@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import os
@@ -183,6 +184,10 @@ def test_all_normal_main_surfaces_forbid_horizontal_page_scrolling(
         == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
     )
     assert (
+        window.attachments_page_scroll.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+    assert (
         window.settings_page_scroll.horizontalScrollBarPolicy()
         == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
     )
@@ -192,6 +197,178 @@ def test_all_normal_main_surfaces_forbid_horizontal_page_scrolling(
     )
     assert (
         window.history_scroll_area.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+
+    window._is_quitting = True
+    window.close()
+
+
+def test_attachments_workspace_reflows_without_recreating_workbench(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(1688, 900)
+    window.show()
+    window._change_page(1)
+    _settle(qapp, window)
+
+    selection_id = id(window.attachments_selection_card)
+    transfer_id = id(window.attachments_transfer_card)
+
+    assert window.pages.currentWidget() is window.attachments_page
+    assert window._attachments_page_spec is not None
+    assert window._attachments_page_spec.columns == 2
+
+    selection_index = window.attachments_workspace_layout.indexOf(
+        window.attachments_selection_card
+    )
+    transfer_index = window.attachments_workspace_layout.indexOf(
+        window.attachments_transfer_card
+    )
+    selection_pos = window.attachments_workspace_layout.getItemPosition(selection_index)
+    transfer_pos = window.attachments_workspace_layout.getItemPosition(transfer_index)
+    assert selection_pos[:2] == (0, 0)
+    assert transfer_pos[:2] == (0, 1)
+
+    window.resize(920, 620)
+    _settle(qapp, window)
+
+    assert id(window.attachments_selection_card) == selection_id
+    assert id(window.attachments_transfer_card) == transfer_id
+    assert window._attachments_page_spec is not None
+    assert window._attachments_page_spec.columns == 1
+
+    selection_index = window.attachments_workspace_layout.indexOf(
+        window.attachments_selection_card
+    )
+    transfer_index = window.attachments_workspace_layout.indexOf(
+        window.attachments_transfer_card
+    )
+    selection_pos = window.attachments_workspace_layout.getItemPosition(selection_index)
+    transfer_pos = window.attachments_workspace_layout.getItemPosition(transfer_index)
+    assert selection_pos[:2] == (0, 0)
+    assert transfer_pos[:2] == (1, 0)
+    assert (
+        window.attachments_page_scroll.horizontalScrollBarPolicy()
+        == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+    )
+
+    window._is_quitting = True
+    window.close()
+
+
+def test_about_product_surface_reflows_without_recreating_cards(
+    qapp: QApplication,
+) -> None:
+    window = XccMainWindow()
+    window.resize(1688, 900)
+    window.show()
+    window._change_page(4)
+    _settle(qapp, window)
+
+    capabilities_id = id(window.about_capabilities_card)
+    privacy_id = id(window.about_privacy_card)
+    runtime_ids = tuple(id(row) for row in window.about_runtime_rows)
+
+    assert window.pages.currentWidget() is window.about_page
+    assert window._about_page_spec is not None
+    assert window._about_page_spec.columns == 2
+    assert window._about_page_spec.badge_columns == 4
+    assert window.about_page_header.subtitle_label.isVisible()
+    assert window._settings_page_spec is not None
+    assert window._history_page_spec is not None
+    assert window._about_page_spec.page_margin == window._settings_page_spec.page_margin
+    assert window._about_page_spec.page_margin == window._history_page_spec.page_margin
+    assert window._about_page_spec.width == window._settings_page_spec.width
+    assert window._about_page_spec.width == window._history_page_spec.width
+    assert window.about_page_layout.contentsMargins().left() == (
+        window.settings_page_layout.contentsMargins().left()
+    )
+    assert window.about_page_layout.contentsMargins().right() == (
+        window.settings_page_layout.contentsMargins().right()
+    )
+
+    capabilities_index = window.about_workspace_layout.indexOf(
+        window.about_capabilities_card
+    )
+    privacy_index = window.about_workspace_layout.indexOf(
+        window.about_privacy_card
+    )
+    assert window.about_workspace_layout.getItemPosition(
+        capabilities_index
+    )[:2] == (0, 0)
+    assert window.about_workspace_layout.getItemPosition(
+        privacy_index
+    )[:2] == (0, 1)
+
+    runtime_positions = [
+        window.about_runtime_grid.getItemPosition(
+            window.about_runtime_grid.indexOf(row)
+        )[:2]
+        for row in window.about_runtime_rows
+    ]
+    assert runtime_positions == [
+        (0, 0),
+        (1, 0),
+        (2, 0),
+        (0, 1),
+        (1, 1),
+        (2, 1),
+    ]
+
+    window.resize(920, 620)
+    _settle(qapp, window)
+
+    assert id(window.about_capabilities_card) == capabilities_id
+    assert id(window.about_privacy_card) == privacy_id
+    assert tuple(id(row) for row in window.about_runtime_rows) == runtime_ids
+    assert window._about_page_spec is not None
+    assert window._about_page_spec.columns == 1
+    assert window._about_page_spec.badge_columns == 2
+    assert not window.about_page_header.subtitle_label.isVisible()
+    assert window._settings_page_spec is not None
+    assert window._history_page_spec is not None
+    assert window._about_page_spec.page_margin == window._settings_page_spec.page_margin
+    assert window._about_page_spec.page_margin == window._history_page_spec.page_margin
+    assert window._about_page_spec.width == window._settings_page_spec.width
+    assert window._about_page_spec.width == window._history_page_spec.width
+    assert window.about_page_layout.contentsMargins().left() == (
+        window.settings_page_layout.contentsMargins().left()
+    )
+    assert window.about_page_layout.contentsMargins().right() == (
+        window.settings_page_layout.contentsMargins().right()
+    )
+
+    capabilities_index = window.about_workspace_layout.indexOf(
+        window.about_capabilities_card
+    )
+    privacy_index = window.about_workspace_layout.indexOf(
+        window.about_privacy_card
+    )
+    assert window.about_workspace_layout.getItemPosition(
+        capabilities_index
+    )[:2] == (0, 0)
+    assert window.about_workspace_layout.getItemPosition(
+        privacy_index
+    )[:2] == (1, 0)
+
+    runtime_positions = [
+        window.about_runtime_grid.getItemPosition(
+            window.about_runtime_grid.indexOf(row)
+        )[:2]
+        for row in window.about_runtime_rows
+    ]
+    assert runtime_positions == [
+        (0, 0),
+        (1, 0),
+        (2, 0),
+        (3, 0),
+        (4, 0),
+        (5, 0),
+    ]
+    assert (
+        window.about_page_scroll.horizontalScrollBarPolicy()
         == Qt.ScrollBarPolicy.ScrollBarAlwaysOff
     )
 

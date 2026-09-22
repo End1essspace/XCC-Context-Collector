@@ -3,7 +3,6 @@ from __future__ import annotations
 import pytest
 
 from xcc.ui_responsive import (
-    ABOUT_USEFUL_PAGE_MAX_WIDTH,
     DIALOG_WORK_AREA_MARGIN,
     LARGE_CONTENT_BREAKPOINT,
     WORKBENCH_HARD_MAX_WIDTH,
@@ -138,7 +137,7 @@ def test_settings_column_breakpoint_triplet(
 
 
 @pytest.mark.parametrize(
-    ("width", "expected_columns"),
+    ("width", "expected_badge_columns"),
     (
         (MEDIUM_CONTENT_BREAKPOINT - 1, 2),
         (MEDIUM_CONTENT_BREAKPOINT, 4),
@@ -147,11 +146,26 @@ def test_settings_column_breakpoint_triplet(
 )
 def test_about_badge_breakpoint_triplet(
     width: int,
-    expected_columns: int,
+    expected_badge_columns: int,
 ) -> None:
     spec = about_page_spec(width)
-    assert spec.columns == expected_columns
+    assert spec.badge_columns == expected_badge_columns
     assert spec.width.available_width == width
+
+
+@pytest.mark.parametrize(
+    ("width", "expected_columns"),
+    (
+        (LARGE_CONTENT_BREAKPOINT - 1, 1),
+        (LARGE_CONTENT_BREAKPOINT, 2),
+        (LARGE_CONTENT_BREAKPOINT + 1, 2),
+    ),
+)
+def test_about_detail_columns_follow_large_breakpoint(
+    width: int,
+    expected_columns: int,
+) -> None:
+    assert about_page_spec(width).columns == expected_columns
 
 
 @pytest.mark.parametrize(
@@ -160,6 +174,7 @@ def test_about_badge_breakpoint_triplet(
         collect_page_width_spec,
         lambda width: settings_page_spec(width).width,
         lambda width: history_page_spec(width).width,
+        lambda width: about_page_spec(width).width,
     ),
 )
 def test_workbench_reference_boundary_starts_progressive_outer_space(
@@ -183,15 +198,27 @@ def test_workbench_reference_boundary_starts_progressive_outer_space(
     assert above.left_inset + above.right_inset == 1
 
 
-def test_about_fixed_readability_cap_triplet_remains_centered() -> None:
-    below = about_page_spec(ABOUT_USEFUL_PAGE_MAX_WIDTH - 1).width
-    exact = about_page_spec(ABOUT_USEFUL_PAGE_MAX_WIDTH).width
-    above = about_page_spec(ABOUT_USEFUL_PAGE_MAX_WIDTH + 1).width
+@pytest.mark.parametrize(
+    "width",
+    (
+        MEDIUM_CONTENT_BREAKPOINT - 1,
+        MEDIUM_CONTENT_BREAKPOINT,
+        LARGE_CONTENT_BREAKPOINT,
+        WORKBENCH_REFERENCE_PAGE_WIDTH,
+        WORKBENCH_REFERENCE_PAGE_WIDTH + 1,
+        2560,
+        3840,
+    ),
+)
+def test_about_shares_progressive_outer_width_with_settings_and_history(
+    width: int,
+) -> None:
+    about = about_page_spec(width)
+    settings = settings_page_spec(width)
+    history = history_page_spec(width)
 
-    assert below.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH - 1
-    assert exact.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
-    assert above.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
-    assert above.left_inset + above.right_inset == 1
+    assert about.page_margin == settings.page_margin == history.page_margin
+    assert about.width == settings.width == history.width
 
 
 def test_sidebar_hysteresis_transition_triplets_are_explicit() -> None:
@@ -378,3 +405,4 @@ def test_major_windows_resolution_scaling_matrix_uses_qt_logical_width_once(
         + page_width.right_inset
         == content_width
     )
+

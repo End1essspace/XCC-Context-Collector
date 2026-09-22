@@ -1,9 +1,9 @@
+
 from __future__ import annotations
 
 import pytest
 
 from xcc.ui_responsive import (
-    ABOUT_USEFUL_PAGE_MAX_WIDTH,
     DIALOG_WORK_AREA_MARGIN,
     INLINE_PAGE_HEADER_HEIGHT,
     LARGE_CONTENT_BREAKPOINT,
@@ -56,8 +56,8 @@ def test_large_workbench_expands_progressively_without_resolution_modes() -> Non
     assert WORKBENCH_WIDE_EXPANSION_DENOMINATOR == 4
     assert WORKBENCH_HARD_MAX_WIDTH == 3200
 
-    # The generic fixed-cap helper remains available for intentionally bounded
-    # information surfaces such as About.
+    # The generic fixed-cap helper remains available for deliberately bounded
+    # surfaces, even though all primary XCC pages now use the shared workbench.
     assert bounded_page_width(0, max_width=1692) == 0
     assert bounded_page_width(1692, max_width=1692) == 1692
     assert bounded_page_width(1693, max_width=1692) == 1692
@@ -333,9 +333,8 @@ def test_height_changes_recalculate_geometry_inside_one_width_mode() -> None:
         > short.metric_preferred_height
     )
 
-def test_non_collect_surface_policy_reflows_and_bounds_by_viewport() -> None:
+def test_non_collect_surface_policy_reflows_and_shares_workbench_width() -> None:
     assert SETTINGS_TWO_COLUMN_BREAKPOINT == LARGE_CONTENT_BREAKPOINT
-    assert ABOUT_USEFUL_PAGE_MAX_WIDTH == 1320
 
     assert responsive_page_margin(819) == 16
     assert responsive_page_margin(820) == 22
@@ -344,27 +343,45 @@ def test_non_collect_surface_policy_reflows_and_bounds_by_viewport() -> None:
 
     assert settings_page_spec(1119).columns == 1
     assert settings_page_spec(1120).columns == 2
-    assert settings_page_spec(2560).width.useful_width == 2343
 
-    assert history_page_spec(2560).width.useful_width == 2343
+    for width in (819, 920, 1688, 2560, 3840):
+        settings = settings_page_spec(width)
+        history = history_page_spec(width)
+        about = about_page_spec(width)
+
+        assert about.page_margin == settings.page_margin == history.page_margin
+        assert about.width == settings.width == history.width
 
     compact_about = about_page_spec(819)
-    assert compact_about.columns == 2
+    assert compact_about.columns == 1
+    assert compact_about.badge_columns == 2
+    assert compact_about.show_subtitle is False
     assert compact_about.page_margin == 16
 
     large_about = about_page_spec(2560)
-    assert large_about.columns == 4
-    assert large_about.width.useful_width == ABOUT_USEFUL_PAGE_MAX_WIDTH
-    assert large_about.width.left_inset == 620
-    assert large_about.width.right_inset == 620
-
-    scaled_about = about_page_spec(2560, interface_scale=1.25)
-    assert scaled_about.columns == 4
-    assert scaled_about.width.useful_width == 1650
-    assert scaled_about.width.left_inset == 455
-    assert scaled_about.width.right_inset == 455
+    assert large_about.columns == 2
+    assert large_about.badge_columns == 4
+    assert large_about.show_subtitle is True
+    assert large_about.width.useful_width == 2343
+    assert large_about.width.left_inset == 108
+    assert large_about.width.right_inset == 109
 
 
-def test_about_interface_scale_rejects_invalid_multiplier() -> None:
-    with pytest.raises(ValueError, match="interface_scale"):
-        about_page_spec(1600, interface_scale=0)
+def test_attachments_page_switches_from_two_column_workbench_to_stacked_layout() -> None:
+    from xcc.ui_responsive import attachments_page_spec
+
+    large = attachments_page_spec(1400)
+    medium = attachments_page_spec(980)
+    compact = attachments_page_spec(700)
+
+    assert large.columns == 2
+    assert large.source_actions_below is False
+    assert large.show_subtitle is True
+
+    assert medium.columns == 1
+    assert medium.source_actions_below is True
+    assert medium.show_subtitle is True
+
+    assert compact.columns == 1
+    assert compact.source_actions_below is True
+    assert compact.show_subtitle is False

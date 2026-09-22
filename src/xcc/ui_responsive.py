@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -23,10 +24,8 @@ WORKBENCH_WIDE_EXPANSION_NUMERATOR = 3
 WORKBENCH_WIDE_EXPANSION_DENOMINATOR = 4
 WORKBENCH_HARD_MAX_WIDTH = 3200
 
-# About remains intentionally narrower because it is an information surface,
-# not a dashboard/workbench; extra line length does not add utility there.
-ABOUT_USEFUL_PAGE_MAX_WIDTH = 1320
 SETTINGS_TWO_COLUMN_BREAKPOINT = LARGE_CONTENT_BREAKPOINT
+ATTACHMENTS_TWO_COLUMN_BREAKPOINT = LARGE_CONTENT_BREAKPOINT
 
 INLINE_PAGE_HEADER_HEIGHT = 42
 COLLECT_PAGE_WIDGET_GAPS = 3
@@ -102,6 +101,28 @@ class PageSurfaceSpec:
     page_margin: int
     width: PageWidthSpec
     columns: int = 1
+
+
+@dataclass(frozen=True, slots=True)
+class AboutPageSpec:
+    """Responsive composition contract for the About product surface."""
+
+    page_margin: int
+    width: PageWidthSpec
+    columns: int
+    badge_columns: int
+    show_subtitle: bool
+
+
+@dataclass(frozen=True, slots=True)
+class AttachmentsPageSpec:
+    """Responsive composition contract for the attachment handoff workbench."""
+
+    page_margin: int
+    width: PageWidthSpec
+    columns: int
+    source_actions_below: bool
+    show_subtitle: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -562,6 +583,18 @@ def workbench_page_surface_spec(
     )
 
 
+def attachments_page_spec(content_width: int) -> AttachmentsPageSpec:
+    width = max(0, content_width)
+    columns = 2 if width >= ATTACHMENTS_TWO_COLUMN_BREAKPOINT else 1
+    return AttachmentsPageSpec(
+        page_margin=responsive_page_margin(width),
+        width=progressive_page_width_spec(width),
+        columns=columns,
+        source_actions_below=width < LARGE_CONTENT_BREAKPOINT,
+        show_subtitle=width >= MEDIUM_CONTENT_BREAKPOINT,
+    )
+
+
 def settings_page_spec(content_width: int) -> PageSurfaceSpec:
     columns = 2 if max(0, content_width) >= SETTINGS_TWO_COLUMN_BREAKPOINT else 1
     return workbench_page_surface_spec(
@@ -574,30 +607,21 @@ def history_page_spec(content_width: int) -> PageSurfaceSpec:
     return workbench_page_surface_spec(content_width)
 
 
-def about_page_spec(
-    content_width: int,
-    *,
-    interface_scale: float = 1.0,
-) -> PageSurfaceSpec:
-    """Return About geometry while respecting the explicit XCC UI scale.
+def about_page_spec(content_width: int) -> AboutPageSpec:
+    """Return About on the same responsive workbench surface as other pages.
 
-    About intentionally keeps a narrower readability surface than the main
-    workbench. Because that surface has its own logical max-width, it must also
-    follow the user's explicit XCC scale override; otherwise the fixed 1320px
-    cap visually cancels part of Interface scale on this page. Windows/Qt DPI
-    is already represented by ``content_width`` and is not multiplied here.
+    About owns a distinct internal composition, but its outer left/right edges
+    follow the shared progressive page-width contract used by Settings and
+    History. Interface scale is already reflected by Qt's logical viewport, so
+    About must not apply a second page-specific width multiplier.
     """
 
-    if interface_scale <= 0:
-        raise ValueError("interface_scale must be greater than 0")
-
-    badge_columns = 4 if max(0, content_width) >= MEDIUM_CONTENT_BREAKPOINT else 2
-    scaled_max_width = max(
-        1,
-        round(ABOUT_USEFUL_PAGE_MAX_WIDTH * interface_scale),
-    )
-    return page_surface_spec(
-        content_width,
-        max_width=scaled_max_width,
-        columns=badge_columns,
+    width = max(0, content_width)
+    surface = workbench_page_surface_spec(width)
+    return AboutPageSpec(
+        page_margin=surface.page_margin,
+        width=surface.width,
+        columns=2 if width >= LARGE_CONTENT_BREAKPOINT else 1,
+        badge_columns=4 if width >= MEDIUM_CONTENT_BREAKPOINT else 2,
+        show_subtitle=width >= MEDIUM_CONTENT_BREAKPOINT,
     )

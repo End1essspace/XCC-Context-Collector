@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from pathlib import Path
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 
 from .cancellation import CollectionCancelled
 from .config import ALLOWED_EXTENSIONS, EXCLUDED_DIRS, is_allowed_context_file
-from .ignore import ProjectIgnoreMatcher
+from .ignore import ProjectIgnoreMatcher, walk_project_entries
 
 
 def scan_project_files(
@@ -36,16 +36,15 @@ def scan_project_files(
 
     files: list[Path] = []
 
-    for path in root_path.rglob("*"):
+    for path, relative_path, is_dir in walk_project_entries(
+        root_path,
+        excluded_dirs=excluded_dirs,
+    ):
         if cancel_check is not None and cancel_check():
             raise CollectionCancelled("Collection cancelled.")
-        if not path.is_file():
+        if is_dir:
             continue
 
-        if _is_inside_excluded_dir(path, root_path, excluded_dirs):
-            continue
-
-        relative_path = path.relative_to(root_path)
         if ignore_matcher.is_ignored(relative_path, is_dir=False):
             continue
 
@@ -57,21 +56,6 @@ def scan_project_files(
             progress_callback(len(files), 0)
 
     return sorted(files, key=_file_priority_key)
-
-
-def _is_inside_excluded_dir(
-    path: Path,
-    root: Path,
-    excluded_dirs: Iterable[str],
-) -> bool:
-    try:
-        relative_parts = path.relative_to(root).parts
-    except ValueError:
-        return False
-
-    excluded = set(excluded_dirs)
-
-    return any(part in excluded for part in relative_parts)
 
 
 def _file_priority_key(path: Path) -> tuple[int, str]:

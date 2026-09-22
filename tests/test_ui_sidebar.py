@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import os
@@ -27,6 +28,7 @@ def _sidebar() -> SidebarNavigation:
     return SidebarNavigation(
         items=(
             (resource_path("assets", "nav-collect.svg"), "Collect"),
+            (resource_path("assets", "nav-attachments.svg"), "Attachments"),
             (resource_path("assets", "nav-history.svg"), "History"),
             (resource_path("assets", "nav-settings.svg"), "Settings"),
             (resource_path("assets", "nav-about.svg"), "About"),
@@ -53,16 +55,17 @@ def test_sidebar_uses_four_real_buttons_without_item_views(
     sidebar = _sidebar()
 
     assert sidebar.objectName() == "Sidebar"
-    assert len(sidebar.buttons) == 4
+    assert len(sidebar.buttons) == 5
     assert all(isinstance(button, SidebarNavButton) for button in sidebar.buttons)
     assert [button.text() for button in sidebar.buttons] == [
         "Collect",
+        "Attachments",
         "History",
         "Settings",
         "About",
     ]
     assert all(button.height() == 50 for button in sidebar.buttons)
-    assert sidebar.button(2).text() == "Settings"
+    assert sidebar.button(3).text() == "Settings"
 
 
 def test_sidebar_selection_is_exclusive_and_emits_page_index(
@@ -72,29 +75,29 @@ def test_sidebar_selection_is_exclusive_and_emits_page_index(
     emitted: list[int] = []
     sidebar.currentRowChanged.connect(emitted.append)
 
-    sidebar.setCurrentRow(2)
+    sidebar.setCurrentRow(3)
 
-    assert sidebar.currentRow == 2
-    assert sidebar.button(2).property("selected") is True
+    assert sidebar.currentRow == 3
+    assert sidebar.button(3).property("selected") is True
     assert sum(button.isChecked() for button in sidebar.buttons) == 1
-    assert emitted[-1] == 2
+    assert emitted[-1] == 3
 
 
 def test_sidebar_arrow_navigation_includes_about(
     qapp: QApplication,
 ) -> None:
     sidebar = _sidebar()
-    sidebar.setCurrentRow(2)
+    sidebar.setCurrentRow(3)
 
     event = QKeyEvent(
         QKeyEvent.Type.KeyPress,
         Qt.Key.Key_Down,
         Qt.KeyboardModifier.NoModifier,
     )
-    sidebar.button(2).keyPressEvent(event)
+    sidebar.button(3).keyPressEvent(event)
 
-    assert sidebar.currentRow == 3
-    assert sidebar.button(3).text() == "About"
+    assert sidebar.currentRow == 4
+    assert sidebar.button(4).text() == "About"
 
 
 def test_sidebar_body_starts_with_navigation_without_duplicate_brand(
@@ -163,9 +166,9 @@ def test_sidebar_wheel_stops_at_first_and_last_page(
     QApplication.sendEvent(sidebar, _wheel_event(120))
     assert sidebar.currentRow == 0
 
-    sidebar.setCurrentRow(3)
+    sidebar.setCurrentRow(4)
     QApplication.sendEvent(sidebar.section_label, _wheel_event(-120))
-    assert sidebar.currentRow == 3
+    assert sidebar.currentRow == 4
 
 
 def test_sidebar_wheel_navigation_does_not_add_scroll_areas(

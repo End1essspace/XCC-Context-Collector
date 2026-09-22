@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -228,4 +229,32 @@ class CollectionRunRecord:
         if self.duration_seconds < 0.01:
             return "<0.01 s"
 
+        return f"{self.duration_seconds:.2f} s"
+
+
+@dataclass(frozen=True, slots=True)
+class AttachmentTransferRecord:
+    """Metadata-only in-memory history for attachment handoff operations."""
+
+    timestamp: str
+    transfer_type: str
+    outcome: str
+    file_count: int
+    total_bytes: int
+    duration_seconds: float = 0.0
+    warning_count: int = 0
+    bundle_name: str | None = None
+
+    @property
+    def health_label(self) -> str:
+        return {
+            "SUCCESS": "Completed",
+            "CANCELLED": "Cancelled",
+            "FAILED": "Failed",
+        }.get(self.outcome, self.outcome.title())
+
+    @property
+    def duration_label(self) -> str:
+        if self.duration_seconds < 0.01:
+            return "<0.01 s"
         return f"{self.duration_seconds:.2f} s"

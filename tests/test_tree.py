@@ -111,3 +111,17 @@ def test_directory_tree_reports_processed_entries(tmp_path: Path) -> None:
     )
 
     assert progress[-1] == (2, 0)
+
+def test_directory_tree_preserves_negated_ignore_descendant_semantics(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    cache = root / "cache"
+    cache.mkdir(parents=True)
+    (cache / "keep.py").write_text("KEEP = True\n", encoding="utf-8")
+    (cache / "drop.py").write_text("DROP = True\n", encoding="utf-8")
+    (root / ".gitignore").write_text("cache/\n!cache/keep.py\n", encoding="utf-8")
+
+    tree, file_count, _ = build_directory_tree(root)
+
+    assert "cache/keep.py" in tree
+    assert "cache/drop.py" not in tree
+    assert file_count == 2  # keep.py + .gitignore

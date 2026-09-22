@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 import gc
@@ -101,3 +102,10 @@ def _destroy_qt_top_level_widgets_after_test():
 
     # Release Python-side ownership cycles after Qt native destruction.
     gc.collect()
+
+@pytest.fixture(autouse=True)
+def _isolate_xcc_user_profile(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Keep config/history/bundle user-state writes inside each test sandbox."""
+
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setenv("USERPROFILE", str(tmp_path))

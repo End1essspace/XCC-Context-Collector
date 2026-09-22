@@ -34,6 +34,8 @@ gui.py
   -> xcc.gui
   -> xcc.pipeline / xcc.qt_worker
   -> scanner, Git, safety, formatter, and budget modules
+  -> attachment_importer / attachment_bundle / clipboard / native_input
+  -> history_store
 ```
 
 The supported application boundary is intentionally singular: `gui.py -> xcc.gui -> xcc.pipeline`. Removed compatibility launchers and Tkinter workflows must not be reintroduced without a new product-level decision.
@@ -41,9 +43,9 @@ The supported application boundary is intentionally singular: `gui.py -> xcc.gui
 Read before cross-cutting changes:
 
 - `docs/ARCHITECTURE.md`
-- `docs/UI_REFERENCE_v1.3.1.md`
-- `docs/M16_VALIDATION.md`
-- `docs/roadmap.md`
+- `docs/UI_REFERENCE_v1.4.0.md`
+- `docs/M17_VALIDATION.md`
+- `docs/XCC_ROADMAP_v1.4.0_UPDATED.md`
 - `docs/BUG_REPORTING.md`
 - `SECURITY.md`
 
@@ -72,7 +74,7 @@ powershell -ExecutionPolicy Bypass -File scripts\package_release.ps1
 For a complete release-candidate validation:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.1
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.4.0
 ```
 
 ## Change guidelines
@@ -97,13 +99,13 @@ Do not log or persist detected secret values. Safety output may contain only san
 
 Collection work belongs outside the Qt main thread. Clipboard access, dialogs, and widget mutation remain on the GUI thread. Cancellation must be cooperative and must not publish partial output.
 
-Responsive/UI changes must preserve the v1.3.1 UI contract.
+Responsive/UI changes must preserve the v1.4.0 UI contract.
 
 Sidebar changes must preserve the navigation contract:
 
 - real buttons rather than item-view rows;
 - exclusive selection;
-- Up/Down access to all four pages;
+- Up/Down access to all five pages;
 - wheel input across the complete sidebar surface;
 - no sidebar scrollbar or `QScrollArea`;
 - one page change per wheel event;
@@ -124,6 +126,10 @@ Keep terminology aligned across README, architecture, release notes, validation 
 - Collect & Copy
 - Last Run
 - Runtime History
+- Attachments
+- Copy Files
+- Send One-by-One
+- Create ZIP & Copy
 
 Update `docs/screenshots/xcc-collect.png` and `docs/screenshots/xcc-history.png` only when they represent the current release UI. Screenshots must not expose credentials, user-profile names, private repositories, client data, or proprietary content. A deliberate path to a public demonstration repository is acceptable.
 

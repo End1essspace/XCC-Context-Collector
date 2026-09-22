@@ -4,11 +4,11 @@ XCC is distributed as a Windows x64 portable ZIP. No installer or Python runtime
 
 ## Download
 
-Official v1.3.1 files:
+Official v1.4.0 files:
 
 ```text
-XCC-Context-Collector-v1.3.1-win64.zip
-XCC-Context-Collector-v1.3.1-win64.zip.sha256
+XCC-Context-Collector-v1.4.0-win64.zip
+XCC-Context-Collector-v1.4.0-win64.zip.sha256
 ```
 
 Download only from the official GitHub Release.
@@ -18,7 +18,7 @@ Download only from the official GitHub Release.
 Place both files together and run:
 
 ```powershell
-$Zip="XCC-Context-Collector-v1.3.1-win64.zip"; $Expected=((Get-Content "$Zip.sha256" -Raw).Trim() -split "\s+")[0]; $Actual=(Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant(); if ($Actual -ne $Expected.ToLowerInvariant()) { throw "Checksum mismatch" }; "Checksum verified: $Actual"
+$Zip="XCC-Context-Collector-v1.4.0-win64.zip"; $Expected=((Get-Content "$Zip.sha256" -Raw).Trim() -split "\s+")[0]; $Actual=(Get-FileHash $Zip -Algorithm SHA256).Hash.ToLowerInvariant(); if ($Actual -ne $Expected.ToLowerInvariant()) { throw "Checksum mismatch" }; "Checksum verified: $Actual"
 ```
 
 Do not use an archive with a mismatched checksum.
@@ -34,7 +34,7 @@ XCC Context Collector/
 └── _internal/
 ```
 
-Do not run the executable from inside the ZIP or move it away from `_internal` and `VERSION.txt`. `VERSION.txt` must contain `1.3.1`.
+Do not run the executable from inside the ZIP or move it away from `_internal` and `VERSION.txt`. `VERSION.txt` must contain `1.4.0`.
 
 ## Windows reputation warning
 
@@ -50,7 +50,19 @@ The app directory is portable; settings are user-local:
 
 This includes behavior settings and **Interface scale**. An explicit Interface scale is applied at process startup, so restart XCC after changing it.
 
-Runtime History is in-memory and clears when XCC exits.
+Runtime History persists separately from the portable application folder:
+
+```text
+%USERPROFILE%\.xcc\history.json
+```
+
+Attachment bundles created by **Create ZIP & Copy** are kept under:
+
+```text
+%USERPROFILE%\.xcc\attachment-bundles\
+```
+
+XCC cleans only its own stale `XCC-Attachments-*.zip` bundles under the documented retention policy.
 
 ## Update
 
@@ -66,7 +78,7 @@ Compatible saved settings are reused automatically.
 
 1. Quit XCC from the tray.
 2. Delete the extracted application folder.
-3. Optionally delete `%USERPROFILE%\.xcc`.
+3. Optionally delete `%USERPROFILE%\.xcc` to remove settings, persistent Runtime History, and XCC-managed attachment bundles.
 4. If Start with Windows was enabled, disable it first or remove the XCC shortcut from `shell:startup`.
 
 ## Troubleshooting

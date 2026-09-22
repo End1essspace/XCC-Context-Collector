@@ -117,6 +117,10 @@ ALLOWED_FILENAMES = {
     ".env.sample",
 }
 
+ALLOWED_FILENAMES_CASEFOLD = frozenset(
+    name.casefold() for name in ALLOWED_FILENAMES
+)
+
 ENCODINGS = (
     "utf-8",
     "utf-8-sig",
@@ -124,8 +128,10 @@ ENCODINGS = (
 )
 
 MAX_FILE_SIZE_BYTES = 512 * 1024
-MAX_OUTPUT_CHARS = 120_000
+MAX_OUTPUT_CHARS = 3_000_000
 DEFAULT_HOTKEY = "ctrl+alt+x"
+DEFAULT_COLLECT_HOTKEY = "ctrl+alt+c"
+DEFAULT_ATTACHMENT_HANDOFF_HOTKEY = "ctrl+alt+v"
 
 def is_allowed_context_file(
     path: str | Path,
@@ -136,12 +142,15 @@ def is_allowed_context_file(
     path = Path(path)
 
     extensions = allowed_extensions or ALLOWED_EXTENSIONS
-    filenames = allowed_filenames or ALLOWED_FILENAMES
-    filenames_lower = {name.lower() for name in filenames}
+    filenames_casefold = (
+        ALLOWED_FILENAMES_CASEFOLD
+        if allowed_filenames is None
+        else frozenset(name.casefold() for name in allowed_filenames)
+    )
 
     return (
         path.suffix.lower() in extensions
-        or path.name.lower() in filenames_lower
+        or path.name.casefold() in filenames_casefold
     )
 
 

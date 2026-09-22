@@ -68,6 +68,7 @@ try {
         --add-data "assets\xcc_tray.png;assets" `
         --add-data "assets\x-series.png;assets" `
         --add-data "assets\nav-collect.svg;assets" `
+        --add-data "assets\nav-attachments.svg;assets" `
         --add-data "assets\nav-history.svg;assets" `
         --add-data "assets\nav-settings.svg;assets" `
         --add-data "assets\nav-about.svg;assets" `
@@ -79,6 +80,14 @@ try {
         --add-data "assets\ui-health.svg;assets" `
         --add-data "assets\ui-paste-paths.svg;assets" `
         --add-data "assets\ui-collect-copy.svg;assets" `
+        --add-data "assets\ui-attachments-source.svg;assets" `
+        --add-data "assets\ui-attachments-selection.svg;assets" `
+        --add-data "assets\ui-attachments-transfer.svg;assets" `
+        --add-data "assets\ui-add-files.svg;assets" `
+        --add-data "assets\ui-remove.svg;assets" `
+        --add-data "assets\ui-clear.svg;assets" `
+        --add-data "assets\ui-copy-files.svg;assets" `
+        --add-data "assets\ui-create-zip.svg;assets" `
         --add-data "assets\window-minimize.svg;assets" `
         --add-data "assets\window-maximize.svg;assets" `
         --add-data "assets\window-restore.svg;assets" `

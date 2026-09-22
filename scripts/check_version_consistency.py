@@ -54,6 +54,16 @@ def validate_version_consistency(project_root: Path = PROJECT_ROOT) -> str:
             f"CHANGELOG.md is missing the current release section [{version}]."
         )
 
+    current_docs = (
+        project_root / "docs" / f"UI_REFERENCE_v{version}.md",
+        project_root / "docs" / "M17_VALIDATION.md",
+    )
+    for current_doc in current_docs:
+        if not current_doc.exists():
+            raise VersionConsistencyError(
+                f"Current release documentation is missing: {current_doc}"
+            )
+
     release_notes = project_root / "docs" / "releases" / f"v{version}.md"
     if not release_notes.exists():
         raise VersionConsistencyError(

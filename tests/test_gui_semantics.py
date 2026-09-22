@@ -9,6 +9,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -352,7 +353,8 @@ def test_interface_scale_setting_is_persistent_and_restart_gated(
 ) -> None:
     combo = window.interface_scale_combo
 
-    assert combo.currentData() == "auto"
+    # 110% is the intentional first-run product default.
+    assert combo.currentData() == "110"
     assert [
         combo.itemData(index)
         for index in range(combo.count())
@@ -412,3 +414,97 @@ def test_footer_series_wordmark_is_subtle_and_noninteractive(
     brand_index = window.status_bar_layout.indexOf(brand)
     assert status_index >= 0
     assert brand_index > status_index
+
+
+def test_settings_exposes_configurable_global_hotkeys(
+    qapp: QApplication,
+    window: XccMainWindow,
+) -> None:
+    assert window.restore_hotkey_enabled_checkbox.isChecked() is True
+    assert (
+        window.restore_hotkey_edit.keySequence().toString(
+            QKeySequence.SequenceFormat.PortableText
+        )
+        == "Ctrl+Alt+X"
+    )
+    assert window.collect_hotkey_enabled_checkbox.isChecked() is False
+    assert (
+        window.collect_hotkey_edit.keySequence().toString(
+            QKeySequence.SequenceFormat.PortableText
+        )
+        == "Ctrl+Alt+C"
+    )
+    assert window.restore_hotkey_apply_button.text() == "Apply"
+    assert window.restore_hotkey_reset_button.text() == "Reset"
+    assert window.collect_hotkey_apply_button.text() == "Apply"
+    assert window.collect_hotkey_reset_button.text() == "Reset"
+
+
+def test_collect_hotkey_apply_updates_runtime_and_persisted_state(
+    qapp: QApplication,
+    window: XccMainWindow,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    created: list[object] = []
+
+    class FakeHotkeyManager:
+        def __init__(self, callback, hotkey_id):
+            self.callback = callback
+            self.hotkey_id = hotkey_id
+            self.registered = False
+            self.registered_hotkey = None
+            created.append(self)
+
+        def register(self, hotkey: str) -> None:
+            self.registered = True
+            self.registered_hotkey = hotkey
+
+        def replace(self, hotkey: str) -> None:
+            self.registered = True
+            self.registered_hotkey = hotkey
+
+        def unregister(self) -> None:
+            self.registered = False
+            self.registered_hotkey = None
+
+    monkeypatch.setattr(gui_module, "NativeHotkeyManager", FakeHotkeyManager)
+
+    window.collect_hotkey_enabled_checkbox.setChecked(True)
+    window.collect_hotkey_edit.setKeySequence(QKeySequence("Ctrl+Shift+C"))
+    window._apply_hotkey_settings("collect")
+    qapp.processEvents()
+
+    assert window.app_settings.collect_hotkey_enabled is True
+    assert window.app_settings.collect_hotkey == "ctrl+shift+c"
+    assert window._collect_hotkey_available is True
+    assert window._collect_hotkey_status_message == "Ctrl+Shift+C"
+    assert created[-1].registered_hotkey == "ctrl+shift+c"
+
+
+def test_duplicate_enabled_hotkey_is_rejected_without_state_change(
+    qapp: QApplication,
+    window: XccMainWindow,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    warnings: list[str] = []
+    monkeypatch.setattr(
+        gui_module.QMessageBox,
+        "warning",
+        lambda _parent, _title, message: warnings.append(message),
+    )
+
+    window.app_settings.restore_hotkey_enabled = True
+    window.app_settings.restore_hotkey = "ctrl+alt+x"
+    window.app_settings.collect_hotkey_enabled = False
+    window.app_settings.collect_hotkey = "ctrl+alt+c"
+    window.collect_hotkey_enabled_checkbox.setChecked(True)
+    window.collect_hotkey_edit.setKeySequence(QKeySequence("Ctrl+Alt+X"))
+
+    window._apply_hotkey_settings("collect")
+    qapp.processEvents()
+
+    assert window.app_settings.collect_hotkey_enabled is False
+    assert window.app_settings.collect_hotkey == "ctrl+alt+c"
+    assert warnings
+    assert "cannot use the same shortcut" in warnings[-1]
+

@@ -11,6 +11,7 @@ from scripts.validate_release_evidence import (
     REQUIRED_GATES,
     V130_REQUIRED_GATES,
     V131_REQUIRED_GATES,
+    V140_REQUIRED_GATES,
     ReleaseEvidenceError,
     validate_release_evidence,
 )
@@ -178,6 +179,28 @@ def test_v131_evidence_requires_responsive_dpi_gates(
         )
 
 
+
+def test_v140_evidence_requires_attachment_and_history_gates(
+    tmp_path: Path,
+) -> None:
+    windows_10 = tmp_path / "windows-10-v140.json"
+    _write_evidence(
+        windows_10,
+        os_release="Windows 10",
+        archive_sha256="7" * 64,
+        version="1.4.0",
+        gate_names=BASE_REQUIRED_GATES + V130_REQUIRED_GATES + V131_REQUIRED_GATES,
+    )
+
+    with pytest.raises(
+        ReleaseEvidenceError,
+        match="attachments_selection_workflow",
+    ):
+        validate_release_evidence(
+            [windows_10],
+            expected_version="1.4.0",
+        )
+
 def test_v120_evidence_keeps_historical_base_gate_compatibility(
     tmp_path: Path,
 ) -> None:
@@ -206,17 +229,22 @@ def test_v120_evidence_keeps_historical_base_gate_compatibility(
     assert summary.version == "1.2.0"
 
 
-def test_versioned_gate_sets_cover_v130_and_v131_contracts() -> None:
+def test_versioned_gate_sets_cover_v130_v131_and_v140_contracts() -> None:
     assert set(V130_REQUIRED_GATES).issubset(REQUIRED_GATES)
     assert set(V131_REQUIRED_GATES).issubset(REQUIRED_GATES)
+    assert set(V140_REQUIRED_GATES).issubset(REQUIRED_GATES)
     assert "selected_files_review_transactionality" in V130_REQUIRED_GATES
     assert "responsive_qhd_scaling" in V131_REQUIRED_GATES
     assert "interface_scale_persistence_restart" in V131_REQUIRED_GATES
+    assert "attachment_handoff_focus_guard" in V140_REQUIRED_GATES
+    assert "runtime_history_metadata_only" in V140_REQUIRED_GATES
+    assert "qss_clean_startup" in V140_REQUIRED_GATES
     assert "safety_confirmation_setting" in REQUIRED_GATES
 
 
 def test_current_release_documents_pass_the_readiness_validator() -> None:
-    assert __version__ == "1.3.1"
+    # The readiness validator must follow the canonical application version
+    # instead of pinning this regression test to one historical release.
     validate_release_documents(PROJECT_ROOT, version=__version__)
 
 
@@ -233,6 +261,10 @@ def test_release_candidate_scripts_cover_automated_and_manual_gates() -> None:
         "check_version_consistency.py",
         "test_selected_files_workflow.py",
         "selected_files_regression",
+        "test_attachment_bundle.py",
+        "attachments_regression",
+        "test_history_store.py",
+        "persistent_history_regression",
         "responsive_regression",
         "test_responsive_regression_matrix.py",
         "pytest -q",

@@ -55,9 +55,30 @@ V131_REQUIRED_GATES = (
     "footer_x_series_brand",
 )
 
-# Current tooling uses the full v1.3.1 set while version-aware validation keeps
-# historical v1.2/v1.3.0 evidence readable.
-REQUIRED_GATES = BASE_REQUIRED_GATES + V130_REQUIRED_GATES + V131_REQUIRED_GATES
+V140_REQUIRED_GATES = (
+    "attachments_selection_workflow",
+    "attachment_copy_files_explorer",
+    "attachment_handoff_order",
+    "attachment_handoff_focus_guard",
+    "attachment_handoff_no_submit",
+    "attachment_zip_integrity",
+    "attachment_zip_cancellation",
+    "attachment_bundle_lifecycle",
+    "attachment_handoff_hotkey",
+    "runtime_history_persistence",
+    "runtime_history_export_clear",
+    "runtime_history_corruption_recovery",
+    "runtime_history_metadata_only",
+    "attachments_responsive",
+    "shared_page_surface_geometry",
+    "first_run_defaults",
+    "qss_clean_startup",
+)
+
+# Current tooling requires the full v1.4.0 contract while version-aware
+# validation keeps historical v1.2/v1.3.x evidence readable.
+V131_COMPLETE_GATES = BASE_REQUIRED_GATES + V130_REQUIRED_GATES + V131_REQUIRED_GATES
+REQUIRED_GATES = V131_COMPLETE_GATES + V140_REQUIRED_GATES
 
 _SHA256_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _VERSION_RE = re.compile(r"^(?P<major>\d+)\.(?P<minor>\d+)\.(?P<patch>\d+)$")
@@ -86,8 +107,10 @@ def required_gates_for_version(version: str) -> tuple[str, ...]:
         int(match.group(name))
         for name in ("major", "minor", "patch")
     )
-    if version_tuple >= (1, 3, 1):
+    if version_tuple >= (1, 4, 0):
         return REQUIRED_GATES
+    if version_tuple >= (1, 3, 1):
+        return V131_COMPLETE_GATES
     if version_tuple >= (1, 3, 0):
         return BASE_REQUIRED_GATES + V130_REQUIRED_GATES
 

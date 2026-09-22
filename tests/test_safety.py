@@ -149,3 +149,38 @@ def test_safety_confirmation_can_be_disabled_without_hiding_findings() -> None:
 
 def test_safety_confirmation_is_not_requested_without_findings() -> None:
     assert should_show_safety_confirmation([], enabled=True) is False
+
+
+def test_attachment_safety_scans_filenames_only(tmp_path: Path) -> None:
+    from xcc.safety import scan_attachment_paths_for_warnings
+
+    secret_name = tmp_path / ".env"
+    ordinary = tmp_path / "payload.bin"
+    secret_name.write_text("SUPER_SECRET=value-that-must-not-be-scanned", encoding="utf-8")
+    ordinary.write_bytes(b"AKIAABCDEFGHIJKLMNOP")
+
+    warnings = scan_attachment_paths_for_warnings([secret_name, ordinary])
+
+    assert len(warnings) == 1
+    assert warnings[0].category == "Sensitive filename"
+    assert warnings[0].path == ".env"
+
+def test_project_filename_scan_preserves_negated_ignore_descendant_semantics(
+    tmp_path: Path,
+) -> None:
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    keep = cache / "credentials.json"
+    drop = cache / "secrets.json"
+    keep.write_text("{}", encoding="utf-8")
+    drop.write_text("{}", encoding="utf-8")
+    (tmp_path / ".gitignore").write_text(
+        "cache/\n!cache/credentials.json\n",
+        encoding="utf-8",
+    )
+
+    warnings = scan_project_filename_warnings(tmp_path)
+    paths = {warning.path for warning in warnings}
+
+    assert "cache/credentials.json" in paths
+    assert "cache/secrets.json" not in paths

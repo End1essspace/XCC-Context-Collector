@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterable
 
 from .cancellation import CollectionCancelled
 from .config import EXCLUDED_DIRS
-from .ignore import ProjectIgnoreMatcher
+from .ignore import ProjectIgnoreMatcher, walk_project_entries
 
 
 def build_project_tree(paths: list[Path], root: str | Path | None = None) -> str:
@@ -53,37 +53,27 @@ def build_directory_tree(
 
     processed_entries = 0
 
-    for path in root_path.rglob("*"):
+    for path, relative, is_dir in walk_project_entries(
+        root_path,
+        excluded_dirs=excluded,
+    ):
         if cancel_check is not None and cancel_check():
             raise CollectionCancelled("Collection cancelled.")
 
-        if _is_inside_excluded_dir(path, root_path, excluded):
-            continue
-
-        try:
-            relative = path.relative_to(root_path)
-            relative_path = relative.as_posix()
-        except ValueError:
-            continue
-
-        is_dir = path.is_dir()
         if ignore_matcher.is_ignored(relative, is_dir=is_dir):
             continue
 
+        relative_path = relative.as_posix()
         if is_dir:
             entries.append(f"{relative_path}/")
             directory_count += 1
-            processed_entries += 1
-            if progress_callback is not None:
-                progress_callback(processed_entries, 0)
-            continue
-
-        if path.is_file():
+        else:
             entries.append(relative_path)
             file_count += 1
-            processed_entries += 1
-            if progress_callback is not None:
-                progress_callback(processed_entries, 0)
+
+        processed_entries += 1
+        if progress_callback is not None:
+            progress_callback(processed_entries, 0)
 
     lines = ["# Project Tree", ""]
 
@@ -103,18 +93,3 @@ def _make_display_path(path: Path, root: str | Path | None = None) -> str:
         return path.resolve().relative_to(root_path.resolve()).as_posix()
     except ValueError:
         return path.name
-
-
-def _is_inside_excluded_dir(
-    path: Path,
-    root: Path,
-    excluded_dirs: Iterable[str],
-) -> bool:
-    try:
-        relative_parts = path.relative_to(root).parts
-    except ValueError:
-        return False
-
-    excluded = set(excluded_dirs)
-
-    return any(part in excluded for part in relative_parts)

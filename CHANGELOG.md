@@ -6,6 +6,46 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-09-22
+
+### Added
+
+- Dedicated **Attachments** page for explicit original-file handoff, separate from text-context collection.
+- Original-file clipboard transfer through Qt/Windows file objects with ordered multi-file publication and final revalidation.
+- **Send One-by-One** automated Attachment Handoff for targets that accept one file per paste event, including foreground-window locking, focus-change fail-closed behavior, cancellation, progress, and optional global hotkey.
+- **Create ZIP & Copy** with ZIP64 support, streaming reads, safe archive-member mapping, deterministic collision handling, transactional finalization, and managed bundle retention.
+- Configurable global hotkeys with validation, conflict detection, rollback, persistence, and reset-to-default behavior.
+- Persistent/exportable metadata-only Runtime History (`xcc-runtime-history` schema v1), bounded to the newest 200 records, with corruption recovery and sanitized paths.
+- Productized About page, Attachments navigation/assets, and first-run defaults aligned with the v1.4.0 workflow.
+
+### Changed
+
+- Attachments, Settings, History, and About now share the same progressive page-surface width contract.
+- Runtime History is no longer process-memory-only; it persists at `%USERPROFILE%\.xcc\history.json`.
+- About now describes the current Collect + Attachments + History product boundary and exposes live runtime/config state.
+- First-run defaults use Selected Files, 3,000,000 max output chars, 110% interface scale, Windows startup/tray behavior, and conservative opt-in action hotkeys.
+- The Attachments table uses a single row-selection accent and a centered fixed-width Size column.
+
+### Fixed
+
+- Multi-file compatibility workflow no longer requires the manual `Copy Next → Alt-Tab → Ctrl+V` loop.
+- Attachment Handoff stops before input is sent when foreground focus changes.
+- About no longer uses a separate narrow 1320 px bounded surface.
+- QSS semantic token rendering now resolves longer tokens before shorter prefixes, preventing invalid colors such as `#D2A533_hover`.
+- Size values in the Attachments table align under the Size header instead of drifting to the row edge.
+
+### Security / privacy
+
+- Attachment transfer never rewrites, moves, or deletes original files.
+- Attachment Handoff never submits messages, presses Enter, automates provider DOM/API behavior, or persists target-window identity.
+- Persistent History stores metadata only and excludes collected source bodies, Git diff bodies, detected secret values, attachment contents, and raw failure bodies.
+- ZIP bundle member paths are sanitized and never embed absolute local source paths.
+
+### Validation
+
+- Added dedicated unit/regression coverage for attachment selection, clipboard publication, ZIP bundling, handoff sequencing/focus guards, persistent history, responsive Attachments/About surfaces, hotkeys, and QSS token rendering.
+- Final release publication remains gated on full pytest, packaged Windows validation, archive/checksum validation, and public-artifact verification.
+
 ## [1.3.1] - 2026-08-17
 
 ### Added
@@ -171,7 +211,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 - Initial Windows desktop release with Selected Files, Full Folder, and Git Changed Files workflows.
 
-[Unreleased]: https://github.com/End1essspace/xcc-context-collector/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/End1essspace/xcc-context-collector/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/End1essspace/xcc-context-collector/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/End1essspace/xcc-context-collector/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/End1essspace/xcc-context-collector/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/End1essspace/xcc-context-collector/compare/v1.1.2...v1.2.0

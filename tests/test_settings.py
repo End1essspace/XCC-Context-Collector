@@ -41,6 +41,31 @@ def test_load_settings_result_returns_defaults_when_file_missing(tmp_path: Path)
     assert settings == AppSettings()
 
 
+
+
+def test_first_run_defaults_match_product_profile(tmp_path: Path) -> None:
+    result = load_settings_result(tmp_path / "missing.json")
+    settings = result.settings
+
+    assert result.first_run is True
+    assert settings.default_mode == "files"
+    assert settings.max_chars == 3_000_000
+    assert settings.compact_mode is False
+    assert settings.start_with_windows is True
+    assert settings.start_minimized_to_tray is True
+    assert settings.close_to_tray is True
+    assert settings.start_maximized is True
+    assert settings.show_tray_notifications is False
+    assert settings.confirm_safety_warnings is False
+    assert settings.restore_hotkey_enabled is True
+    assert settings.restore_hotkey == "ctrl+alt+x"
+    assert settings.collect_hotkey_enabled is False
+    assert settings.collect_hotkey == "ctrl+alt+c"
+    assert settings.attachment_handoff_hotkey_enabled is False
+    assert settings.attachment_handoff_hotkey == "ctrl+alt+v"
+    assert settings.interface_scale == "110"
+
+
 def test_save_and_load_settings_result_roundtrip(tmp_path: Path) -> None:
     path = tmp_path / "config.json"
 
@@ -98,7 +123,7 @@ def test_validate_settings_accepts_project_tree_mode() -> None:
 def test_validate_settings_falls_back_on_invalid_mode() -> None:
     settings = validate_settings({"default_mode": "bad"})
 
-    assert settings.default_mode == "folder"
+    assert settings.default_mode == "files"
 
 
 def test_validate_settings_falls_back_on_invalid_max_chars() -> None:
@@ -110,7 +135,7 @@ def test_validate_settings_falls_back_on_invalid_max_chars() -> None:
 def test_validate_settings_falls_back_on_invalid_compact_mode() -> None:
     settings = validate_settings({"compact_mode": "yes"})
 
-    assert settings.compact_mode is True
+    assert settings.compact_mode is False
 
 
 def test_validate_settings_falls_back_on_invalid_last_source() -> None:
@@ -130,12 +155,12 @@ def test_validate_settings_falls_back_on_invalid_behavior_flags() -> None:
         }
     )
 
-    assert settings.start_with_windows is False
-    assert settings.start_minimized_to_tray is False
+    assert settings.start_with_windows is True
+    assert settings.start_minimized_to_tray is True
     assert settings.close_to_tray is True
     assert settings.start_maximized is True
-    assert settings.show_tray_notifications is True
-    assert settings.confirm_safety_warnings is True
+    assert settings.show_tray_notifications is False
+    assert settings.confirm_safety_warnings is False
 
 
 def test_validate_settings_accepts_disabled_safety_confirmation() -> None:
@@ -144,10 +169,10 @@ def test_validate_settings_accepts_disabled_safety_confirmation() -> None:
     assert settings.confirm_safety_warnings is False
 
 
-def test_safety_confirmation_defaults_to_enabled_for_older_configs() -> None:
+def test_safety_confirmation_defaults_to_disabled_for_older_configs() -> None:
     settings = validate_settings({"default_mode": "folder"})
 
-    assert settings.confirm_safety_warnings is True
+    assert settings.confirm_safety_warnings is False
 
 
 def test_validate_settings_accepts_interface_scale() -> None:
@@ -159,7 +184,7 @@ def test_validate_settings_accepts_interface_scale() -> None:
 def test_validate_settings_falls_back_on_invalid_interface_scale() -> None:
     settings = validate_settings({"interface_scale": "175"})
 
-    assert settings.interface_scale == "auto"
+    assert settings.interface_scale == "110"
 
 
 def test_interface_scale_maps_to_qt_global_factor() -> None:
@@ -188,3 +213,72 @@ def test_explicit_interface_scale_sets_qt_environment() -> None:
 
     assert factor == "1.25"
     assert environment["QT_SCALE_FACTOR"] == "1.25"
+
+
+def test_hotkey_settings_roundtrip(tmp_path: Path) -> None:
+    path = tmp_path / "config.json"
+    original = AppSettings(
+        restore_hotkey_enabled=False,
+        restore_hotkey="ctrl+shift+r",
+        collect_hotkey_enabled=True,
+        collect_hotkey="ctrl+alt+c",
+        attachment_handoff_hotkey_enabled=True,
+        attachment_handoff_hotkey="ctrl+shift+v",
+    )
+
+    save_settings(original, path)
+    loaded = load_settings_result(path).settings
+
+    assert loaded.restore_hotkey_enabled is False
+    assert loaded.restore_hotkey == "ctrl+shift+r"
+    assert loaded.collect_hotkey_enabled is True
+    assert loaded.collect_hotkey == "ctrl+alt+c"
+    assert loaded.attachment_handoff_hotkey_enabled is True
+    assert loaded.attachment_handoff_hotkey == "ctrl+shift+v"
+
+
+def test_invalid_hotkey_settings_fall_back_to_defaults() -> None:
+    settings = validate_settings(
+        {
+            "restore_hotkey": "ctrl+alt",
+            "collect_hotkey": "not-a-hotkey",
+            "attachment_handoff_hotkey": "ctrl+alt",
+        }
+    )
+
+    assert settings.restore_hotkey == "ctrl+alt+x"
+    assert settings.collect_hotkey == "ctrl+alt+c"
+    assert settings.attachment_handoff_hotkey == "ctrl+alt+v"
+
+
+def test_duplicate_enabled_hotkeys_disable_optional_collect_binding() -> None:
+    settings = validate_settings(
+        {
+            "restore_hotkey_enabled": True,
+            "restore_hotkey": "alt+ctrl+x",
+            "collect_hotkey_enabled": True,
+            "collect_hotkey": "ctrl+alt+x",
+        }
+    )
+
+    assert settings.restore_hotkey == "ctrl+alt+x"
+    assert settings.collect_hotkey == "ctrl+alt+x"
+    assert settings.restore_hotkey_enabled is True
+    assert settings.collect_hotkey_enabled is False
+
+
+def test_duplicate_enabled_handoff_hotkey_is_disabled() -> None:
+    settings = validate_settings(
+        {
+            "restore_hotkey_enabled": True,
+            "restore_hotkey": "ctrl+alt+x",
+            "collect_hotkey_enabled": True,
+            "collect_hotkey": "ctrl+alt+c",
+            "attachment_handoff_hotkey_enabled": True,
+            "attachment_handoff_hotkey": "alt+ctrl+c",
+        }
+    )
+
+    assert settings.collect_hotkey_enabled is True
+    assert settings.attachment_handoff_hotkey == "ctrl+alt+c"
+    assert settings.attachment_handoff_hotkey_enabled is False

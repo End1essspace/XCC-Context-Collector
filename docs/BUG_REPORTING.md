@@ -57,6 +57,14 @@ Include:
 
 State whether the tray icon exists, whether another process owns `Ctrl+Alt+X`, and whether an XCC process remains in Task Manager after the visible window closes.
 
+## Attachments / handoff defects
+
+Include the transfer type (`Copy Files`, `Send One-by-One`, or `Create ZIP & Copy`), selected file count, whether locations are mixed, and the exact visible XCC status. For Handoff issues, include whether focus changed during the sequence and whether the target accepted separate paste events. Do not attach the original private files merely to demonstrate the bug.
+
+## Runtime History defects
+
+State whether the problem survives restart and whether it affects display, Export JSON, Clear History, retention, or corruption recovery. Share only sanitized metadata; do not attach `%USERPROFILE%\.xcc\history.json` if it contains private paths or names.
+
 ## Build / release defects
 
 Include the exact failing command and final relevant error block.
@@ -74,7 +82,7 @@ python -m pytest -q
 ```
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.3.1
+powershell -ExecutionPolicy Bypass -File scripts\validate_release_candidate.ps1 -ExpectedVersion 1.4.0
 ```
 
 Quit every packaged/tray XCC instance before rebuilding.

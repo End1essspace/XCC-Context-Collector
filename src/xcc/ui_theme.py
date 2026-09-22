@@ -614,6 +614,17 @@ QCheckBox::indicator:checked {
     font-size: 9.75pt;
     background: transparent;
 }
+#HistoryCountLabel,
+#HistoryPrivacyLabel {
+    color: #8F8F8F;
+    font-size: 8.5pt;
+    background: transparent;
+}
+
+#HistoryCountLabel {
+    color: #B8B8B8;
+    font-weight: 700;
+}
 #HistoryScrollArea {
     background: transparent;
     border: none;
@@ -738,6 +749,69 @@ QScrollBar::sub-page:vertical {
     color: #F2F2F2;
 }
 
+#SettingsHotkeyControl {
+    background: transparent;
+}
+
+#SettingsHotkeyToggle {
+    background: transparent;
+    border: none;
+    color: #D6D6D6;
+    font-size: 8.25pt;
+    font-weight: 700;
+    spacing: 5px;
+}
+
+#SettingsHotkeyToggle:hover {
+    color: #D6A93A;
+}
+
+#SettingsHotkeyEdit {
+    background: #101113;
+    border: 1px solid #3B3E43;
+    border-radius: 8px;
+    color: #F2F2F2;
+    font-size: 8.75pt;
+    font-weight: 700;
+    padding: 0px 9px;
+    selection-background-color: #2A2412;
+    selection-color: #F2F2F2;
+}
+
+#SettingsHotkeyEdit:hover {
+    border: 1px solid #5A4820;
+}
+
+#SettingsHotkeyEdit:focus {
+    border: 1px solid #D6A93A;
+}
+
+#SettingsHotkeyButton {
+    background: #171717;
+    border: 1px solid #3A311C;
+    border-radius: 8px;
+    color: #D6D6D6;
+    font-size: 8.25pt;
+    font-weight: 700;
+    padding: 0px 9px;
+}
+
+#SettingsHotkeyButton:hover {
+    background: #1E1B12;
+    border: 1px solid #5A4820;
+    color: #F2F2F2;
+}
+
+#SettingsHotkeyButton:pressed {
+    background: #242016;
+    border: 1px solid #D6A93A;
+}
+
+#SettingsHotkeyButton:disabled {
+    color: #66686C;
+    border: 1px solid #2A2C30;
+}
+
 #SettingsGroup {
     background: #141414;
     border: 1px solid #2F2A1C;
@@ -779,10 +853,22 @@ QScrollBar::sub-page:vertical {
     background: transparent;
     min-width: 110px;
 }
-#AboutCard {
+#AboutHeroCard,
+#AboutCapabilityCard,
+#AboutPrivacyCard,
+#AboutRuntimeCard {
     background: #161616;
     border: 1px solid #302A1D;
     border-radius: 14px;
+}
+
+#AboutHeroCard {
+    border: 1px solid #3A321F;
+}
+
+#AboutWorkspace {
+    background: transparent;
+    border: none;
 }
 
 #AboutAppIcon {
@@ -791,7 +877,7 @@ QScrollBar::sub-page:vertical {
 
 #AboutTitle {
     color: #F2F2F2;
-    font-size: 16.5pt;
+    font-size: 17pt;
     font-weight: 800;
     background: transparent;
 }
@@ -807,6 +893,16 @@ QScrollBar::sub-page:vertical {
     color: #8F8F8F;
     font-size: 9pt;
     background: transparent;
+}
+
+#AboutVersionCapsule {
+    background: #191811;
+    border: 1px solid #57471F;
+    border-radius: 10px;
+    padding: 4px 12px;
+    color: #D2A533;
+    font-size: 8.25pt;
+    font-weight: 700;
 }
 
 #AboutDescription {
@@ -830,10 +926,34 @@ QScrollBar::sub-page:vertical {
     border: 1px solid #5A4820;
 }
 
-#AboutSectionTitle {
+#AboutCardTitleRow,
+#AboutCardTitleIcon {
+    background: transparent;
+}
+
+#AboutCardTitle {
     color: #D6A93A;
-    font-size: 9.75pt;
+    font-size: 10pt;
     font-weight: 800;
+    background: transparent;
+}
+
+#AboutDetailRow {
+    background: #181818;
+    border: 1px solid #2B2D31;
+    border-radius: 10px;
+}
+
+#AboutDetailTitle {
+    color: #F0F1F3;
+    font-size: 9pt;
+    font-weight: 700;
+    background: transparent;
+}
+
+#AboutDetailDescription {
+    color: #8F949C;
+    font-size: 8.25pt;
     background: transparent;
 }
 
@@ -852,17 +972,18 @@ QScrollBar::sub-page:vertical {
 
 #AboutInfoValue {
     color: #D6A93A;
-    font-size: 9pt;
+    font-size: 8.75pt;
     font-weight: 800;
     background: transparent;
 }
 
 #AboutFooter {
-    color: #8F8F8F;
-    font-size: 9pt;
+    color: #777D86;
+    font-size: 8.25pt;
     background: transparent;
-    padding-top: 4px;
+    padding-top: 2px;
 }
+
 #SourceInputBox {
     background: #101010;
     border: 1px solid #3B3E43;
@@ -1265,6 +1386,20 @@ _COLOR_REPLACEMENTS = {
 }
 
 
+def _render_qss_tokens(template: str, replacements: dict[str, str]) -> str:
+    """Render semantic QSS tokens without prefix-collision corruption.
+
+    Longer tokens must be replaced first because names such as ``@accent``
+    are prefixes of tokens such as ``@accent_hover`` and ``@accent_border``.
+    """
+
+    rendered = dedent(template)
+    for source in sorted(replacements, key=len, reverse=True):
+        rendered = rendered.replace(source, replacements[source])
+    return rendered.strip()
+
+
+
 def build_application_stylesheet() -> str:
     """Return the shared application stylesheet with semantic tokens applied."""
 
@@ -1284,7 +1419,235 @@ def build_application_stylesheet() -> str:
     )
 
     semantic_state_rules = _semantic_state_stylesheet()
-    return f"{stylesheet}\n\n{semantic_state_rules}\n"
+    attachment_rules = _attachment_stylesheet()
+    return f"{stylesheet}\n\n{semantic_state_rules}\n\n{attachment_rules}\n"
+
+
+
+def _attachment_stylesheet() -> str:
+    template = r"""
+    #AttachmentsPage,
+    #AttachmentsPageScroll,
+    #AttachmentsPageScroll > QWidget,
+    #AttachmentsPageScroll > QWidget > QWidget,
+    #AttachmentsWorkspace,
+    #AttachmentsSourceActions,
+    #AttachmentsSelectionHeader,
+    #AttachmentsTransferSummary,
+    #AttachmentsEmptyState {
+        background: transparent;
+        border: none;
+    }
+
+    #AttachmentsPageScroll QScrollBar:horizontal {
+        height: 0px;
+    }
+
+    #LocalFilesCapsule {
+        background: @input;
+        border: 1px solid @quiet_border;
+        border-radius: 10px;
+        padding: 4px 12px;
+        color: @secondary;
+        font-size: 8.25pt;
+        font-weight: 600;
+    }
+
+    #AttachmentsSourceCard,
+    #AttachmentsSelectionCard,
+    #AttachmentsTransferCard {
+        background: qlineargradient(
+            x1: 0, y1: 0, x2: 0, y2: 1,
+            stop: 0 #1B1D21,
+            stop: 0.42 #181A1E,
+            stop: 1 #15171A
+        );
+        border: 1px solid @card_border;
+        border-radius: 14px;
+    }
+
+    #AttachmentsFieldLabel,
+    #AttachmentsSummaryLabel {
+        color: @secondary;
+        font-size: 8.25pt;
+        font-weight: 700;
+        background: transparent;
+    }
+
+    #AttachmentsRootValue {
+        background: @input;
+        border: 1px solid @control_border;
+        border-radius: 10px;
+        padding: 8px 12px;
+        color: @primary;
+        font-size: 9pt;
+    }
+
+    #AttachmentsRootValue[scope="mixed"] {
+        color: @warning;
+        border: 1px solid @accent_border;
+    }
+
+    #AttachmentsRootValue[scope="empty"] {
+        color: @muted;
+    }
+
+    #AttachmentsPastePathsButton {
+        background: #171717;
+        border: 1px solid @accent_border;
+        border-radius: 10px;
+        color: @accent;
+        font-weight: 700;
+    }
+
+    #AttachmentsPastePathsButton:hover,
+    #AttachmentsPastePathsButton:focus {
+        background: #211E13;
+        border: 1px solid @accent;
+        color: @accent_hover;
+    }
+
+    #AttachmentsSecondaryButton,
+    #AttachmentsQuietButton {
+        background: @raised;
+        border: 1px solid @control_border;
+        border-radius: 10px;
+        color: @primary;
+    }
+
+    #AttachmentsSecondaryButton:hover,
+    #AttachmentsQuietButton:hover,
+    #AttachmentsSecondaryButton:focus,
+    #AttachmentsQuietButton:focus {
+        border: 1px solid @accent;
+        color: @accent;
+    }
+
+    #AttachmentsSecondaryButton:disabled,
+    #AttachmentsQuietButton:disabled {
+        background: @raised;
+        border: 1px solid @quiet_border;
+        color: @disabled;
+    }
+
+    #AttachmentsSelectionMeta {
+        color: @secondary;
+        font-size: 8.5pt;
+        font-weight: 700;
+        background: transparent;
+    }
+
+    #AttachmentsFileList {
+        background: @input;
+        alternate-background-color: @input;
+        border: 1px solid @metric_border;
+        border-radius: 10px;
+        color: @primary;
+        outline: 0px;
+        padding: 0px;
+    }
+
+    #AttachmentsFileList::item {
+        min-height: 43px;
+        border-bottom: 1px solid @metric_divider;
+        padding: 0px 8px;
+    }
+
+    #AttachmentsFileList::item:hover {
+        background: @hover;
+    }
+
+    #AttachmentsFileList::item:selected {
+        background: @selected;
+        color: @primary;
+    }
+
+    #AttachmentsFileList QHeaderView::section {
+        background: #121316;
+        color: @muted;
+        border: none;
+        border-bottom: 1px solid @metric_border;
+        padding: 8px 10px;
+        font-size: 7.5pt;
+        font-weight: 800;
+    }
+
+    #AttachmentsReadyLine,
+    #AttachmentsSuccessStrip {
+        background: transparent;
+        color: @success;
+        font-size: 8.25pt;
+        font-weight: 600;
+    }
+
+    #AttachmentsWarningSummary {
+        background: #201B12;
+        border: 1px solid @accent_border;
+        border-radius: 9px;
+        color: @warning;
+        padding: 8px 10px;
+        font-size: 8.25pt;
+    }
+
+    #AttachmentsTransferRow {
+        background: #181A1D;
+        border: 1px solid @metric_border;
+        border-radius: 9px;
+    }
+
+    #AttachmentsTransferKey {
+        color: @secondary;
+        background: transparent;
+        font-size: 8.25pt;
+    }
+
+    #AttachmentsTransferValue {
+        color: @primary;
+        background: transparent;
+        font-size: 9pt;
+        font-weight: 800;
+    }
+
+    #AttachmentsTransferValue[state="success"] {
+        color: @success;
+    }
+
+    #AttachmentsActionHelper,
+    #AttachmentsSourceHelper,
+    #AttachmentsEmptyHelper {
+        color: @muted;
+        background: transparent;
+        font-size: 8.25pt;
+    }
+
+    #AttachmentsEmptyTitle {
+        color: @primary;
+        background: transparent;
+        font-size: 10.5pt;
+        font-weight: 800;
+    }
+    """
+    replacements = {
+        "@input": PALETTE.input_surface,
+        "@quiet_border": PALETTE.quiet_border,
+        "@card_border": PALETTE.card_border,
+        "@secondary": PALETTE.secondary_text,
+        "@control_border": PALETTE.control_border,
+        "@primary": PALETTE.primary_text,
+        "@warning": PALETTE.warning,
+        "@accent_border": PALETTE.accent_border,
+        "@muted": PALETTE.muted_text,
+        "@accent": PALETTE.accent,
+        "@accent_hover": PALETTE.accent_hover,
+        "@raised": PALETTE.raised_surface,
+        "@disabled": PALETTE.disabled_text,
+        "@metric_border": PALETTE.metric_border,
+        "@metric_divider": PALETTE.metric_divider,
+        "@hover": PALETTE.hover_surface,
+        "@selected": PALETTE.selected_surface,
+        "@success": PALETTE.success,
+    }
+    return _render_qss_tokens(template, replacements)
 
 
 def build_tray_menu_stylesheet() -> str:

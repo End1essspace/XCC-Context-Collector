@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+import xcc.ignore as ignore_module
 from xcc.scanner import scan_project_files
 
 
@@ -129,3 +130,53 @@ def test_scanner_reports_discovered_file_count(tmp_path: Path) -> None:
     )
 
     assert progress[-1] == (2, 0)
+
+def test_builtin_excluded_directories_are_pruned_before_descent(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = tmp_path / "project"
+    src = root / "src"
+    build = root / "build"
+    node_modules = root / "node_modules"
+    src.mkdir(parents=True)
+    build.mkdir()
+    node_modules.mkdir()
+    main = src / "main.py"
+    main.write_text("VALUE = 1\n", encoding="utf-8")
+    (build / "ignored.py").write_text("IGNORED = 1\n", encoding="utf-8")
+    (node_modules / "ignored.py").write_text("IGNORED = 2\n", encoding="utf-8")
+
+    descended: list[str] = []
+
+    def fake_walk(root_arg, *, topdown: bool, followlinks: bool):
+        assert topdown is True
+        assert followlinks is False
+        dirs = ["src", "build", "node_modules"]
+        yield str(root_arg), dirs, []
+        descended.extend(dirs)
+        for name in list(dirs):
+            yield str(Path(root_arg) / name), [], ["main.py" if name == "src" else "ignored.py"]
+
+    monkeypatch.setattr(ignore_module.os, "walk", fake_walk)
+
+    files = scan_project_files(root)
+
+    assert descended == ["src"]
+    assert files == [main]
+
+
+def test_scanner_preserves_negated_ignore_descendant_semantics(tmp_path: Path) -> None:
+    root = tmp_path / "project"
+    cache = root / "cache"
+    cache.mkdir(parents=True)
+    keep = cache / "keep.py"
+    drop = cache / "drop.py"
+    keep.write_text("KEEP = True\n", encoding="utf-8")
+    drop.write_text("DROP = True\n", encoding="utf-8")
+    (root / ".gitignore").write_text("cache/\n!cache/keep.py\n", encoding="utf-8")
+
+    files = scan_project_files(root)
+
+    assert keep in files
+    assert drop not in files

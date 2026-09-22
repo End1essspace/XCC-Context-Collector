@@ -1,6 +1,6 @@
 ﻿param(
     [string]$PythonExecutable = "python",
-    [string]$ExpectedVersion = "1.3.1",
+    [string]$ExpectedVersion = "1.4.0",
     [string]$OutputDirectory = "artifacts",
     [switch]$SkipCleanInstall
 )
@@ -34,7 +34,16 @@ if ($LASTEXITCODE -ne 0) { throw "Version consistency failed." }
 & $PythonExecutable -m pytest -q tests\test_path_list_parser.py tests\test_selected_files_importer.py tests\test_selected_files_review.py tests\test_selected_files_workflow.py
 if ($LASTEXITCODE -ne 0) { throw "Selected Files regression tests failed." }
 
-& $PythonExecutable -m pytest -q tests\test_ui_responsive.py tests\test_responsive_regression_matrix.py tests\test_gui_responsive_regression.py tests\test_gui_geometry.py tests\test_ui_dialogs.py tests\test_ui_components.py
+& $PythonExecutable -m pytest -q tests\test_hotkeys.py tests\test_native_hotkey.py tests\test_settings.py tests\test_gui_semantics.py
+if ($LASTEXITCODE -ne 0) { throw "Global hotkey regression tests failed." }
+
+& $PythonExecutable -m pytest -q tests\test_attachment_importer.py tests\test_attachment_clipboard.py tests\test_attachment_bundle.py tests\test_native_input.py tests\test_ui_attachments.py
+if ($LASTEXITCODE -ne 0) { throw "Attachments/Handoff regression tests failed." }
+
+& $PythonExecutable -m pytest -q tests\test_history_store.py tests\test_models.py
+if ($LASTEXITCODE -ne 0) { throw "Persistent History regression tests failed." }
+
+& $PythonExecutable -m pytest -q tests\test_ui_responsive.py tests\test_responsive_regression_matrix.py tests\test_gui_responsive_regression.py tests\test_gui_geometry.py tests\test_ui_dialogs.py tests\test_ui_components.py tests\test_ui_theme.py
 if ($LASTEXITCODE -ne 0) { throw "Responsive/DPI regression tests failed." }
 
 & $PythonExecutable -m pytest -q
@@ -90,6 +99,9 @@ $Report = [ordered]@{
         compileall = $true
         version_consistency = $true
         selected_files_regression = $true
+        global_hotkey_regression = $true
+        attachments_regression = $true
+        persistent_history_regression = $true
         responsive_regression = $true
         pytest = $true
         clean_install = (-not $SkipCleanInstall)

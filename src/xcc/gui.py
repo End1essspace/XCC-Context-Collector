@@ -1,8 +1,10 @@
+
 from __future__ import annotations
 
 import sys
 import tempfile
 from datetime import datetime
+from time import perf_counter
 from PySide6.QtCore import (
     QEvent,
     QObject,
@@ -14,6 +16,7 @@ from PySide6.QtCore import (
     QThread,
     Qt,
     QTimer,
+    QUrl,
     Signal,
 )
 from PySide6.QtNetwork import QLocalServer, QLocalSocket
@@ -30,6 +33,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QKeySequenceEdit,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
@@ -43,12 +47,18 @@ from PySide6.QtWidgets import (
     QWidget,
     QGridLayout,
     QScrollArea,
+    QStyledItemDelegate,
+    QStyle,
     QToolButton,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QHeaderView,
 )
 from PySide6.QtGui import (
     QAction,
     QCursor,
     QColor,
+    QDesktopServices,
     QIcon,
     QIntValidator,
     QKeySequence,
@@ -60,9 +70,15 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QSystemTrayIcon, QMenu
 from . import __version__
-from .config import DEFAULT_HOTKEY, MAX_OUTPUT_CHARS, qt_context_file_filter
+from .config import (
+    DEFAULT_ATTACHMENT_HANDOFF_HOTKEY,
+    DEFAULT_COLLECT_HOTKEY,
+    DEFAULT_HOTKEY,
+    MAX_OUTPUT_CHARS,
+    qt_context_file_filter,
+)
 from pathlib import Path
-from .clipboard import copy_to_clipboard
+from .clipboard import copy_files_to_clipboard, copy_to_clipboard
 from .git_utils import is_git_repository
 from .settings import (
     AppSettings,
@@ -73,12 +89,41 @@ from .settings import (
     save_settings,
 )
 from .autostart import is_autostart_enabled, set_autostart_enabled
-from .native_hotkey import NativeHotkeyError, NativeHotkeyManager
-from .models import CollectionOutcome, CollectionRunRecord, SafetyWarning
+from .hotkeys import HotkeyValidationError, normalize_hotkey
+from .history_store import (
+    HISTORY_MAX_RECORDS,
+    export_history_json,
+    history_timestamp_for_display,
+    load_history,
+    sanitize_history_record,
+    save_history,
+)
+from .native_hotkey import (
+    HOTKEY_ID_ATTACHMENT_HANDOFF,
+    HOTKEY_ID_COLLECT_COPY,
+    HOTKEY_ID_RESTORE_WINDOW,
+    NativeHotkeyError,
+    NativeHotkeyManager,
+)
+from .native_input import (
+    NativeInputError,
+    get_foreground_window,
+    is_foreground_window,
+    send_ctrl_v_to_foreground,
+    window_belongs_to_current_process,
+)
+from .models import (
+    AttachmentTransferRecord,
+    CollectionOutcome,
+    CollectionRunRecord,
+    SafetyWarning,
+)
 from .pipeline import CollectionJobResult, CollectionRequest
-from .qt_worker import CollectionWorker
+from .qt_worker import AttachmentBundleWorker, CollectionWorker
 from .safety import (
+    build_attachment_warning_confirmation_text,
     build_warning_confirmation_text,
+    scan_attachment_paths_for_warnings,
     should_show_safety_confirmation,
 )
 from .resources import resource_path
@@ -139,6 +184,7 @@ from .ui_responsive import (
     PageSurfaceSpec,
     PageWidthSpec,
     about_page_spec,
+    attachments_page_spec,
     collect_content_min_height,
     collect_geometry_spec,
     collect_layout_spec,
@@ -158,6 +204,26 @@ from .selected_files_review import (
     remove_selected_file_indices,
     review_project_root,
 )
+from .attachment_bundle import (
+    AttachmentBundleResult,
+    BUNDLE_RETENTION_DAYS,
+    attachment_bundle_directory,
+    cleanup_stale_bundles,
+)
+from .attachment_importer import (
+    AttachmentFile,
+    AttachmentImportResult,
+    AttachmentSelection,
+    build_attachment_selection,
+    import_attachment_files,
+    import_attachments,
+)
+from .ui_attachments import (
+    ATTACHMENTS_PAGE_SUBTITLE,
+    ATTACHMENTS_PAGE_TITLE,
+    attachment_display_path,
+    format_attachment_size,
+)
 
 APP_ICON_PATH = resource_path("assets", "xcc_app.ico")
 APP_IMAGE_PATH = resource_path("assets", "xcc_app.png")
@@ -165,6 +231,7 @@ TRAY_ICON_PATH = resource_path("assets", "xcc_tray.ico")
 TRAY_IMAGE_PATH = resource_path("assets", "xcc_tray.png")
 X_SERIES_WORDMARK_PATH = resource_path("assets", "x-series.png")
 NAV_COLLECT_ICON_PATH = resource_path("assets", "nav-collect.svg")
+NAV_ATTACHMENTS_ICON_PATH = resource_path("assets", "nav-attachments.svg")
 NAV_HISTORY_ICON_PATH = resource_path("assets", "nav-history.svg")
 NAV_SETTINGS_ICON_PATH = resource_path("assets", "nav-settings.svg")
 NAV_ABOUT_ICON_PATH = resource_path("assets", "nav-about.svg")
@@ -176,6 +243,14 @@ UI_COVERAGE_ICON_PATH = resource_path("assets", "ui-coverage.svg")
 UI_HEALTH_ICON_PATH = resource_path("assets", "ui-health.svg")
 UI_PASTE_PATHS_ICON_PATH = resource_path("assets", "ui-paste-paths.svg")
 UI_COLLECT_COPY_ICON_PATH = resource_path("assets", "ui-collect-copy.svg")
+UI_ATTACHMENTS_SOURCE_ICON_PATH = resource_path("assets", "ui-attachments-source.svg")
+UI_ATTACHMENTS_SELECTION_ICON_PATH = resource_path("assets", "ui-attachments-selection.svg")
+UI_ATTACHMENTS_TRANSFER_ICON_PATH = resource_path("assets", "ui-attachments-transfer.svg")
+UI_ADD_FILES_ICON_PATH = resource_path("assets", "ui-add-files.svg")
+UI_REMOVE_ICON_PATH = resource_path("assets", "ui-remove.svg")
+UI_CLEAR_ICON_PATH = resource_path("assets", "ui-clear.svg")
+UI_COPY_FILES_ICON_PATH = resource_path("assets", "ui-copy-files.svg")
+UI_CREATE_ZIP_ICON_PATH = resource_path("assets", "ui-create-zip.svg")
 WINDOW_MINIMIZE_ICON_PATH = resource_path("assets", "window-minimize.svg")
 WINDOW_MAXIMIZE_ICON_PATH = resource_path("assets", "window-maximize.svg")
 WINDOW_RESTORE_ICON_PATH = resource_path("assets", "window-restore.svg")
@@ -202,6 +277,13 @@ FOOTER_SERIES_WORDMARK_OPACITY = 0.28
 PASTE_PATHS_DIALOG_PREFERRED_SIZE = QSize(820, 590)
 SELECTED_FILES_DIALOG_PREFERRED_SIZE = QSize(860, 610)
 RESPONSIVE_DIALOG_MINIMUM_SIZE = QSize(640, 420)
+
+ATTACHMENT_HANDOFF_COUNTDOWN_SECONDS = 3
+ATTACHMENT_HANDOFF_HOTKEY_RELEASE_MS = 250
+ATTACHMENT_HANDOFF_CLIPBOARD_SETTLE_MS = 120
+ATTACHMENT_HANDOFF_PASTE_INTERVAL_MS = 900
+ATTACHMENT_SIZE_COLUMN_WIDTH = 104
+ATTACHMENT_SELECTION_INDICATOR_WIDTH = 3
 
 
 def _dialog_work_area_size(dialog: QDialog) -> QSize:
@@ -1182,6 +1264,32 @@ class PastePathsDialog(QDialog):
         self.accept()
 
 
+class AttachmentSelectionDelegate(QStyledItemDelegate):
+    """Paint one selection accent at the left edge of an attachment row.
+
+    QTreeWidget styles each selected cell independently, so a stylesheet
+    ``border-left`` repeats at every column boundary. Keep the shared selected
+    background in QSS and paint the accent only for column zero.
+    """
+
+    def paint(self, painter, option, index) -> None:
+        super().paint(painter, option, index)
+        if index.column() != 0:
+            return
+        if not (option.state & QStyle.StateFlag.State_Selected):
+            return
+
+        painter.save()
+        indicator = QRect(
+            option.rect.left(),
+            option.rect.top(),
+            ATTACHMENT_SELECTION_INDICATOR_WIDTH,
+            option.rect.height(),
+        )
+        painter.fillRect(indicator, QColor(PALETTE.accent))
+        painter.restore()
+
+
 class XccMainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
@@ -1195,17 +1303,52 @@ class XccMainWindow(QMainWindow):
 
         self.selected_paths: list[Path] = []
         self.project_root: Path | None = None
+        self.attachment_files: list[AttachmentFile] = []
+        self.attachment_project_root: Path | None = None
+        self._attachment_last_action = "No transfer yet"
+        self._attachment_issue_summary = ""
+        self._attachment_bundle_thread: QThread | None = None
+        self._attachment_bundle_worker: AttachmentBundleWorker | None = None
+        self._attachment_bundle_active = False
+        self._attachment_bundle_started_at = 0.0
+        self._attachment_bundle_last_path: Path | None = None
+        self._attachment_sequential_active = False
+        self._attachment_sequential_paths: tuple[Path, ...] = ()
+        self._attachment_sequential_next_index = 0
+        self._attachment_sequential_started_at = 0.0
+        self._attachment_sequential_target_hwnd = 0
+        self._attachment_sequential_countdown = 0
+        self._attachment_sequential_generation = 0
+        self._attachment_sequential_phase = "idle"
+        self._close_after_attachment_bundle = False
+        self._quit_after_attachment_bundle = False
         self._recent_project_root: Path | None = None
-        self.history_entries: list[CollectionRunRecord] = []
+        history_result = load_history()
+        self.history_entries: list[CollectionRunRecord | AttachmentTransferRecord] = list(
+            history_result.records
+        )
+        self._history_recovery_message = history_result.message
+        if history_result.recovered_from_error:
+            try:
+                save_history(self.history_entries)
+            except OSError:
+                pass
         settings_result = load_settings_result()
         self.app_settings: AppSettings = settings_result.settings
         self._settings_recovery_message = settings_result.message
+        self._settings_first_run = settings_result.first_run
         self._is_loading_settings = True
         self._is_quitting = False
         self._has_shown_tray_hint = False
         self._hotkey_manager: NativeHotkeyManager | None = None
+        self._collect_hotkey_manager: NativeHotkeyManager | None = None
+        self._attachment_handoff_hotkey_manager: NativeHotkeyManager | None = None
         self._hotkey_available = False
+        self._collect_hotkey_available = False
+        self._attachment_handoff_hotkey_available = False
         self._hotkey_status_message = "Not registered"
+        self._collect_hotkey_status_message = "Disabled"
+        self._attachment_handoff_hotkey_status_message = "Disabled"
         self._collection_thread: QThread | None = None
         self._collection_worker: CollectionWorker | None = None
         self._active_collection_request: CollectionRequest | None = None
@@ -1220,7 +1363,10 @@ class XccMainWindow(QMainWindow):
         self._settings_page_spec: PageSurfaceSpec | None = None
         self._history_page_spec: PageSurfaceSpec | None = None
         self._about_page_spec: PageSurfaceSpec | None = None
+        self._attachments_page_spec = None
+        self._attachments_columns: int | None = None
         self._settings_columns: int | None = None
+        self._about_columns: int | None = None
         self._about_badge_columns: int | None = None
         self._effective_setup_height = 0
         self._effective_stats_min_height = 0
@@ -1233,6 +1379,7 @@ class XccMainWindow(QMainWindow):
         )
 
         self._setup_ui()
+        self._cleanup_attachment_bundle_cache()
         self._fitts_close = FittsCloseController(
             window=self,
             title_bar=self.window_title_bar,
@@ -1244,6 +1391,8 @@ class XccMainWindow(QMainWindow):
         self._apply_loaded_settings()
         if settings_result.recovered_from_error:
             self._set_event_status(self._settings_recovery_message)
+        if history_result.recovered_from_error:
+            self._set_event_status(self._history_recovery_message)
         self._is_loading_settings = False
         self._apply_theme()
         self._setup_tray()
@@ -1289,11 +1438,13 @@ class XccMainWindow(QMainWindow):
         self.pages.setObjectName("PageStack")
 
         self.collect_page = self._build_collect_page()
+        self.attachments_page = self._build_attachments_page()
         self.history_page = self._build_history_page()
         self.settings_page = self._build_settings_page()
         self.about_page = self._build_about_page()
 
         self.pages.addWidget(self.collect_page)
+        self.pages.addWidget(self.attachments_page)
         self.pages.addWidget(self.history_page)
         self.pages.addWidget(self.settings_page)
         self.pages.addWidget(self.about_page)
@@ -1412,6 +1563,20 @@ class XccMainWindow(QMainWindow):
         self.interface_scale_combo.currentIndexChanged.connect(self._on_interface_scale_changed)
         self.paste_paths_button.clicked.connect(self._paste_paths_from_clipboard)
         self.source_input.clicked.connect(self._open_selected_files_review)
+        self.attachments_change_root_button.clicked.connect(self._choose_attachment_root)
+        self.attachments_add_files_button.clicked.connect(self._add_attachment_files)
+        self.attachments_paste_paths_button.clicked.connect(self._paste_attachment_paths_from_clipboard)
+        self.attachments_remove_button.clicked.connect(self._remove_selected_attachments)
+        self.attachments_clear_button.clicked.connect(self._clear_attachments)
+        self.attachments_copy_files_button.clicked.connect(self._copy_attachment_files)
+        self.attachments_sequential_button.clicked.connect(
+            self._on_attachment_sequential_button_clicked
+        )
+        self.attachments_sequential_cancel_button.clicked.connect(
+            lambda _checked=False: self._cancel_attachment_sequential()
+        )
+        self.attachments_zip_button.clicked.connect(self._on_attachment_zip_button_clicked)
+        self.attachments_file_list.itemSelectionChanged.connect(self._refresh_attachment_action_states)
 
         self.paste_paths_shortcut = QShortcut(
             QKeySequence(QKeySequence.StandardKey.Paste),
@@ -1937,20 +2102,91 @@ class XccMainWindow(QMainWindow):
     def _setup_global_hotkey(self) -> None:
         self._cleanup_global_hotkey()
 
-        manager = NativeHotkeyManager(self._restore_from_hotkey)
+        errors: list[str] = []
 
-        try:
-            manager.register(DEFAULT_HOTKEY)
-        except NativeHotkeyError as exc:
-            self._hotkey_manager = None
+        if self.app_settings.restore_hotkey_enabled:
+            manager = NativeHotkeyManager(
+                self._restore_from_hotkey,
+                hotkey_id=HOTKEY_ID_RESTORE_WINDOW,
+            )
+            try:
+                manager.register(self.app_settings.restore_hotkey)
+            except NativeHotkeyError as exc:
+                self._hotkey_manager = None
+                self._hotkey_available = False
+                self._hotkey_status_message = f"Unavailable: {exc}"
+                errors.append(f"Restore / Show XCC: {exc}")
+            else:
+                self._hotkey_manager = manager
+                self._hotkey_available = True
+                self._hotkey_status_message = format_hotkey_for_display(
+                    self.app_settings.restore_hotkey
+                )
+        else:
             self._hotkey_available = False
-            self._hotkey_status_message = f"Unavailable: {exc}"
+            self._hotkey_status_message = "Disabled"
+
+        if self.app_settings.collect_hotkey_enabled:
+            manager = NativeHotkeyManager(
+                self._collect_from_hotkey,
+                hotkey_id=HOTKEY_ID_COLLECT_COPY,
+            )
+            try:
+                manager.register(self.app_settings.collect_hotkey)
+            except NativeHotkeyError as exc:
+                self._collect_hotkey_manager = None
+                self._collect_hotkey_available = False
+                self._collect_hotkey_status_message = f"Unavailable: {exc}"
+                errors.append(f"Collect & Copy: {exc}")
+            else:
+                self._collect_hotkey_manager = manager
+                self._collect_hotkey_available = True
+                self._collect_hotkey_status_message = format_hotkey_for_display(
+                    self.app_settings.collect_hotkey
+                )
+        else:
+            self._collect_hotkey_available = False
+            self._collect_hotkey_status_message = "Disabled"
+
+        if self.app_settings.attachment_handoff_hotkey_enabled:
+            manager = NativeHotkeyManager(
+                self._attachment_handoff_from_hotkey,
+                hotkey_id=HOTKEY_ID_ATTACHMENT_HANDOFF,
+            )
+            try:
+                manager.register(self.app_settings.attachment_handoff_hotkey)
+            except NativeHotkeyError as exc:
+                self._attachment_handoff_hotkey_manager = None
+                self._attachment_handoff_hotkey_available = False
+                self._attachment_handoff_hotkey_status_message = f"Unavailable: {exc}"
+                errors.append(f"Attachment Handoff: {exc}")
+            else:
+                self._attachment_handoff_hotkey_manager = manager
+                self._attachment_handoff_hotkey_available = True
+                self._attachment_handoff_hotkey_status_message = (
+                    format_hotkey_for_display(
+                        self.app_settings.attachment_handoff_hotkey
+                    )
+                )
+        else:
+            self._attachment_handoff_hotkey_available = False
+            self._attachment_handoff_hotkey_status_message = "Disabled"
+
+        if self._hotkey_available:
+            self.hotkey_capsule.setText(
+                f"Hotkey: {format_hotkey_for_display(self.app_settings.restore_hotkey)}"
+            )
+            self.hotkey_capsule.set_state(None)
+        elif self.app_settings.restore_hotkey_enabled:
             self.hotkey_capsule.setText("Hotkey unavailable")
             self.hotkey_capsule.set_state("warning")
-            self._set_runtime_state(RuntimeState.WARNINGS)
-            self._set_event_status(f"Hotkey unavailable: {exc}")
-            self._refresh_settings_page()
+        else:
+            self.hotkey_capsule.setText("Hotkey disabled")
+            self.hotkey_capsule.set_state("neutral")
 
+        if errors:
+            self._set_runtime_state(RuntimeState.WARNINGS)
+            self._set_event_status("Global hotkey unavailable · " + " · ".join(errors))
             if (
                 hasattr(self, "tray_icon")
                 and self.tray_icon.isVisible()
@@ -1958,20 +2194,64 @@ class XccMainWindow(QMainWindow):
             ):
                 self.tray_icon.showMessage(
                     "XCC hotkey unavailable",
-                    str(exc),
+                    "\n".join(errors),
                     QSystemTrayIcon.MessageIcon.Warning,
                     3500,
                 )
+        else:
+            self._set_runtime_state(RuntimeState.READY)
+            self._restore_default_footer_status()
+
+        self._refresh_settings_page()
+
+    def _collect_from_hotkey(self) -> None:
+        if (
+            self._collection_active
+            or self._attachment_bundle_active
+            or self._attachment_sequential_active
+        ):
+            self._set_transient_event_status(
+                "Collect & Copy hotkey ignored · XCC is busy."
+            )
             return
 
-        self._hotkey_manager = manager
-        self._hotkey_available = True
-        self._hotkey_status_message = DISPLAY_HOTKEY
-        self.hotkey_capsule.setText(f"Hotkey: {DISPLAY_HOTKEY}")
-        self.hotkey_capsule.set_state(None)
-        self._set_runtime_state(RuntimeState.READY)
-        self._restore_default_footer_status()
-        self._refresh_settings_page()
+        self._start_collection()
+
+    def _attachment_handoff_from_hotkey(self) -> None:
+        if self._attachment_sequential_active:
+            self._cancel_attachment_sequential()
+            return
+
+        if self._collection_active or self._attachment_bundle_active:
+            self._set_transient_event_status(
+                "Attachment Handoff hotkey ignored · XCC is busy."
+            )
+            return
+        if not self.attachment_files:
+            self._set_transient_event_status(
+                "Attachment Handoff hotkey ignored · no attachment files selected."
+            )
+            return
+
+        try:
+            target_hwnd = get_foreground_window()
+            target_is_xcc = window_belongs_to_current_process(target_hwnd)
+        except NativeInputError as exc:
+            self._attachment_issue_summary = str(exc)
+            self._refresh_attachments_page()
+            self._set_transient_event_status("Attachment Handoff could not start.")
+            return
+
+        if not target_hwnd or target_is_xcc:
+            self._set_transient_event_status(
+                "Focus the target app before using Attachment Handoff."
+            )
+            return
+
+        self._start_attachment_sequential(
+            target_hwnd=target_hwnd,
+            hotkey_start=True,
+        )
 
     def _minimize_window(self) -> None:
         self._restore_maximized_on_show = (
@@ -2041,6 +2321,7 @@ class XccMainWindow(QMainWindow):
             return
 
         self._save_current_settings()
+        self._refresh_about_page()
         self._set_event_status("Settings saved.")
 
 
@@ -2107,6 +2388,14 @@ class XccMainWindow(QMainWindow):
             self._recent_project_root = self.project_root
             self._set_status("Loaded saved settings.")
 
+        if self._settings_first_run and self.app_settings.start_with_windows:
+            try:
+                set_autostart_enabled(True)
+            except Exception as exc:
+                self._settings_recovery_message = (
+                    f"Could not enable Start with Windows on first run: {exc}"
+                )
+
         try:
             real_autostart_state = is_autostart_enabled()
         except Exception:
@@ -2118,7 +2407,21 @@ class XccMainWindow(QMainWindow):
             self.start_with_windows_checkbox.setChecked(real_autostart_state)
 
         self._refresh_source_controls()
+        self._refresh_about_page()
         self._restore_default_footer_status()
+
+        # Persist the product defaults once on a clean profile. This makes the
+        # first-run configuration explicit while preserving all existing user
+        # settings on upgrades. Start minimized applies from the next launch,
+        # so the first-ever run still remains visible for onboarding.
+        if self._settings_first_run:
+            try:
+                self._save_current_settings()
+            except OSError as exc:
+                self._settings_recovery_message = (
+                    f"Could not save first-run defaults: {exc}"
+                )
+            self._settings_first_run = False
 
     def _save_current_settings(self) -> None:
         settings = AppSettings(
@@ -2132,6 +2435,14 @@ class XccMainWindow(QMainWindow):
             start_maximized=self.start_maximized_checkbox.isChecked(),
             show_tray_notifications=self.tray_notifications_checkbox.isChecked(),
             confirm_safety_warnings=self.safety_confirmation_checkbox.isChecked(),
+            restore_hotkey_enabled=self.app_settings.restore_hotkey_enabled,
+            restore_hotkey=self.app_settings.restore_hotkey,
+            collect_hotkey_enabled=self.app_settings.collect_hotkey_enabled,
+            collect_hotkey=self.app_settings.collect_hotkey,
+            attachment_handoff_hotkey_enabled=(
+                self.app_settings.attachment_handoff_hotkey_enabled
+            ),
+            attachment_handoff_hotkey=self.app_settings.attachment_handoff_hotkey,
             interface_scale=self._current_interface_scale(),
         )
 
@@ -2178,6 +2489,1510 @@ class XccMainWindow(QMainWindow):
 
         return ""
 
+    def _build_attachments_page(self) -> QWidget:
+        scroll = QScrollArea()
+        scroll.setObjectName("AttachmentsPageScroll")
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
+        page = QWidget()
+        page.setObjectName("AttachmentsPage")
+        page.setMinimumWidth(0)
+        page.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        layout = self._page_layout(page)
+        self.attachments_page_scroll = scroll
+        self.attachments_page_viewport = scroll.viewport()
+        self.attachments_page_content = page
+        self.attachments_page_layout = layout
+        self.attachments_page_viewport.installEventFilter(self)
+
+        self.attachments_header_status = make_runtime_status_capsule("Ready")
+        self.attachments_header_status.set_state(RuntimeState.READY.semantic_state)
+        self.attachments_header_status.setAccessibleName("Attachment runtime status")
+
+        self.attachments_local_capsule = make_status_capsule(
+            "Local files only",
+            object_name="LocalFilesCapsule",
+        )
+        self.attachments_local_capsule.setAccessibleName("Local files only")
+
+        self.attachments_page_header: PageHeader = make_page_header(
+            ATTACHMENTS_PAGE_TITLE,
+            ATTACHMENTS_PAGE_SUBTITLE,
+        )
+        self.attachments_page_header.add_action(self.attachments_header_status)
+        self.attachments_page_header.add_action(self.attachments_local_capsule)
+        layout.addWidget(self.attachments_page_header)
+
+        source_card = make_card(object_name="AttachmentsSourceCard")
+        self.attachments_source_card = source_card
+        source_layout = make_card_layout(
+            source_card,
+            left=22,
+            top=18,
+            right=22,
+            bottom=18,
+            spacing=12,
+        )
+        source_layout.addWidget(
+            make_icon_title(
+                "Source",
+                UI_ATTACHMENTS_SOURCE_ICON_PATH,
+                object_name="CardTitleRow",
+                text_object_name="CardTitle",
+                icon_object_name="CardTitleIcon",
+                icon_size=18,
+            )
+        )
+
+        root_label = QLabel("Project root")
+        root_label.setObjectName("AttachmentsFieldLabel")
+        source_layout.addWidget(root_label)
+
+        root_row = QWidget()
+        root_row.setObjectName("TransparentWidget")
+        root_row_layout = QHBoxLayout(root_row)
+        root_row_layout.setContentsMargins(0, 0, 0, 0)
+        root_row_layout.setSpacing(10)
+
+        self.attachments_root_value = QLineEdit()
+        self.attachments_root_value.setObjectName("AttachmentsRootValue")
+        self.attachments_root_value.setReadOnly(True)
+        self.attachments_root_value.setFixedHeight(40)
+        self.attachments_root_value.setMinimumWidth(0)
+        self.attachments_root_value.setAccessibleName("Attachment project root")
+
+        self.attachments_change_root_button = make_secondary_button(
+            "Change",
+            object_name="AttachmentsSecondaryButton",
+            minimum_width=96,
+        )
+        self.attachments_change_root_button.setAccessibleName("Change attachment project root")
+
+        root_row_layout.addWidget(self.attachments_root_value, 1)
+        root_row_layout.addWidget(self.attachments_change_root_button)
+        source_layout.addWidget(root_row)
+
+        self.attachments_source_bottom = QWidget()
+        self.attachments_source_bottom.setObjectName("AttachmentsSourceActions")
+        self.attachments_source_bottom_grid = QGridLayout(self.attachments_source_bottom)
+        self.attachments_source_bottom_grid.setContentsMargins(0, 0, 0, 0)
+        self.attachments_source_bottom_grid.setHorizontalSpacing(12)
+        self.attachments_source_bottom_grid.setVerticalSpacing(8)
+
+        self.attachments_source_helper = make_helper_text(
+            "Import exact files requested by an AI assistant.",
+            object_name="AttachmentsSourceHelper",
+        )
+        self.attachments_source_helper.setMinimumWidth(0)
+
+        self.attachments_source_action_group = QWidget()
+        self.attachments_source_action_group.setObjectName("TransparentWidget")
+        source_action_layout = QHBoxLayout(self.attachments_source_action_group)
+        source_action_layout.setContentsMargins(0, 0, 0, 0)
+        source_action_layout.setSpacing(10)
+
+        self.attachments_paste_paths_button = QPushButton("Paste Paths")
+        self.attachments_paste_paths_button.setObjectName("AttachmentsPastePathsButton")
+        self.attachments_paste_paths_button.setFixedHeight(40)
+        self.attachments_paste_paths_button.setMinimumWidth(132)
+        self.attachments_paste_paths_button.setAccessibleName("Paste attachment paths")
+        set_tinted_button_icon(
+            self.attachments_paste_paths_button,
+            UI_PASTE_PATHS_ICON_PATH,
+            size=18,
+            color=PALETTE.accent,
+        )
+
+        self.attachments_add_files_button = make_secondary_button(
+            "Add Files",
+            object_name="AttachmentsSecondaryButton",
+            minimum_width=126,
+        )
+        self.attachments_add_files_button.setAccessibleName("Add attachment files")
+        set_tinted_button_icon(
+            self.attachments_add_files_button,
+            UI_ADD_FILES_ICON_PATH,
+            size=18,
+            color=PALETTE.primary_text,
+        )
+
+        source_action_layout.addWidget(self.attachments_paste_paths_button)
+        source_action_layout.addWidget(self.attachments_add_files_button)
+        self.attachments_source_bottom_grid.addWidget(self.attachments_source_helper, 0, 0)
+        self.attachments_source_bottom_grid.addWidget(self.attachments_source_action_group, 0, 1)
+        self.attachments_source_bottom_grid.setColumnStretch(0, 1)
+        source_layout.addWidget(self.attachments_source_bottom)
+        layout.addWidget(source_card)
+
+        workspace = QWidget()
+        workspace.setObjectName("AttachmentsWorkspace")
+        self.attachments_workspace = workspace
+        self.attachments_workspace_layout = QGridLayout(workspace)
+        self.attachments_workspace_layout.setContentsMargins(0, 0, 0, 0)
+        self.attachments_workspace_layout.setHorizontalSpacing(14)
+        self.attachments_workspace_layout.setVerticalSpacing(14)
+
+        selection_card = make_card(object_name="AttachmentsSelectionCard")
+        self.attachments_selection_card = selection_card
+        selection_layout = make_card_layout(
+            selection_card,
+            left=20,
+            top=16,
+            right=20,
+            bottom=16,
+            spacing=10,
+        )
+
+        selection_header = QWidget()
+        selection_header.setObjectName("AttachmentsSelectionHeader")
+        selection_header_layout = QHBoxLayout(selection_header)
+        selection_header_layout.setContentsMargins(0, 0, 0, 0)
+        selection_header_layout.setSpacing(10)
+        selection_header_layout.addWidget(
+            make_icon_title(
+                "Selection",
+                UI_ATTACHMENTS_SELECTION_ICON_PATH,
+                object_name="CardTitleRow",
+                text_object_name="CardTitle",
+                icon_object_name="CardTitleIcon",
+                icon_size=18,
+            )
+        )
+
+        self.attachments_selection_meta = QLabel("0 files · 0 B")
+        self.attachments_selection_meta.setObjectName("AttachmentsSelectionMeta")
+        selection_header_layout.addWidget(self.attachments_selection_meta)
+        selection_header_layout.addStretch(1)
+
+        self.attachments_remove_button = make_secondary_button(
+            "Remove",
+            object_name="AttachmentsQuietButton",
+            minimum_width=102,
+        )
+        set_tinted_button_icon(
+            self.attachments_remove_button,
+            UI_REMOVE_ICON_PATH,
+            size=16,
+            color=PALETTE.secondary_text,
+        )
+        self.attachments_remove_button.setAccessibleName("Remove selected attachments")
+
+        self.attachments_clear_button = make_secondary_button(
+            "Clear",
+            object_name="AttachmentsQuietButton",
+            minimum_width=88,
+        )
+        set_tinted_button_icon(
+            self.attachments_clear_button,
+            UI_CLEAR_ICON_PATH,
+            size=16,
+            color=PALETTE.secondary_text,
+        )
+        self.attachments_clear_button.setAccessibleName("Clear all attachments")
+
+        selection_header_layout.addWidget(self.attachments_remove_button)
+        selection_header_layout.addWidget(self.attachments_clear_button)
+        selection_layout.addWidget(selection_header)
+
+        self.attachments_warning_summary = QLabel()
+        self.attachments_warning_summary.setObjectName("AttachmentsWarningSummary")
+        self.attachments_warning_summary.setWordWrap(True)
+        self.attachments_warning_summary.setVisible(False)
+        self.attachments_warning_summary.setAccessibleName("Attachment import issues")
+        selection_layout.addWidget(self.attachments_warning_summary)
+
+        self.attachments_selection_stack = QStackedWidget()
+        self.attachments_selection_stack.setObjectName("AttachmentsSelectionStack")
+
+        empty_state = QWidget()
+        empty_state.setObjectName("AttachmentsEmptyState")
+        empty_layout = QVBoxLayout(empty_state)
+        empty_layout.setContentsMargins(24, 48, 24, 48)
+        empty_layout.setSpacing(8)
+        empty_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_title = QLabel("No files selected")
+        empty_title.setObjectName("AttachmentsEmptyTitle")
+        empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_helper = QLabel(
+            "Paste paths requested by an AI assistant or add files manually."
+        )
+        empty_helper.setObjectName("AttachmentsEmptyHelper")
+        empty_helper.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        empty_helper.setWordWrap(True)
+        empty_layout.addWidget(empty_title)
+        empty_layout.addWidget(empty_helper)
+
+        self.attachments_file_list = QTreeWidget()
+        self.attachments_file_list.setObjectName("AttachmentsFileList")
+        self.attachments_file_list.setColumnCount(2)
+        self.attachments_file_list.setHeaderLabels(["FILE", "SIZE"])
+        header_item = self.attachments_file_list.headerItem()
+        header_item.setTextAlignment(
+            1,
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter,
+        )
+        self.attachments_file_list.setRootIsDecorated(False)
+        self.attachments_file_list.setAlternatingRowColors(False)
+        self.attachments_file_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.ExtendedSelection
+        )
+        self.attachments_file_list.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self.attachments_file_list.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self.attachments_file_list.setTextElideMode(Qt.TextElideMode.ElideMiddle)
+        self.attachments_file_list.setMinimumHeight(220)
+        self.attachments_file_list.setAccessibleName("Attachment selection")
+        self.attachments_file_list.setItemDelegate(
+            AttachmentSelectionDelegate(self.attachments_file_list)
+        )
+        header = self.attachments_file_list.header()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        header.resizeSection(1, ATTACHMENT_SIZE_COLUMN_WIDTH)
+
+        self.attachments_selection_stack.addWidget(empty_state)
+        self.attachments_selection_stack.addWidget(self.attachments_file_list)
+        selection_layout.addWidget(self.attachments_selection_stack, 1)
+
+        self.attachments_ready_line = QLabel(
+            "All selected files are available and ready to copy."
+        )
+        self.attachments_ready_line.setObjectName("AttachmentsReadyLine")
+        self.attachments_ready_line.setAccessibleName("Attachment readiness")
+        selection_layout.addWidget(self.attachments_ready_line)
+
+        transfer_card = make_card(object_name="AttachmentsTransferCard")
+        self.attachments_transfer_card = transfer_card
+        transfer_layout = make_card_layout(
+            transfer_card,
+            left=20,
+            top=16,
+            right=20,
+            bottom=16,
+            spacing=10,
+        )
+        transfer_layout.addWidget(
+            make_icon_title(
+                "Transfer",
+                UI_ATTACHMENTS_TRANSFER_ICON_PATH,
+                object_name="CardTitleRow",
+                text_object_name="CardTitle",
+                icon_object_name="CardTitleIcon",
+                icon_size=18,
+            )
+        )
+
+        self.attachments_transfer_values: dict[str, QLabel] = {}
+        for key in ("Files", "Total size", "Structure", "Status"):
+            row = QFrame()
+            row.setObjectName("AttachmentsTransferRow")
+            row_layout = QHBoxLayout(row)
+            row_layout.setContentsMargins(12, 0, 12, 0)
+            row_layout.setSpacing(10)
+            row.setFixedHeight(42)
+            key_label = QLabel(key)
+            key_label.setObjectName("AttachmentsTransferKey")
+            value_label = QLabel("—")
+            value_label.setObjectName("AttachmentsTransferValue")
+            value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+            row_layout.addWidget(key_label)
+            row_layout.addStretch(1)
+            row_layout.addWidget(value_label)
+            transfer_layout.addWidget(row)
+            self.attachments_transfer_values[key] = value_label
+
+        self.attachments_copy_files_button = make_primary_button(
+            "Copy Files",
+            height=48,
+            icon_path=UI_COPY_FILES_ICON_PATH,
+            icon_size=19,
+        )
+        self.attachments_copy_files_button.setAccessibleName("Copy attachment files")
+        transfer_layout.addWidget(self.attachments_copy_files_button)
+
+        copy_helper = QLabel(
+            "Copy the full selection to Windows. Multi-file paste support depends on the target app."
+        )
+        copy_helper.setObjectName("AttachmentsActionHelper")
+        copy_helper.setWordWrap(True)
+        transfer_layout.addWidget(copy_helper)
+
+        self.attachments_sequential_button = make_secondary_button(
+            "Send One-by-One",
+            object_name="AttachmentsSecondaryButton",
+            height=46,
+        )
+        set_tinted_button_icon(
+            self.attachments_sequential_button,
+            UI_COPY_FILES_ICON_PATH,
+            size=18,
+            color=PALETTE.secondary_text,
+        )
+        self.attachments_sequential_button.setAccessibleName(
+            "Send attachments one by one"
+        )
+        self.attachments_sequential_button.setToolTip(
+            "Automatically paste each selected file into one foreground target app, one file per Ctrl+V event."
+        )
+        transfer_layout.addWidget(self.attachments_sequential_button)
+
+        sequential_helper = QLabel(
+            "Start, switch to the target app during the 3-second countdown, and keep it focused while XCC pastes each file automatically."
+        )
+        sequential_helper.setObjectName("AttachmentsActionHelper")
+        sequential_helper.setWordWrap(True)
+        transfer_layout.addWidget(sequential_helper)
+
+        self.attachments_sequential_progress = QLabel()
+        self.attachments_sequential_progress.setObjectName("AttachmentsActionHelper")
+        self.attachments_sequential_progress.setWordWrap(True)
+        self.attachments_sequential_progress.setAccessibleName(
+            "Automated attachment handoff progress"
+        )
+        self.attachments_sequential_progress.setVisible(False)
+        transfer_layout.addWidget(self.attachments_sequential_progress)
+
+        self.attachments_sequential_cancel_button = make_secondary_button(
+            "Cancel Handoff",
+            object_name="AttachmentsQuietButton",
+            height=38,
+        )
+        self.attachments_sequential_cancel_button.setAccessibleName(
+            "Cancel automated attachment handoff"
+        )
+        self.attachments_sequential_cancel_button.setVisible(False)
+        transfer_layout.addWidget(self.attachments_sequential_cancel_button)
+
+        self.attachments_zip_button = make_secondary_button(
+            "Create ZIP && Copy",
+            object_name="AttachmentsSecondaryButton",
+            height=46,
+        )
+        set_tinted_button_icon(
+            self.attachments_zip_button,
+            UI_CREATE_ZIP_ICON_PATH,
+            size=18,
+            color=PALETTE.secondary_text,
+        )
+        self.attachments_zip_button.setAccessibleName("Create ZIP and copy")
+        self.attachments_zip_button.setToolTip("Create a ZIP64 bundle, preserve safe structure, and copy the completed ZIP.")
+        transfer_layout.addWidget(self.attachments_zip_button)
+
+        zip_helper = QLabel(
+            "Create one portable bundle while preserving the project structure."
+        )
+        zip_helper.setObjectName("AttachmentsActionHelper")
+        zip_helper.setWordWrap(True)
+        transfer_layout.addWidget(zip_helper)
+        transfer_layout.addStretch(1)
+
+        self.attachments_success_strip = QLabel("Last action: No transfer yet")
+        self.attachments_success_strip.setObjectName("AttachmentsSuccessStrip")
+        self.attachments_success_strip.setWordWrap(True)
+        self.attachments_success_strip.setAccessibleName("Last attachment action")
+        transfer_layout.addWidget(self.attachments_success_strip)
+
+        self.attachments_open_bundle_button = make_secondary_button(
+            "Open bundle location",
+            object_name="AttachmentsQuietButton",
+            height=38,
+        )
+        self.attachments_open_bundle_button.setAccessibleName("Open attachment bundle location")
+        self.attachments_open_bundle_button.setVisible(False)
+        self.attachments_open_bundle_button.clicked.connect(self._open_attachment_bundle_location)
+        transfer_layout.addWidget(self.attachments_open_bundle_button)
+
+        self.attachments_workspace_layout.addWidget(selection_card, 0, 0)
+        self.attachments_workspace_layout.addWidget(transfer_card, 0, 1)
+        self.attachments_workspace_layout.setColumnStretch(0, 7)
+        self.attachments_workspace_layout.setColumnStretch(1, 3)
+        layout.addWidget(workspace, 1)
+
+        self.attachments_delete_shortcut = QShortcut(
+            QKeySequence(Qt.Key.Key_Delete),
+            self.attachments_file_list,
+        )
+        self.attachments_delete_shortcut.setContext(Qt.ShortcutContext.WidgetShortcut)
+        self.attachments_delete_shortcut.activated.connect(self._remove_selected_attachments)
+
+        self.setTabOrder(self.attachments_root_value, self.attachments_change_root_button)
+        self.setTabOrder(self.attachments_change_root_button, self.attachments_paste_paths_button)
+        self.setTabOrder(self.attachments_paste_paths_button, self.attachments_add_files_button)
+        self.setTabOrder(self.attachments_add_files_button, self.attachments_file_list)
+        self.setTabOrder(self.attachments_file_list, self.attachments_remove_button)
+        self.setTabOrder(self.attachments_remove_button, self.attachments_clear_button)
+        self.setTabOrder(self.attachments_clear_button, self.attachments_copy_files_button)
+        self.setTabOrder(self.attachments_copy_files_button, self.attachments_sequential_button)
+        self.setTabOrder(
+            self.attachments_sequential_button,
+            self.attachments_sequential_cancel_button,
+        )
+        self.setTabOrder(self.attachments_sequential_cancel_button, self.attachments_zip_button)
+
+        scroll.setWidget(page)
+        self._refresh_attachments_page()
+        return scroll
+
+    def _arrange_attachments_workspace(self, columns: int) -> None:
+        self._take_layout_items(self.attachments_workspace_layout)
+        self._reset_grid_stretches(self.attachments_workspace_layout, columns=2, rows=2)
+        if columns >= 2:
+            self.attachments_workspace_layout.addWidget(self.attachments_selection_card, 0, 0)
+            self.attachments_workspace_layout.addWidget(self.attachments_transfer_card, 0, 1)
+            self.attachments_workspace_layout.setColumnStretch(0, 7)
+            self.attachments_workspace_layout.setColumnStretch(1, 3)
+            self.attachments_workspace_layout.setRowStretch(0, 1)
+            return
+
+        self.attachments_workspace_layout.addWidget(self.attachments_selection_card, 0, 0)
+        self.attachments_workspace_layout.addWidget(self.attachments_transfer_card, 1, 0)
+        self.attachments_workspace_layout.setColumnStretch(0, 1)
+        self.attachments_workspace_layout.setRowStretch(0, 1)
+
+    def _arrange_attachment_source_actions(self, below: bool) -> None:
+        layout = self.attachments_source_bottom_grid
+        self._take_layout_items(layout)
+        self._reset_grid_stretches(layout, columns=2, rows=2)
+        if below:
+            layout.addWidget(self.attachments_source_helper, 0, 0, 1, 2)
+            layout.addWidget(self.attachments_source_action_group, 1, 0, 1, 2)
+            layout.setColumnStretch(0, 1)
+            return
+        layout.addWidget(self.attachments_source_helper, 0, 0)
+        layout.addWidget(self.attachments_source_action_group, 0, 1)
+        layout.setColumnStretch(0, 1)
+
+    def _attachment_selection(self) -> AttachmentSelection:
+        return AttachmentSelection(
+            tuple(self.attachment_files),
+            self.attachment_project_root,
+        )
+
+    def _cleanup_attachment_bundle_cache(self) -> None:
+        cleanup = cleanup_stale_bundles(
+            retention_days=BUNDLE_RETENTION_DAYS,
+            active_paths=(self._attachment_bundle_last_path,)
+            if self._attachment_bundle_last_path is not None
+            else (),
+        )
+        if cleanup.has_failures:
+            self._attachment_issue_summary = cleanup.failures[0]
+            if hasattr(self, "attachments_warning_summary"):
+                self._refresh_attachments_page()
+
+    def _choose_attachment_root(self) -> None:
+        if self._collection_active:
+            return
+        initial = (
+            str(self.attachment_project_root)
+            if self.attachment_project_root is not None
+            else str(self._recent_project_root)
+            if self._recent_project_root is not None
+            else ""
+        )
+        selected = QFileDialog.getExistingDirectory(
+            self,
+            "Select attachment project root",
+            initial,
+        )
+        if not selected:
+            self._set_status("Attachment project-root selection cancelled.")
+            return
+        try:
+            root = Path(selected).resolve(strict=True)
+        except (OSError, RuntimeError) as exc:
+            self._set_status("Attachment project root is unavailable.")
+            QMessageBox.warning(self, "XCC", str(exc))
+            return
+        self.attachment_project_root = root
+        self._recent_project_root = root
+        self._attachment_issue_summary = ""
+        self._refresh_attachments_page()
+        self._set_status("Attachment project root selected.")
+
+    def _add_attachment_files(self) -> None:
+        if self._collection_active:
+            return
+        initial = (
+            str(self.attachment_project_root)
+            if self.attachment_project_root is not None
+            else str(self._recent_project_root)
+            if self._recent_project_root is not None
+            else ""
+        )
+        selected, _ = QFileDialog.getOpenFileNames(
+            self,
+            "Add attachment files",
+            initial,
+            "All Files (*)",
+        )
+        if not selected:
+            self._set_status("Attachment selection cancelled.")
+            return
+        result = import_attachment_files(
+            selected,
+            project_root=self.attachment_project_root,
+            existing_paths=[item.path for item in self.attachment_files],
+        )
+        self._apply_attachment_import(result)
+
+    def _paste_attachment_paths_from_clipboard(self) -> None:
+        if self._collection_active:
+            return
+        text = QApplication.clipboard().text()
+        result = import_attachments(
+            text,
+            project_root=self.attachment_project_root,
+            existing_paths=[item.path for item in self.attachment_files],
+        )
+        if not result.parsed:
+            self._attachment_issue_summary = "No recognizable file paths found in the clipboard."
+            self._refresh_attachments_page()
+            self._set_status("No attachment paths found in clipboard.")
+            return
+
+        if result.needs_project_root_selection:
+            initial = (
+                str(self.attachment_project_root)
+                if self.attachment_project_root is not None
+                else str(self._recent_project_root)
+                if self._recent_project_root is not None
+                else ""
+            )
+            selected = QFileDialog.getExistingDirectory(
+                self,
+                "Select project root for pasted attachment paths",
+                initial,
+            )
+            if not selected:
+                self._attachment_issue_summary = (
+                    "Project root is required to resolve relative attachment paths."
+                )
+                self._refresh_attachments_page()
+                self._set_status("Paste paths cancelled · project root required.")
+                return
+            try:
+                self.attachment_project_root = Path(selected).resolve(strict=True)
+            except (OSError, RuntimeError) as exc:
+                self._attachment_issue_summary = f"Project root is unavailable: {exc}"
+                self._refresh_attachments_page()
+                return
+            self._recent_project_root = self.attachment_project_root
+            result = import_attachments(
+                text,
+                project_root=self.attachment_project_root,
+                existing_paths=[item.path for item in self.attachment_files],
+            )
+
+        self._apply_attachment_import(result)
+
+    def _apply_attachment_import(self, result: AttachmentImportResult) -> None:
+        if result.added:
+            self.attachment_files.extend(result.added)
+            if self.attachment_project_root is None:
+                inferred = build_attachment_selection(
+                    [item.path for item in self.attachment_files]
+                ).project_root
+                if inferred is not None:
+                    self.attachment_project_root = inferred
+                    self._recent_project_root = inferred
+
+        details: list[str] = []
+        if result.missing:
+            details.append(f"Missing {len(result.missing)}")
+        if result.directories:
+            details.append(f"Directories {len(result.directories)}")
+        if result.inaccessible:
+            details.append(f"Inaccessible {len(result.inaccessible)}")
+        if result.outside_root:
+            details.append(f"Outside root {len(result.outside_root)}")
+        if result.invalid:
+            details.append(f"Invalid {len(result.invalid)}")
+        if result.duplicate_count:
+            details.append(f"Duplicates {result.duplicate_count}")
+        if result.root_error:
+            details.append(result.root_error)
+        self._attachment_issue_summary = " · ".join(details)
+        self._refresh_attachments_page()
+
+        if result.added_count:
+            self._set_status(
+                f"Added {result.added_count} attachment"
+                f"{'s' if result.added_count != 1 else ''} · "
+                f"Total: {len(self.attachment_files)}."
+            )
+        elif result.duplicate_count and result.issue_count == 0:
+            self._set_status("All attachment files are already selected.")
+        elif result.issue_count:
+            self._set_status("No attachment files added · review import issues.")
+        else:
+            self._set_status("No attachment files were added.")
+
+    def _remove_selected_attachments(self) -> None:
+        selected_items = self.attachments_file_list.selectedItems()
+        if not selected_items:
+            return
+        selected_paths = {
+            item.data(0, Qt.ItemDataRole.UserRole)
+            for item in selected_items
+        }
+        before = len(self.attachment_files)
+        self.attachment_files = [
+            item
+            for item in self.attachment_files
+            if str(item.path) not in selected_paths
+        ]
+        removed = before - len(self.attachment_files)
+        self._attachment_issue_summary = ""
+        self._refresh_attachments_page()
+        if removed:
+            self._set_status(f"Removed {removed} attachment{'s' if removed != 1 else ''}.")
+
+    def _clear_attachments(self) -> None:
+        if not self.attachment_files:
+            return
+        self.attachment_files = []
+        self._attachment_issue_summary = ""
+        self._refresh_attachments_page()
+        self._set_status("Attachment selection cleared.")
+
+    def _refresh_attachment_action_states(self) -> None:
+        has_files = bool(self.attachment_files)
+        has_selected = bool(self.attachments_file_list.selectedItems())
+        idle = (
+            not self._collection_active
+            and not self._attachment_bundle_active
+            and not self._attachment_sequential_active
+        )
+
+        for control in (
+            self.attachments_change_root_button,
+            self.attachments_add_files_button,
+            self.attachments_paste_paths_button,
+            self.attachments_file_list,
+        ):
+            control.setEnabled(idle)
+
+        self.attachments_remove_button.setEnabled(idle and has_selected)
+        self.attachments_clear_button.setEnabled(idle and has_files)
+        self.attachments_copy_files_button.setEnabled(idle and has_files)
+
+        if self._attachment_sequential_active:
+            total = len(self._attachment_sequential_paths)
+            sent = min(self._attachment_sequential_next_index, total)
+            if self._attachment_sequential_phase == "countdown":
+                self.attachments_sequential_button.setText(
+                    f"Starting in {self._attachment_sequential_countdown}s"
+                )
+            else:
+                self.attachments_sequential_button.setText(
+                    f"Sending · {sent}/{total}"
+                )
+            self.attachments_sequential_button.setEnabled(False)
+        else:
+            self.attachments_sequential_button.setText("Send One-by-One")
+            self.attachments_sequential_button.setEnabled(idle and has_files)
+
+        self.attachments_sequential_cancel_button.setVisible(
+            self._attachment_sequential_active
+        )
+        self.attachments_sequential_cancel_button.setEnabled(
+            self._attachment_sequential_active
+        )
+
+        self.attachments_zip_button.setEnabled(
+            has_files
+            and not self._collection_active
+            and not self._attachment_sequential_active
+        )
+        self.attachments_zip_button.setText(
+            "Cancel ZIP" if self._attachment_bundle_active else "Create ZIP && Copy"
+        )
+
+    def _refresh_attachments_page(self) -> None:
+        if not hasattr(self, "attachments_root_value"):
+            return
+        selection = self._attachment_selection()
+        has_files = bool(selection.files)
+
+        if has_files:
+            root_text = selection.scope_label
+            scope_state = "mixed" if selection.has_mixed_locations else "project"
+        elif self.attachment_project_root is not None:
+            root_text = str(self.attachment_project_root)
+            scope_state = "project"
+        else:
+            root_text = "No files selected"
+            scope_state = "empty"
+        self.attachments_root_value.setText(root_text)
+        self.attachments_root_value.setToolTip(root_text)
+        set_widget_property(self.attachments_root_value, "scope", scope_state)
+
+        self.attachments_selection_meta.setText(
+            f"{selection.file_count} file{'s' if selection.file_count != 1 else ''} · "
+            f"{format_attachment_size(selection.total_bytes)}"
+        )
+
+        self.attachments_file_list.clear()
+        for attachment in selection.files:
+            display_path = attachment_display_path(
+                attachment.path,
+                self.attachment_project_root,
+            )
+            item = QTreeWidgetItem([display_path, format_attachment_size(attachment.size_bytes)])
+            item.setData(0, Qt.ItemDataRole.UserRole, str(attachment.path))
+            item.setToolTip(0, str(attachment.path))
+            item.setTextAlignment(
+                1,
+                Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter,
+            )
+            self.attachments_file_list.addTopLevelItem(item)
+
+        self.attachments_selection_stack.setCurrentIndex(1 if has_files else 0)
+        self.attachments_ready_line.setVisible(has_files)
+
+        warning = self._attachment_issue_summary.strip()
+        self.attachments_warning_summary.setText(warning)
+        self.attachments_warning_summary.setVisible(bool(warning))
+
+        transfer = self.attachments_transfer_values
+        transfer["Files"].setText(str(selection.file_count))
+        transfer["Total size"].setText(format_attachment_size(selection.total_bytes))
+        if self._attachment_sequential_active:
+            structure = "Mixed locations" if selection.has_mixed_locations else "Preserved"
+            total = len(self._attachment_sequential_paths)
+            sent = min(self._attachment_sequential_next_index, total)
+            if self._attachment_sequential_phase == "countdown":
+                status = f"Switch target · {self._attachment_sequential_countdown}s"
+            else:
+                status = f"Handoff · {sent}/{total} sent"
+            state = "warning"
+        elif self._attachment_bundle_active:
+            structure = "Mixed locations" if selection.has_mixed_locations else "Preserved"
+            status = "Creating ZIP"
+            state = "warning"
+        elif not has_files:
+            structure = "—"
+            status = "No files selected"
+            state = "neutral"
+        elif selection.has_mixed_locations:
+            structure = "Mixed locations"
+            status = "Ready to transfer"
+            state = "success"
+        else:
+            structure = "Preserved"
+            status = "Ready to transfer"
+            state = "success"
+        transfer["Structure"].setText(structure)
+        transfer["Status"].setText(status)
+        set_widget_state(transfer["Status"], state)
+        if has_files and not selection.has_mixed_locations:
+            set_widget_state(transfer["Structure"], "success")
+        else:
+            set_widget_state(transfer["Structure"], None)
+
+        if self._attachment_sequential_active:
+            total = len(self._attachment_sequential_paths)
+            sent = min(self._attachment_sequential_next_index, total)
+            if self._attachment_sequential_phase == "countdown":
+                text = (
+                    f"Switch to the destination app now · starts in "
+                    f"{self._attachment_sequential_countdown}s."
+                )
+            elif self._attachment_sequential_phase == "prepared" and sent < total:
+                current = self._attachment_sequential_paths[sent]
+                text = f"{sent}/{total} sent · preparing paste · {current.name}"
+            else:
+                text = f"{sent}/{total} sent · keep the target app focused."
+            self.attachments_sequential_progress.setText(text)
+            self.attachments_sequential_progress.setVisible(True)
+        else:
+            self.attachments_sequential_progress.clear()
+            self.attachments_sequential_progress.setVisible(False)
+
+        self.attachments_success_strip.setText(
+            f"Last action: {self._attachment_last_action}"
+        )
+        self.attachments_open_bundle_button.setVisible(
+            self._attachment_bundle_last_path is not None
+            and self._attachment_bundle_last_path.exists()
+        )
+        self._refresh_attachment_action_states()
+
+    def _attachment_filename_warnings(self) -> list[SafetyWarning]:
+        return scan_attachment_paths_for_warnings(
+            [item.path for item in self.attachment_files],
+            project_root=self.attachment_project_root,
+        )
+
+    def _confirm_attachment_warnings(self) -> bool:
+        warnings = self._attachment_filename_warnings()
+        if not should_show_safety_confirmation(
+            warnings,
+            enabled=self.app_settings.confirm_safety_warnings,
+        ):
+            return True
+        response = QMessageBox.question(
+            self,
+            "XCC Attachment Safety Warning",
+            build_attachment_warning_confirmation_text(warnings),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        return response == QMessageBox.StandardButton.Yes
+
+    def _record_attachment_transfer(
+        self,
+        *,
+        transfer_type: str,
+        outcome: str,
+        duration_seconds: float,
+        bundle_name: str | None = None,
+    ) -> None:
+        selection = self._attachment_selection()
+        record = AttachmentTransferRecord(
+            timestamp=self._current_history_time(),
+            transfer_type=transfer_type,
+            outcome=outcome,
+            file_count=selection.file_count,
+            total_bytes=selection.total_bytes,
+            duration_seconds=max(0.0, duration_seconds),
+            warning_count=len(self._attachment_filename_warnings()),
+            bundle_name=bundle_name,
+        )
+        self._add_history_entry(record)
+
+    def _copy_attachment_files(self) -> None:
+        if (
+            self._collection_active
+            or self._attachment_bundle_active
+            or self._attachment_sequential_active
+        ):
+            return
+        if not self.attachment_files:
+            return
+        if not self._confirm_attachment_warnings():
+            self._set_status("Attachment transfer cancelled after filename warning.")
+            return
+
+        started_at = perf_counter()
+        try:
+            copied = copy_files_to_clipboard(
+                [item.path for item in self.attachment_files]
+            )
+        except Exception as exc:
+            duration = perf_counter() - started_at
+            self._record_attachment_transfer(
+                transfer_type="Copy Files",
+                outcome="FAILED",
+                duration_seconds=duration,
+            )
+            self._attachment_issue_summary = str(exc)
+            self.attachments_header_status.setText("Failed")
+            self.attachments_header_status.set_state("error")
+            self._refresh_attachments_page()
+            self._set_status("Attachment clipboard copy failed.")
+            return
+
+        duration = perf_counter() - started_at
+        count = len(copied)
+        stamp = datetime.now().strftime("%H:%M:%S")
+        self._attachment_last_action = (
+            f"{count} file{'s' if count != 1 else ''} copied · {stamp}"
+        )
+        self._attachment_issue_summary = ""
+        self.attachments_header_status.setText("Copied")
+        self.attachments_header_status.set_state("success")
+        self._record_attachment_transfer(
+            transfer_type="Copy Files",
+            outcome="SUCCESS",
+            duration_seconds=duration,
+        )
+        self._refresh_attachments_page()
+        self._set_status(
+            f"{count} attachment file{'s' if count != 1 else ''} copied to clipboard."
+        )
+        QTimer.singleShot(1500, self._reset_attachment_status)
+
+    def _on_attachment_sequential_button_clicked(self) -> None:
+        if self._attachment_sequential_active:
+            return
+        self._start_attachment_sequential()
+
+    def _schedule_attachment_sequential(self, delay_ms: int, callback) -> None:
+        generation = self._attachment_sequential_generation
+
+        def run_if_current() -> None:
+            if (
+                not self._attachment_sequential_active
+                or generation != self._attachment_sequential_generation
+            ):
+                return
+            callback()
+
+        QTimer.singleShot(max(0, int(delay_ms)), run_if_current)
+
+    def _start_attachment_sequential(
+        self,
+        *,
+        target_hwnd: int | None = None,
+        hotkey_start: bool = False,
+    ) -> None:
+        if (
+            self._collection_active
+            or self._attachment_bundle_active
+            or self._attachment_sequential_active
+            or not self.attachment_files
+        ):
+            return
+
+        warnings = self._attachment_filename_warnings()
+        if hotkey_start and should_show_safety_confirmation(
+            warnings,
+            enabled=self.app_settings.confirm_safety_warnings,
+        ):
+            self._attachment_issue_summary = (
+                "Attachment Handoff needs filename-warning confirmation. "
+                "Open XCC and start Send One-by-One from the Attachments page."
+            )
+            self._refresh_attachments_page()
+            self._set_transient_event_status(
+                "Attachment Handoff needs confirmation in XCC."
+            )
+            return
+        if not hotkey_start and not self._confirm_attachment_warnings():
+            self._set_status(
+                "Attachment Handoff cancelled after filename warning."
+            )
+            return
+
+        self._attachment_sequential_paths = tuple(
+            item.path for item in self.attachment_files
+        )
+        self._attachment_sequential_next_index = 0
+        self._attachment_sequential_started_at = perf_counter()
+        self._attachment_sequential_active = True
+        self._attachment_sequential_generation += 1
+        self._attachment_sequential_target_hwnd = int(target_hwnd or 0)
+        self._attachment_sequential_countdown = 0
+        self._attachment_issue_summary = ""
+        self._attachment_last_action = "Attachment Handoff started"
+        self.attachments_header_status.setText("Handoff")
+        self.attachments_header_status.set_state("warning")
+
+        if target_hwnd:
+            try:
+                target_is_xcc = window_belongs_to_current_process(int(target_hwnd))
+            except NativeInputError as exc:
+                self._fail_attachment_sequential(str(exc), sent=0)
+                return
+            if target_is_xcc:
+                self._fail_attachment_sequential(
+                    "The target window is XCC. Focus the destination app first.",
+                    sent=0,
+                )
+                return
+
+            self._attachment_sequential_phase = "hotkey-delay"
+            self._refresh_attachments_page()
+            self._set_event_status(
+                "Attachment Handoff armed · keep the target app focused."
+            )
+            self._schedule_attachment_sequential(
+                ATTACHMENT_HANDOFF_HOTKEY_RELEASE_MS
+                if hotkey_start
+                else 0,
+                self._run_attachment_sequential_step,
+            )
+            return
+
+        self._attachment_sequential_phase = "countdown"
+        self._attachment_sequential_countdown = ATTACHMENT_HANDOFF_COUNTDOWN_SECONDS
+        self._refresh_attachments_page()
+        self._set_event_status(
+            f"Switch to the target app · handoff starts in "
+            f"{self._attachment_sequential_countdown}s."
+        )
+        self._schedule_attachment_sequential(
+            1000,
+            self._advance_attachment_sequential_countdown,
+        )
+
+    def _advance_attachment_sequential_countdown(self) -> None:
+        if (
+            not self._attachment_sequential_active
+            or self._attachment_sequential_phase != "countdown"
+        ):
+            return
+
+        self._attachment_sequential_countdown -= 1
+        if self._attachment_sequential_countdown > 0:
+            self._refresh_attachments_page()
+            self._set_event_status(
+                f"Switch to the target app · handoff starts in "
+                f"{self._attachment_sequential_countdown}s."
+            )
+            self._schedule_attachment_sequential(
+                1000,
+                self._advance_attachment_sequential_countdown,
+            )
+            return
+
+        try:
+            target_hwnd = get_foreground_window()
+            target_is_xcc = window_belongs_to_current_process(target_hwnd)
+        except NativeInputError as exc:
+            self._fail_attachment_sequential(str(exc), sent=0)
+            return
+
+        if not target_hwnd:
+            self._fail_attachment_sequential(
+                "No foreground target window was available after the countdown.",
+                sent=0,
+            )
+            return
+        if target_is_xcc:
+            self._fail_attachment_sequential(
+                "XCC was still focused after the countdown. Switch to the destination app before it reaches zero.",
+                sent=0,
+            )
+            return
+
+        self._attachment_sequential_target_hwnd = int(target_hwnd)
+        self._attachment_sequential_phase = "sending"
+        self._refresh_attachments_page()
+        self._set_event_status(
+            "Target locked · keep that app focused while XCC sends attachments."
+        )
+        self._schedule_attachment_sequential(
+            0,
+            self._run_attachment_sequential_step,
+        )
+
+    def _attachment_sequential_target_is_foreground(self) -> bool:
+        target = self._attachment_sequential_target_hwnd
+        if not target:
+            return False
+        try:
+            return is_foreground_window(target)
+        except NativeInputError:
+            return False
+
+    def _run_attachment_sequential_step(self) -> None:
+        if not self._attachment_sequential_active:
+            return
+
+        total = len(self._attachment_sequential_paths)
+        index = self._attachment_sequential_next_index
+        if index >= total:
+            self._complete_attachment_sequential()
+            return
+
+        if not self._attachment_sequential_target_is_foreground():
+            self._stop_attachment_sequential_for_focus_change()
+            return
+
+        path = self._attachment_sequential_paths[index]
+        try:
+            # Publish exactly one file. Revalidation occurs inside the existing
+            # Qt/Windows clipboard backend immediately before every paste.
+            copy_files_to_clipboard([path])
+        except Exception as exc:
+            self._fail_attachment_sequential(
+                f"Could not prepare {path.name}: {exc}",
+                sent=index,
+            )
+            return
+
+        self._attachment_sequential_phase = "prepared"
+        self.attachments_header_status.setText(f"{index + 1}/{total}")
+        self.attachments_header_status.set_state("warning")
+        self._refresh_attachments_page()
+        self._set_event_status(
+            f"Attachment Handoff · {index + 1}/{total} prepared · {path.name}"
+        )
+        self._schedule_attachment_sequential(
+            ATTACHMENT_HANDOFF_CLIPBOARD_SETTLE_MS,
+            self._paste_attachment_sequential_step,
+        )
+
+    def _paste_attachment_sequential_step(self) -> None:
+        if not self._attachment_sequential_active:
+            return
+
+        total = len(self._attachment_sequential_paths)
+        index = self._attachment_sequential_next_index
+        if index >= total:
+            self._complete_attachment_sequential()
+            return
+
+        if not self._attachment_sequential_target_is_foreground():
+            self._stop_attachment_sequential_for_focus_change()
+            return
+
+        try:
+            send_ctrl_v_to_foreground(self._attachment_sequential_target_hwnd)
+        except NativeInputError as exc:
+            if not self._attachment_sequential_target_is_foreground():
+                self._stop_attachment_sequential_for_focus_change()
+                return
+            self._fail_attachment_sequential(str(exc), sent=index)
+            return
+
+        self._attachment_sequential_next_index += 1
+        sent = self._attachment_sequential_next_index
+        stamp = datetime.now().strftime("%H:%M:%S")
+        self._attachment_last_action = (
+            f"Attachment Handoff · {sent}/{total} sent · {stamp}"
+        )
+
+        if sent >= total:
+            self._complete_attachment_sequential()
+            return
+
+        self._attachment_sequential_phase = "waiting"
+        self.attachments_header_status.setText(f"{sent}/{total} sent")
+        self.attachments_header_status.set_state("success")
+        self._refresh_attachments_page()
+        self._set_event_status(
+            f"Attachment Handoff · {sent}/{total} sent · keep target focused."
+        )
+        self._schedule_attachment_sequential(
+            ATTACHMENT_HANDOFF_PASTE_INTERVAL_MS,
+            self._run_attachment_sequential_step,
+        )
+
+    def _complete_attachment_sequential(self) -> None:
+        if not self._attachment_sequential_active:
+            return
+        total = len(self._attachment_sequential_paths)
+        duration = max(
+            0.0,
+            perf_counter() - self._attachment_sequential_started_at,
+        )
+        self._record_attachment_transfer(
+            transfer_type="Attachment Handoff",
+            outcome="SUCCESS",
+            duration_seconds=duration,
+        )
+        stamp = datetime.now().strftime("%H:%M:%S")
+        self._attachment_last_action = (
+            f"Attachment Handoff completed · {total} file"
+            f"{'s' if total != 1 else ''} · {stamp}"
+        )
+        self._attachment_issue_summary = ""
+        self.attachments_header_status.setText("Completed")
+        self.attachments_header_status.set_state("success")
+        self._reset_attachment_sequential_state()
+        self._refresh_attachments_page()
+        self._set_status(
+            f"Attachment Handoff completed · {total}/{total} paste actions sent."
+        )
+        QTimer.singleShot(2000, self._reset_attachment_status)
+
+    def _stop_attachment_sequential_for_focus_change(self) -> None:
+        if not self._attachment_sequential_active:
+            return
+        total = len(self._attachment_sequential_paths)
+        sent = min(self._attachment_sequential_next_index, total)
+        duration = max(
+            0.0,
+            perf_counter() - self._attachment_sequential_started_at,
+        )
+        self._record_attachment_transfer(
+            transfer_type="Attachment Handoff",
+            outcome="CANCELLED",
+            duration_seconds=duration,
+        )
+        self._attachment_issue_summary = (
+            f"Attachment Handoff stopped safely at {sent}/{total}: "
+            "the target app lost focus."
+        )
+        self._attachment_last_action = (
+            f"Attachment Handoff stopped · {sent}/{total} sent"
+        )
+        self.attachments_header_status.setText("Stopped")
+        self.attachments_header_status.set_state("warning")
+        self._reset_attachment_sequential_state()
+        self._refresh_attachments_page()
+        self._set_status(
+            f"Attachment Handoff stopped safely · {sent}/{total} sent. "
+            "No paste was sent to the newly focused window."
+        )
+
+    def _fail_attachment_sequential(self, message: str, *, sent: int) -> None:
+        if not self._attachment_sequential_active:
+            return
+        total = len(self._attachment_sequential_paths)
+        sent = max(0, min(sent, total))
+        duration = max(
+            0.0,
+            perf_counter() - self._attachment_sequential_started_at,
+        )
+        self._record_attachment_transfer(
+            transfer_type="Attachment Handoff",
+            outcome="FAILED",
+            duration_seconds=duration,
+        )
+        self._attachment_issue_summary = (
+            f"Attachment Handoff failed at {sent}/{total}: {message}"
+        )
+        self._attachment_last_action = (
+            f"Attachment Handoff failed · {sent}/{total} sent"
+        )
+        self.attachments_header_status.setText("Failed")
+        self.attachments_header_status.set_state("error")
+        self._reset_attachment_sequential_state()
+        self._refresh_attachments_page()
+        self._set_status(
+            f"Attachment Handoff failed · {sent}/{total} paste actions sent."
+        )
+
+    def _cancel_attachment_sequential(self, *, announce: bool = True) -> None:
+        if not self._attachment_sequential_active:
+            return
+
+        total = len(self._attachment_sequential_paths)
+        sent = min(self._attachment_sequential_next_index, total)
+        duration = max(
+            0.0,
+            perf_counter() - self._attachment_sequential_started_at,
+        )
+        self._record_attachment_transfer(
+            transfer_type="Attachment Handoff",
+            outcome="CANCELLED",
+            duration_seconds=duration,
+        )
+        self._attachment_last_action = (
+            f"Attachment Handoff cancelled · {sent}/{total} sent"
+        )
+        self._attachment_issue_summary = ""
+        self.attachments_header_status.setText("Cancelled")
+        self.attachments_header_status.set_state("warning")
+        self._reset_attachment_sequential_state()
+        self._refresh_attachments_page()
+        if announce:
+            self._set_status(
+                f"Attachment Handoff cancelled · {sent}/{total} paste actions sent."
+            )
+            QTimer.singleShot(1500, self._reset_attachment_status)
+
+    def _reset_attachment_sequential_state(self) -> None:
+        self._attachment_sequential_generation += 1
+        self._attachment_sequential_active = False
+        self._attachment_sequential_paths = ()
+        self._attachment_sequential_next_index = 0
+        self._attachment_sequential_started_at = 0.0
+        self._attachment_sequential_target_hwnd = 0
+        self._attachment_sequential_countdown = 0
+        self._attachment_sequential_phase = "idle"
+
+    def _reset_attachment_status(self) -> None:
+        if not hasattr(self, "attachments_header_status"):
+            return
+        if self._attachment_bundle_active or self._attachment_sequential_active:
+            return
+        self.attachments_header_status.setText("Ready")
+        self.attachments_header_status.set_state("success")
+
+    def _on_attachment_zip_button_clicked(self) -> None:
+        if self._attachment_bundle_active:
+            self._cancel_attachment_bundle()
+            return
+        self._start_attachment_bundle()
+
+    def _start_attachment_bundle(self) -> None:
+        if (
+            self._collection_active
+            or self._attachment_bundle_active
+            or self._attachment_sequential_active
+            or self._attachment_bundle_thread is not None
+            or not self.attachment_files
+        ):
+            return
+        if not self._confirm_attachment_warnings():
+            self._set_status("ZIP creation cancelled after filename warning.")
+            return
+
+        bundle_dir = attachment_bundle_directory()
+        cleanup = cleanup_stale_bundles(
+            directory=bundle_dir,
+            retention_days=BUNDLE_RETENTION_DAYS,
+            active_paths=(self._attachment_bundle_last_path,) if self._attachment_bundle_last_path else (),
+        )
+        if cleanup.has_failures:
+            self._attachment_issue_summary = cleanup.failures[0]
+
+        thread = QThread(self)
+        worker = AttachmentBundleWorker(
+            [item.path for item in self.attachment_files],
+            project_root=self.attachment_project_root,
+            directory=bundle_dir,
+        )
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._on_attachment_bundle_progress)
+        worker.completed.connect(self._on_attachment_bundle_completed)
+        worker.failed.connect(self._on_attachment_bundle_failed)
+        worker.cancelled.connect(self._on_attachment_bundle_cancelled)
+        worker.completed.connect(thread.quit)
+        worker.failed.connect(thread.quit)
+        worker.cancelled.connect(thread.quit)
+        worker.completed.connect(worker.deleteLater)
+        worker.failed.connect(worker.deleteLater)
+        worker.cancelled.connect(worker.deleteLater)
+        thread.finished.connect(self._on_attachment_bundle_thread_finished)
+        thread.finished.connect(thread.deleteLater)
+
+        self._attachment_bundle_thread = thread
+        self._attachment_bundle_worker = worker
+        self._attachment_bundle_active = True
+        self._attachment_bundle_started_at = perf_counter()
+        self.attachments_header_status.setText("Bundling")
+        self.attachments_header_status.set_state("warning")
+        self._attachment_last_action = "Creating ZIP…"
+        self._set_attachment_transfer_controls_enabled(False)
+        self._refresh_attachments_page()
+        self._set_status("Creating attachment ZIP…")
+        thread.start()
+
+    def _set_attachment_transfer_controls_enabled(self, enabled: bool) -> None:
+        for control in (
+            self.attachments_change_root_button,
+            self.attachments_add_files_button,
+            self.attachments_paste_paths_button,
+            self.attachments_remove_button,
+            self.attachments_clear_button,
+            self.attachments_copy_files_button,
+            self.attachments_sequential_button,
+            self.attachments_sequential_cancel_button,
+            self.attachments_file_list,
+        ):
+            control.setEnabled(enabled)
+        self.attachments_zip_button.setEnabled(True)
+        self._refresh_attachment_action_states()
+
+    def _cancel_attachment_bundle(self) -> None:
+        worker = self._attachment_bundle_worker
+        if not self._attachment_bundle_active or worker is None:
+            return
+        worker.request_cancel()
+        self.attachments_zip_button.setEnabled(False)
+        self.attachments_zip_button.setText("Cancelling…")
+        self.attachments_header_status.setText("Cancelling")
+        self.attachments_header_status.set_state("warning")
+        self._set_status("Cancelling attachment ZIP creation…")
+
+    def _on_attachment_bundle_progress(
+        self,
+        phase: str,
+        files_done: int,
+        total_files: int,
+        bytes_done: int,
+        total_bytes: int,
+    ) -> None:
+        if not self._attachment_bundle_active:
+            return
+        self.attachments_transfer_values["Status"].setText(
+            f"{files_done}/{total_files} · "
+            f"{format_attachment_size(bytes_done)}/{format_attachment_size(total_bytes)}"
+        )
+        set_widget_state(self.attachments_transfer_values["Status"], "warning")
+        self._set_event_status(
+            f"{phase}: {files_done}/{total_files} files · "
+            f"{format_attachment_size(bytes_done)}/{format_attachment_size(total_bytes)}"
+        )
+
+    def _on_attachment_bundle_completed(self, result: AttachmentBundleResult) -> None:
+        duration = max(0.0, perf_counter() - self._attachment_bundle_started_at)
+        try:
+            copy_files_to_clipboard([result.bundle_path])
+        except Exception as exc:
+            self._record_attachment_transfer(
+                transfer_type="Create ZIP & Copy",
+                outcome="FAILED",
+                duration_seconds=duration,
+                bundle_name=result.bundle_path.name,
+            )
+            self._attachment_bundle_last_path = result.bundle_path
+            self._attachment_issue_summary = (
+                f"ZIP created, but clipboard copy failed: {exc}"
+            )
+            self._attachment_last_action = f"ZIP created · {result.bundle_path.name}"
+            self.attachments_header_status.setText("ZIP ready")
+            self.attachments_header_status.set_state("warning")
+            self._set_status("ZIP created, but clipboard copy failed.")
+            return
+
+        self._attachment_bundle_last_path = result.bundle_path
+        self._attachment_issue_summary = ""
+        stamp = datetime.now().strftime("%H:%M:%S")
+        self._attachment_last_action = f"ZIP created and copied · {stamp}"
+        self.attachments_header_status.setText("Copied")
+        self.attachments_header_status.set_state("success")
+        self._record_attachment_transfer(
+            transfer_type="Create ZIP & Copy",
+            outcome="SUCCESS",
+            duration_seconds=duration,
+            bundle_name=result.bundle_path.name,
+        )
+        self._set_status(
+            f"Attachment ZIP created and copied · {result.file_count} files · "
+            f"{format_attachment_size(result.total_bytes)}."
+        )
+
+    def _on_attachment_bundle_failed(self, message: str, duration_seconds: float) -> None:
+        self._record_attachment_transfer(
+            transfer_type="Create ZIP & Copy",
+            outcome="FAILED",
+            duration_seconds=duration_seconds,
+        )
+        self._attachment_issue_summary = message
+        self._attachment_last_action = "ZIP creation failed"
+        self.attachments_header_status.setText("Failed")
+        self.attachments_header_status.set_state("error")
+        self._set_status("Attachment ZIP creation failed.")
+
+    def _on_attachment_bundle_cancelled(self, duration_seconds: float) -> None:
+        self._record_attachment_transfer(
+            transfer_type="Create ZIP & Copy",
+            outcome="CANCELLED",
+            duration_seconds=duration_seconds,
+        )
+        self._attachment_issue_summary = ""
+        self._attachment_last_action = "ZIP creation cancelled"
+        self.attachments_header_status.setText("Cancelled")
+        self.attachments_header_status.set_state("warning")
+        self._set_status("Attachment ZIP creation cancelled.")
+
+    def _on_attachment_bundle_thread_finished(self) -> None:
+        self._attachment_bundle_worker = None
+        self._attachment_bundle_thread = None
+        self._attachment_bundle_active = False
+        self._set_attachment_transfer_controls_enabled(True)
+        self._refresh_attachments_page()
+        if self._quit_after_attachment_bundle:
+            self._quit_after_attachment_bundle = False
+            QTimer.singleShot(0, self._complete_quit_from_tray)
+        elif self._close_after_attachment_bundle:
+            self._close_after_attachment_bundle = False
+            QTimer.singleShot(0, self.close)
+        else:
+            QTimer.singleShot(1500, self._reset_attachment_status)
+
+    def _open_attachment_bundle_location(self) -> None:
+        bundle_dir = attachment_bundle_directory()
+        bundle_dir.mkdir(parents=True, exist_ok=True)
+        if not QDesktopServices.openUrl(QUrl.fromLocalFile(str(bundle_dir))):
+            self._set_status("Could not open attachment bundle location.")
+
     def _build_history_page(self) -> QWidget:
         page = QWidget()
         page.setObjectName("HistoryPage")
@@ -2186,14 +4001,53 @@ class XccMainWindow(QMainWindow):
         self.history_page_content = page
         self.history_page_layout = layout
 
-        layout.addWidget(self._section_title("History"))
+        header = QWidget()
+        header.setObjectName("TransparentWidget")
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setSpacing(10)
+        header_layout.addWidget(self._section_title("History"))
+        header_layout.addStretch(1)
+
+        self.history_count_label = QLabel()
+        self.history_count_label.setObjectName("HistoryCountLabel")
+        self.history_count_label.setAccessibleName("Persistent history count")
+        header_layout.addWidget(self.history_count_label)
+
+        self.history_export_button = make_secondary_button(
+            "Export JSON",
+            minimum_width=112,
+            height=38,
+        )
+        self.history_export_button.setAccessibleName("Export runtime history as JSON")
+        self.history_export_button.clicked.connect(self._export_history_json)
+        header_layout.addWidget(self.history_export_button)
+
+        self.history_clear_button = make_secondary_button(
+            "Clear History",
+            minimum_width=116,
+            height=38,
+        )
+        self.history_clear_button.setAccessibleName("Clear persistent runtime history")
+        self.history_clear_button.clicked.connect(self._clear_history)
+        header_layout.addWidget(self.history_clear_button)
+        layout.addWidget(header)
 
         history_card = self._card()
         self.history_card = history_card
         history_card.setMinimumHeight(260)
 
         history_layout = self._card_layout(history_card)
-        history_layout.addWidget(self._card_title("Runtime History"))
+        title_row = QHBoxLayout()
+        title_row.setContentsMargins(0, 0, 0, 0)
+        title_row.setSpacing(10)
+        title_row.addWidget(self._card_title("Runtime History"))
+        title_row.addStretch(1)
+        privacy_label = QLabel("Metadata only · local")
+        privacy_label.setObjectName("HistoryPrivacyLabel")
+        privacy_label.setAccessibleName("History privacy status")
+        title_row.addWidget(privacy_label)
+        history_layout.addLayout(title_row)
 
         self.history_scroll_area = QScrollArea()
         self.history_scroll_area.setObjectName("HistoryScrollArea")
@@ -2210,7 +4064,7 @@ class XccMainWindow(QMainWindow):
         self.history_list_layout.setSpacing(12)
 
         self.history_empty_label = QLabel(
-            "No runs yet.\nCollect context to see runtime history here."
+            "No persistent history yet.\nCollect context or transfer attachments to add metadata-only events."
         )
         self.history_empty_label.setObjectName("HistoryEmpty")
         self.history_empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -2220,12 +4074,11 @@ class XccMainWindow(QMainWindow):
         self.history_list_layout.addStretch(1)
 
         self.history_scroll_area.setWidget(self.history_list_container)
-
         history_layout.addWidget(self.history_scroll_area, 1)
 
         layout.addWidget(history_card, 1)
         layout.addStretch(0)
-
+        self._render_history_entries()
         return page
 
     def _setup_tray(self) -> None:
@@ -2276,6 +4129,26 @@ class XccMainWindow(QMainWindow):
         set_widget_state(self.footer_status_dot, state.semantic_state)
 
     def _default_footer_message(self) -> str:
+        if (
+            hasattr(self, "pages")
+            and hasattr(self, "attachments_page")
+            and self.pages.currentWidget() is self.attachments_page
+        ):
+            if self._attachment_sequential_active:
+                total = len(self._attachment_sequential_paths)
+                sent = min(self._attachment_sequential_next_index, total)
+                if self._attachment_sequential_phase == "countdown":
+                    return (
+                        f"Attachment Handoff · switch target · "
+                        f"{self._attachment_sequential_countdown}s"
+                    )
+                return f"Attachment Handoff · {sent}/{total} sent"
+            count = len(self.attachment_files)
+            if count:
+                noun = "file" if count == 1 else "files"
+                return f"{count} {noun} ready for transfer"
+            return "Ready · Add files or paste paths to begin"
+
         mode = self._current_mode() if hasattr(self, "mode_group") else "folder"
         return default_footer_message(
             mode=mode,
@@ -2333,15 +4206,23 @@ class XccMainWindow(QMainWindow):
             self._quit_after_collection = True
             self._cancel_collection()
             return
+        if self._attachment_bundle_active:
+            self._quit_after_attachment_bundle = True
+            self._cancel_attachment_bundle()
+            return
 
         self._complete_quit_from_tray()
 
     def _complete_quit_from_tray(self) -> None:
+        if self._attachment_sequential_active:
+            self._cancel_attachment_sequential(announce=False)
+
         self._is_quitting = True
 
         if hasattr(self, "tray_icon"):
             self.tray_icon.hide()
 
+        self._shutdown_attachment_bundle_worker()
         self._cleanup_global_hotkey()
         QApplication.quit()
 
@@ -2359,14 +4240,37 @@ class XccMainWindow(QMainWindow):
             thread.quit()
             thread.wait()
 
-    def _cleanup_global_hotkey(self) -> None:
-        if self._hotkey_manager is None:
-            return
+    def _shutdown_attachment_bundle_worker(self) -> None:
+        worker = self._attachment_bundle_worker
+        thread = self._attachment_bundle_thread
 
-        self._hotkey_manager.unregister()
-        self._hotkey_manager = None
+        if worker is not None:
+            try:
+                worker.request_cancel()
+            except RuntimeError:
+                pass
+
+        if thread is not None and thread.isRunning():
+            thread.quit()
+            thread.wait()
+
+    def _cleanup_global_hotkey(self) -> None:
+        for manager_name in (
+            "_hotkey_manager",
+            "_collect_hotkey_manager",
+            "_attachment_handoff_hotkey_manager",
+        ):
+            manager = getattr(self, manager_name, None)
+            if manager is not None:
+                manager.unregister()
+                setattr(self, manager_name, None)
+
         self._hotkey_available = False
+        self._collect_hotkey_available = False
+        self._attachment_handoff_hotkey_available = False
         self._hotkey_status_message = "Not registered"
+        self._collect_hotkey_status_message = "Disabled"
+        self._attachment_handoff_hotkey_status_message = "Disabled"
 
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Escape:
@@ -2410,6 +4314,14 @@ class XccMainWindow(QMainWindow):
             event.ignore()
             return
 
+        if self._attachment_bundle_active:
+            self._close_after_attachment_bundle = True
+            self._cancel_attachment_bundle()
+            event.ignore()
+            return
+
+        if self._attachment_sequential_active:
+            self._cancel_attachment_sequential(announce=False)
         self._cleanup_global_hotkey()
         event.accept()
 
@@ -2428,6 +4340,7 @@ class XccMainWindow(QMainWindow):
         return SidebarNavigation(
             items=(
                 (NAV_COLLECT_ICON_PATH, "Collect"),
+                (NAV_ATTACHMENTS_ICON_PATH, "Attachments"),
                 (NAV_HISTORY_ICON_PATH, "History"),
                 (NAV_SETTINGS_ICON_PATH, "Settings"),
                 (NAV_ABOUT_ICON_PATH, "About"),
@@ -2473,6 +4386,14 @@ class XccMainWindow(QMainWindow):
             and event.type() == QEvent.Type.Resize
         ):
             QTimer.singleShot(0, self._apply_collect_layout)
+
+        attachments_viewport = getattr(self, "attachments_page_viewport", None)
+        if (
+            attachments_viewport is not None
+            and watched is attachments_viewport
+            and event.type() == QEvent.Type.Resize
+        ):
+            QTimer.singleShot(0, self._apply_responsive_pages)
 
         return super().eventFilter(watched, event)
 
@@ -2731,6 +4652,20 @@ class XccMainWindow(QMainWindow):
         if content_width <= 0:
             return
 
+        if hasattr(self, "attachments_page_layout"):
+            spec = attachments_page_spec(content_width)
+            self._attachments_page_spec = spec
+            self._apply_page_surface_geometry(self.attachments_page_layout, spec)
+            self.attachments_page_header.subtitle_label.setVisible(spec.show_subtitle)
+            if force or spec.columns != self._attachments_columns:
+                self._arrange_attachments_workspace(spec.columns)
+                self._attachments_columns = spec.columns
+            self._arrange_attachment_source_actions(spec.source_actions_below)
+            self._sync_scroll_content_min_height(
+                self.attachments_page_content,
+                self.attachments_page_layout,
+            )
+
         if hasattr(self, "settings_page_layout"):
             spec = settings_page_spec(content_width)
             self._settings_page_spec = spec
@@ -2749,15 +4684,17 @@ class XccMainWindow(QMainWindow):
             self._apply_page_surface_geometry(self.history_page_layout, spec)
 
         if hasattr(self, "about_page_layout"):
-            spec = about_page_spec(
-                content_width,
-                interface_scale=self._interface_scale_multiplier(),
-            )
+            spec = about_page_spec(content_width)
             self._about_page_spec = spec
             self._apply_page_surface_geometry(self.about_page_layout, spec)
-            if force or spec.columns != self._about_badge_columns:
-                self._arrange_about_badges(spec.columns)
-                self._about_badge_columns = spec.columns
+            self.about_page_header.subtitle_label.setVisible(spec.show_subtitle)
+            if force or spec.columns != self._about_columns:
+                self._arrange_about_workspace(spec.columns)
+                self._arrange_about_runtime(spec.columns)
+                self._about_columns = spec.columns
+            if force or spec.badge_columns != self._about_badge_columns:
+                self._arrange_about_badges(spec.badge_columns)
+                self._about_badge_columns = spec.badge_columns
             self._sync_scroll_content_min_height(
                 self.about_page_content,
                 self.about_page_layout,
@@ -2797,6 +4734,66 @@ class XccMainWindow(QMainWindow):
             Qt.AlignmentFlag.AlignTop,
         )
         self.settings_groups_layout.setColumnStretch(0, 1)
+
+    def _arrange_about_workspace(self, columns: int) -> None:
+        self._take_layout_items(self.about_workspace_layout)
+        self._reset_grid_stretches(
+            self.about_workspace_layout,
+            columns=2,
+            rows=2,
+        )
+        if columns >= 2:
+            self.about_workspace_layout.addWidget(
+                self.about_capabilities_card,
+                0,
+                0,
+                Qt.AlignmentFlag.AlignTop,
+            )
+            self.about_workspace_layout.addWidget(
+                self.about_privacy_card,
+                0,
+                1,
+                Qt.AlignmentFlag.AlignTop,
+            )
+            self.about_workspace_layout.setColumnStretch(0, 1)
+            self.about_workspace_layout.setColumnStretch(1, 1)
+            return
+
+        self.about_workspace_layout.addWidget(
+            self.about_capabilities_card,
+            0,
+            0,
+            Qt.AlignmentFlag.AlignTop,
+        )
+        self.about_workspace_layout.addWidget(
+            self.about_privacy_card,
+            1,
+            0,
+            Qt.AlignmentFlag.AlignTop,
+        )
+        self.about_workspace_layout.setColumnStretch(0, 1)
+
+    def _arrange_about_runtime(self, columns: int) -> None:
+        self._take_layout_items(self.about_runtime_grid)
+        self._reset_grid_stretches(
+            self.about_runtime_grid,
+            columns=2,
+            rows=max(6, len(self.about_runtime_rows)),
+        )
+
+        if columns >= 2:
+            split = (len(self.about_runtime_rows) + 1) // 2
+            for index, row in enumerate(self.about_runtime_rows):
+                column = 0 if index < split else 1
+                grid_row = index if column == 0 else index - split
+                self.about_runtime_grid.addWidget(row, grid_row, column)
+            self.about_runtime_grid.setColumnStretch(0, 1)
+            self.about_runtime_grid.setColumnStretch(1, 1)
+            return
+
+        for index, row in enumerate(self.about_runtime_rows):
+            self.about_runtime_grid.addWidget(row, index, 0)
+        self.about_runtime_grid.setColumnStretch(0, 1)
 
     def _arrange_about_badges(self, columns: int) -> None:
         columns = max(1, columns)
@@ -3342,10 +5339,15 @@ class XccMainWindow(QMainWindow):
         return "tree"
 
     def _change_page(self, index: int) -> None:
-        if index == 2:
+        if index == 1:
+            self._refresh_attachments_page()
+        if index == 3:
             self._refresh_settings_page()
+        if index == 4:
+            self._refresh_about_page()
 
         self.pages.setCurrentIndex(index)
+        self._restore_default_footer_status()
         QTimer.singleShot(0, self._apply_responsive_pages)
 
     def _current_mode_name(self) -> str:
@@ -3453,6 +5455,277 @@ class XccMainWindow(QMainWindow):
 
         return group
 
+    def _settings_hotkey_control(
+        self,
+        *,
+        kind: str,
+        enabled: bool,
+        hotkey: str,
+    ) -> QWidget:
+        labels = {
+            "restore": "Restore / Show XCC",
+            "collect": "Collect and Copy",
+            "handoff": "Attachment Handoff",
+        }
+        if kind not in labels:
+            raise ValueError(f"Unsupported hotkey kind: {kind}")
+        label = labels[kind]
+
+        container = QWidget()
+        container.setObjectName("SettingsHotkeyControl")
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(6)
+
+        enabled_toggle = QCheckBox("On")
+        enabled_toggle.setObjectName("SettingsHotkeyToggle")
+        enabled_toggle.setChecked(enabled)
+        enabled_toggle.setAccessibleName(f"Enable {label} hotkey")
+
+        editor = QKeySequenceEdit(QKeySequence(format_hotkey_for_display(hotkey)))
+        editor.setObjectName("SettingsHotkeyEdit")
+        editor.setFixedHeight(34)
+        editor.setMaximumWidth(150)
+        try:
+            editor.setClearButtonEnabled(False)
+        except AttributeError:
+            pass
+        try:
+            editor.setMaximumSequenceLength(1)
+        except AttributeError:
+            pass
+        editor.setAccessibleName(f"{label} hotkey")
+
+        apply_button = make_secondary_button(
+            "Apply",
+            object_name="SettingsHotkeyButton",
+            minimum_width=62,
+            height=34,
+        )
+        reset_button = make_secondary_button(
+            "Reset",
+            object_name="SettingsHotkeyButton",
+            minimum_width=62,
+            height=34,
+        )
+
+        layout.addWidget(enabled_toggle)
+        layout.addWidget(editor)
+        layout.addWidget(apply_button)
+        layout.addWidget(reset_button)
+
+        if kind == "restore":
+            self.restore_hotkey_enabled_checkbox = enabled_toggle
+            self.restore_hotkey_edit = editor
+            self.restore_hotkey_apply_button = apply_button
+            self.restore_hotkey_reset_button = reset_button
+        elif kind == "collect":
+            self.collect_hotkey_enabled_checkbox = enabled_toggle
+            self.collect_hotkey_edit = editor
+            self.collect_hotkey_apply_button = apply_button
+            self.collect_hotkey_reset_button = reset_button
+        else:
+            self.attachment_handoff_hotkey_enabled_checkbox = enabled_toggle
+            self.attachment_handoff_hotkey_edit = editor
+            self.attachment_handoff_hotkey_apply_button = apply_button
+            self.attachment_handoff_hotkey_reset_button = reset_button
+
+        apply_button.clicked.connect(
+            lambda _checked=False, target=kind: self._apply_hotkey_settings(target)
+        )
+        reset_button.clicked.connect(
+            lambda _checked=False, target=kind: self._reset_hotkey_settings(target)
+        )
+        return container
+
+    def _hotkey_editor_value(self, kind: str) -> str:
+        if kind == "restore":
+            editor = self.restore_hotkey_edit
+        elif kind == "collect":
+            editor = self.collect_hotkey_edit
+        elif kind == "handoff":
+            editor = self.attachment_handoff_hotkey_edit
+        else:
+            raise ValueError(f"Unsupported hotkey kind: {kind}")
+        portable = editor.keySequence().toString(QKeySequence.SequenceFormat.PortableText)
+        return normalize_hotkey(portable)
+
+    def _reset_hotkey_settings(self, kind: str) -> None:
+        if kind == "restore":
+            self.restore_hotkey_edit.setKeySequence(
+                QKeySequence(format_hotkey_for_display(DEFAULT_HOTKEY))
+            )
+            self.restore_hotkey_enabled_checkbox.setChecked(True)
+        elif kind == "collect":
+            self.collect_hotkey_edit.setKeySequence(
+                QKeySequence(format_hotkey_for_display(DEFAULT_COLLECT_HOTKEY))
+            )
+            self.collect_hotkey_enabled_checkbox.setChecked(False)
+        elif kind == "handoff":
+            self.attachment_handoff_hotkey_edit.setKeySequence(
+                QKeySequence(
+                    format_hotkey_for_display(DEFAULT_ATTACHMENT_HANDOFF_HOTKEY)
+                )
+            )
+            self.attachment_handoff_hotkey_enabled_checkbox.setChecked(False)
+        else:
+            raise ValueError(f"Unsupported hotkey kind: {kind}")
+        self._apply_hotkey_settings(kind)
+
+    def _restore_hotkey_editor_state(self, kind: str) -> None:
+        if kind == "restore":
+            enabled = self.app_settings.restore_hotkey_enabled
+            hotkey = self.app_settings.restore_hotkey
+            checkbox = self.restore_hotkey_enabled_checkbox
+            editor = self.restore_hotkey_edit
+        elif kind == "collect":
+            enabled = self.app_settings.collect_hotkey_enabled
+            hotkey = self.app_settings.collect_hotkey
+            checkbox = self.collect_hotkey_enabled_checkbox
+            editor = self.collect_hotkey_edit
+        elif kind == "handoff":
+            enabled = self.app_settings.attachment_handoff_hotkey_enabled
+            hotkey = self.app_settings.attachment_handoff_hotkey
+            checkbox = self.attachment_handoff_hotkey_enabled_checkbox
+            editor = self.attachment_handoff_hotkey_edit
+        else:
+            raise ValueError(f"Unsupported hotkey kind: {kind}")
+
+        checkbox.setChecked(enabled)
+        editor.setKeySequence(QKeySequence(format_hotkey_for_display(hotkey)))
+
+    def _apply_hotkey_settings(self, kind: str) -> None:
+        if self._is_loading_settings:
+            return
+
+        if kind == "restore":
+            enabled_checkbox = self.restore_hotkey_enabled_checkbox
+            manager_attr = "_hotkey_manager"
+            callback = self._restore_from_hotkey
+            hotkey_id = HOTKEY_ID_RESTORE_WINDOW
+            label = "Restore / Show XCC"
+        elif kind == "collect":
+            enabled_checkbox = self.collect_hotkey_enabled_checkbox
+            manager_attr = "_collect_hotkey_manager"
+            callback = self._collect_from_hotkey
+            hotkey_id = HOTKEY_ID_COLLECT_COPY
+            label = "Collect & Copy"
+        elif kind == "handoff":
+            enabled_checkbox = self.attachment_handoff_hotkey_enabled_checkbox
+            manager_attr = "_attachment_handoff_hotkey_manager"
+            callback = self._attachment_handoff_from_hotkey
+            hotkey_id = HOTKEY_ID_ATTACHMENT_HANDOFF
+            label = "Attachment Handoff"
+        else:
+            raise ValueError(f"Unsupported hotkey kind: {kind}")
+
+        enabled = enabled_checkbox.isChecked()
+        try:
+            hotkey = self._hotkey_editor_value(kind)
+        except HotkeyValidationError as exc:
+            self._restore_hotkey_editor_state(kind)
+            QMessageBox.warning(self, "XCC Global Hotkey", str(exc))
+            self._set_event_status("Hotkey change rejected · invalid shortcut.")
+            return
+
+        other_bindings = {
+            "restore": (
+                self.app_settings.restore_hotkey_enabled,
+                self.app_settings.restore_hotkey,
+                "Restore / Show XCC",
+            ),
+            "collect": (
+                self.app_settings.collect_hotkey_enabled,
+                self.app_settings.collect_hotkey,
+                "Collect & Copy",
+            ),
+            "handoff": (
+                self.app_settings.attachment_handoff_hotkey_enabled,
+                self.app_settings.attachment_handoff_hotkey,
+                "Attachment Handoff",
+            ),
+        }
+        conflicts = [
+            other_label
+            for other_kind, (other_enabled, other_hotkey, other_label) in other_bindings.items()
+            if other_kind != kind
+            and enabled
+            and other_enabled
+            and hotkey == other_hotkey
+        ]
+        if conflicts:
+            self._restore_hotkey_editor_state(kind)
+            QMessageBox.warning(
+                self,
+                "XCC Global Hotkey",
+                f"{label} cannot use the same shortcut as {conflicts[0]}.",
+            )
+            self._set_event_status("Hotkey change rejected · shortcut conflict.")
+            return
+
+        manager = getattr(self, manager_attr)
+        try:
+            if enabled:
+                if manager is None:
+                    manager = NativeHotkeyManager(callback, hotkey_id=hotkey_id)
+                    manager.register(hotkey)
+                    setattr(self, manager_attr, manager)
+                else:
+                    manager.replace(hotkey)
+            elif manager is not None:
+                manager.unregister()
+                setattr(self, manager_attr, None)
+        except NativeHotkeyError as exc:
+            self._restore_hotkey_editor_state(kind)
+            QMessageBox.warning(
+                self,
+                "XCC Global Hotkey",
+                (
+                    f"{exc}\n\n"
+                    "The previous working hotkey and saved setting were preserved."
+                ),
+            )
+            self._set_event_status("Hotkey change rejected · registration conflict.")
+            return
+
+        display = format_hotkey_for_display(hotkey) if enabled else "Disabled"
+        if kind == "restore":
+            self.app_settings.restore_hotkey_enabled = enabled
+            self.app_settings.restore_hotkey = hotkey
+            self._hotkey_available = enabled
+            self._hotkey_status_message = display
+            if enabled:
+                self.hotkey_capsule.setText(f"Hotkey: {display}")
+                self.hotkey_capsule.set_state(None)
+            else:
+                self.hotkey_capsule.setText("Hotkey disabled")
+                self.hotkey_capsule.set_state("neutral")
+        elif kind == "collect":
+            self.app_settings.collect_hotkey_enabled = enabled
+            self.app_settings.collect_hotkey = hotkey
+            self._collect_hotkey_available = enabled
+            self._collect_hotkey_status_message = display
+        else:
+            self.app_settings.attachment_handoff_hotkey_enabled = enabled
+            self.app_settings.attachment_handoff_hotkey = hotkey
+            self._attachment_handoff_hotkey_available = enabled
+            self._attachment_handoff_hotkey_status_message = display
+
+        self._save_current_settings()
+        self._refresh_settings_page()
+        has_hotkey_error = (
+            self.app_settings.restore_hotkey_enabled and not self._hotkey_available
+        ) or (
+            self.app_settings.collect_hotkey_enabled and not self._collect_hotkey_available
+        ) or (
+            self.app_settings.attachment_handoff_hotkey_enabled
+            and not self._attachment_handoff_hotkey_available
+        )
+        self._set_runtime_state(
+            RuntimeState.WARNINGS if has_hotkey_error else RuntimeState.READY
+        )
+        self._set_event_status(f"{label} hotkey saved.")
+
     def _refresh_settings_page(self) -> None:
         if hasattr(self, "settings_current_mode"):
             self.settings_current_mode.value_label.setText(self._current_mode_name())
@@ -3469,6 +5742,18 @@ class XccMainWindow(QMainWindow):
 
         if hasattr(self, "settings_hotkey"):
             self.settings_hotkey.value_label.setText(self._hotkey_status_message)
+
+        if hasattr(self, "settings_collect_hotkey"):
+            self.settings_collect_hotkey.value_label.setText(
+                self._collect_hotkey_status_message
+            )
+
+        if hasattr(self, "settings_attachment_handoff_hotkey"):
+            self.settings_attachment_handoff_hotkey.value_label.setText(
+                self._attachment_handoff_hotkey_status_message
+            )
+
+        self._refresh_about_page()
 
     def _refresh_source_controls(self) -> None:
         if not hasattr(self, "paste_paths_button"):
@@ -3570,15 +5855,23 @@ class XccMainWindow(QMainWindow):
         return True
 
     def _on_paste_paths_shortcut(self) -> None:
-        if self._collection_active or self._current_mode() != "files":
-            return
-
         focus = QApplication.focusWidget()
         if isinstance(focus, QPlainTextEdit):
             return
         if isinstance(focus, QLineEdit) and not focus.isReadOnly():
             return
 
+        current = self.pages.currentWidget() if hasattr(self, "pages") else None
+        if current is getattr(self, "attachments_page", None):
+            self._paste_attachment_paths_from_clipboard()
+            return
+
+        if (
+            current is not getattr(self, "collect_page", None)
+            or self._collection_active
+            or self._current_mode() != "files"
+        ):
+            return
         self._paste_paths_from_clipboard()
 
     def _paste_paths_from_clipboard(self) -> None:
@@ -3863,6 +6156,11 @@ class XccMainWindow(QMainWindow):
         self._start_collection()
 
     def _start_collection(self) -> None:
+        if self._attachment_sequential_active:
+            self._set_transient_event_status(
+                "Finish or cancel Attachment Handoff before collecting."
+            )
+            return
         if self._collection_active or self._collection_thread is not None:
             return
 
@@ -4109,6 +6407,20 @@ class XccMainWindow(QMainWindow):
         ):
             button.setEnabled(not active)
 
+        for control in (
+            self.attachments_change_root_button,
+            self.attachments_add_files_button,
+            self.attachments_paste_paths_button,
+            self.attachments_remove_button,
+            self.attachments_clear_button,
+            self.attachments_copy_files_button,
+            self.attachments_sequential_button,
+            self.attachments_sequential_cancel_button,
+            self.attachments_zip_button,
+            self.attachments_file_list,
+        ):
+            control.setEnabled(not active)
+
         self.collect_button.setEnabled(True)
         self.collect_button.setText("Cancel" if active else "Collect && Copy")
         if active:
@@ -4124,6 +6436,7 @@ class XccMainWindow(QMainWindow):
 
         if not active:
             self._refresh_source_controls()
+            self._refresh_attachment_action_states()
 
     def _run_deferred_close_or_quit(self) -> None:
         if self._quit_after_collection:
@@ -4173,7 +6486,7 @@ class XccMainWindow(QMainWindow):
         return self._current_mode_name(), "Unknown source"
 
     def _current_history_time(self) -> str:
-        return datetime.now().strftime("%H:%M:%S")
+        return datetime.now().astimezone().isoformat(timespec="seconds")
 
     def _record_run(self, record: CollectionRunRecord) -> None:
         self._update_metrics(record)
@@ -4376,6 +6689,22 @@ class XccMainWindow(QMainWindow):
         if scale_index >= 0:
             self.interface_scale_combo.setCurrentIndex(scale_index)
 
+        self.restore_hotkey_control = self._settings_hotkey_control(
+            kind="restore",
+            enabled=self.app_settings.restore_hotkey_enabled,
+            hotkey=self.app_settings.restore_hotkey,
+        )
+        self.collect_hotkey_control = self._settings_hotkey_control(
+            kind="collect",
+            enabled=self.app_settings.collect_hotkey_enabled,
+            hotkey=self.app_settings.collect_hotkey,
+        )
+        self.attachment_handoff_hotkey_control = self._settings_hotkey_control(
+            kind="handoff",
+            enabled=self.app_settings.attachment_handoff_hotkey_enabled,
+            hotkey=self.app_settings.attachment_handoff_hotkey,
+        )
+
         behavior_group = self._settings_group(
             "Behavior",
             [
@@ -4410,6 +6739,21 @@ class XccMainWindow(QMainWindow):
                     control=self.interface_scale_combo,
                 ),
                 self._settings_row(
+                    "Restore / Show hotkey",
+                    "Global shortcut that restores XCC from tray or minimized state.",
+                    control=self.restore_hotkey_control,
+                ),
+                self._settings_row(
+                    "Collect & Copy hotkey",
+                    "Optional global shortcut that starts collection using the current source.",
+                    control=self.collect_hotkey_control,
+                ),
+                self._settings_row(
+                    "Attachment Handoff hotkey",
+                    "Optional shortcut that starts or cancels automated one-by-one paste into the currently focused target app.",
+                    control=self.attachment_handoff_hotkey_control,
+                ),
+                self._settings_row(
                     "Double click restore",
                     "Restore the main window by double-clicking the tray icon.",
                     value="Enabled",
@@ -4436,9 +6780,19 @@ class XccMainWindow(QMainWindow):
         )
 
         self.settings_hotkey = self._settings_row(
-            "Hotkey",
-            "Restore the main window while XCC is running.",
+            "Restore hotkey status",
+            "Active runtime binding for Restore / Show XCC.",
             value=self._hotkey_status_message,
+        )
+        self.settings_collect_hotkey = self._settings_row(
+            "Collect hotkey status",
+            "Active runtime binding for Collect & Copy.",
+            value=self._collect_hotkey_status_message,
+        )
+        self.settings_attachment_handoff_hotkey = self._settings_row(
+            "Handoff hotkey status",
+            "Active runtime binding for Attachment Handoff.",
+            value=self._attachment_handoff_hotkey_status_message,
         )
 
         context_group = self._settings_group(
@@ -4453,6 +6807,8 @@ class XccMainWindow(QMainWindow):
                     control=self.safety_confirmation_checkbox,
                 ),
                 self.settings_hotkey,
+                self.settings_collect_hotkey,
+                self.settings_attachment_handoff_hotkey,
                 self._settings_row(
                     "Version",
                     "Current application version.",
@@ -4528,38 +6884,52 @@ class XccMainWindow(QMainWindow):
         self.about_page_content = page
         self.about_page_layout = layout
 
-        layout.addWidget(self._section_title("About"))
+        self.about_page_header = make_page_header(
+            "About",
+            "Product, privacy, and local runtime details.",
+        )
+        self.about_version_capsule = make_status_capsule(
+            f"v{__version__}",
+            object_name="AboutVersionCapsule",
+        )
+        self.about_version_capsule.setAccessibleName("XCC version")
+        self.about_page_header.add_action(self.about_version_capsule)
+        layout.addWidget(self.about_page_header)
 
-        card = self._card()
-        card.setObjectName("AboutCard")
-
-        card_layout = self._card_layout(card)
-        card_layout.setContentsMargins(28, 24, 28, 24)
-        card_layout.setSpacing(18)
+        hero = make_card(object_name="AboutHeroCard")
+        self.about_hero_card = hero
+        hero_layout = make_card_layout(
+            hero,
+            left=26,
+            top=22,
+            right=26,
+            bottom=22,
+            spacing=15,
+        )
 
         identity_row = QWidget()
         identity_row.setObjectName("TransparentWidget")
-
         identity_layout = QHBoxLayout(identity_row)
         identity_layout.setContentsMargins(0, 0, 0, 0)
-        identity_layout.setSpacing(16)
+        identity_layout.setSpacing(18)
 
         app_image_path = APP_IMAGE_PATH if APP_IMAGE_PATH.exists() else APP_ICON_PATH
-        icon_label = DpiAwareImageLabel(app_image_path, 56)
-        self.about_app_icon = icon_label
-        icon_label.setObjectName("AboutAppIcon")
+        self.about_app_icon = DpiAwareImageLabel(app_image_path, 64)
+        self.about_app_icon.setObjectName("AboutAppIcon")
+        self.about_app_icon.setAccessibleName("XCC application icon")
 
         title_box = QWidget()
         title_box.setObjectName("TransparentWidget")
-
         title_layout = QVBoxLayout(title_box)
         title_layout.setContentsMargins(0, 0, 0, 0)
         title_layout.setSpacing(4)
 
         app_title = QLabel("XCC Context Collector")
         app_title.setObjectName("AboutTitle")
+        app_title.setAccessibleName("XCC Context Collector")
 
-        app_subtitle = QLabel("AI-ready project context collector")
+        app_subtitle = QLabel("AI-ready project context & attachment handoff")
+        self.about_product_subtitle = app_subtitle
         app_subtitle.setObjectName("AboutSubtitle")
 
         app_version = QLabel(f"Version {__version__}")
@@ -4569,73 +6939,230 @@ class XccMainWindow(QMainWindow):
         title_layout.addWidget(app_subtitle)
         title_layout.addWidget(app_version)
 
-        identity_layout.addWidget(icon_label)
+        identity_layout.addWidget(
+            self.about_app_icon,
+            0,
+            Qt.AlignmentFlag.AlignTop,
+        )
         identity_layout.addWidget(title_box, 1)
-
-        card_layout.addWidget(identity_row)
+        hero_layout.addWidget(identity_row)
 
         description = QLabel(
-            "XCC helps collect clean project context for AI coding assistants "
-            "and copies it directly to the clipboard."
+            "Collect focused project context, hand off original files to AI tools, "
+            "and keep a local metadata-only activity record from one Windows utility."
         )
+        self.about_description = description
         description.setObjectName("AboutDescription")
         description.setWordWrap(True)
-        card_layout.addWidget(description)
+        description.setMinimumWidth(0)
+        hero_layout.addWidget(description)
 
         badges_row = QWidget()
         badges_row.setObjectName("TransparentWidget")
-
-        badges_layout = QGridLayout(badges_row)
-        self.about_badges_layout = badges_layout
-        badges_layout.setContentsMargins(0, 0, 0, 0)
-        badges_layout.setHorizontalSpacing(10)
-        badges_layout.setVerticalSpacing(8)
+        self.about_badges_layout = QGridLayout(badges_row)
+        self.about_badges_layout.setContentsMargins(0, 0, 0, 0)
+        self.about_badges_layout.setHorizontalSpacing(10)
+        self.about_badges_layout.setVerticalSpacing(8)
 
         self.about_badges = [
             self._about_badge(text)
-            for text in ["Local-first", "No cloud", "Windows utility", "Tray-ready"]
+            for text in (
+                "Local-first",
+                "No cloud",
+                "Original files",
+                "Metadata history",
+            )
         ]
         for index, badge in enumerate(self.about_badges):
-            badges_layout.addWidget(
+            self.about_badges_layout.addWidget(
                 badge,
                 0,
                 index,
                 Qt.AlignmentFlag.AlignLeft,
             )
-        badges_layout.setColumnStretch(4, 1)
-        card_layout.addWidget(badges_row)
+        self.about_badges_layout.setColumnStretch(4, 1)
+        hero_layout.addWidget(badges_row)
 
-        paths_title = QLabel("Paths")
-        paths_title.setObjectName("AboutSectionTitle")
-        card_layout.addWidget(paths_title)
+        layout.addWidget(hero)
 
-        card_layout.addWidget(
-            self._about_info_row(
-                "Config file",
-                r"%USERPROFILE%\.xcc\config.json",
+        self.about_workspace = QWidget()
+        self.about_workspace.setObjectName("AboutWorkspace")
+        self.about_workspace_layout = QGridLayout(self.about_workspace)
+        self.about_workspace_layout.setContentsMargins(0, 0, 0, 0)
+        self.about_workspace_layout.setHorizontalSpacing(16)
+        self.about_workspace_layout.setVerticalSpacing(16)
+
+        self.about_capabilities_card = make_card(
+            object_name="AboutCapabilityCard"
+        )
+        capabilities_layout = make_card_layout(
+            self.about_capabilities_card,
+            left=20,
+            top=18,
+            right=20,
+            bottom=20,
+            spacing=10,
+        )
+        capabilities_layout.addWidget(
+            make_icon_title(
+                "What XCC does",
+                NAV_COLLECT_ICON_PATH,
+                object_name="AboutCardTitleRow",
+                text_object_name="AboutCardTitle",
+                icon_object_name="AboutCardTitleIcon",
+                icon_size=18,
             )
         )
-        card_layout.addWidget(
-            self._about_info_row(
-                "Startup folder",
-                "shell:startup",
+        for title, detail in (
+            (
+                "Collect Context",
+                "Build AI-ready context from selected files, folders, Git changes, or a project tree.",
+            ),
+            (
+                "Attachment Handoff",
+                "Transfer original files directly, including automated one-by-one paste for web targets.",
+            ),
+            (
+                "ZIP Bundle",
+                "Create one portable bundle while preserving the selected project structure.",
+            ),
+            (
+                "Runtime History",
+                "Keep local metadata-only records for collection and attachment transfer events.",
+            ),
+        ):
+            capabilities_layout.addWidget(
+                self._about_detail_row(title, detail)
+            )
+        capabilities_layout.addStretch(1)
+
+        self.about_privacy_card = make_card(
+            object_name="AboutPrivacyCard"
+        )
+        privacy_layout = make_card_layout(
+            self.about_privacy_card,
+            left=20,
+            top=18,
+            right=20,
+            bottom=20,
+            spacing=10,
+        )
+        privacy_layout.addWidget(
+            make_icon_title(
+                "Privacy & guarantees",
+                NAV_ABOUT_ICON_PATH,
+                object_name="AboutCardTitleRow",
+                text_object_name="AboutCardTitle",
+                icon_object_name="AboutCardTitleIcon",
+                icon_size=18,
             )
         )
-        card_layout.addWidget(
-            self._about_info_row(
-                "Default hotkey",
-                DISPLAY_HOTKEY,
+        for title, detail in (
+            (
+                "Local processing",
+                "Context collection and attachment preparation happen on this PC.",
+            ),
+            (
+                "Originals stay unchanged",
+                "Attachment handoff references source files; XCC does not rewrite them.",
+            ),
+            (
+                "Explicit sharing",
+                "Automated handoff sends paste actions only; it never submits the destination message.",
+            ),
+            (
+                "Metadata-only history",
+                "History stores run metadata, not source contents or attachment bytes.",
+            ),
+        ):
+            privacy_layout.addWidget(
+                self._about_detail_row(title, detail)
+            )
+        privacy_layout.addStretch(1)
+
+        self.about_workspace_layout.addWidget(
+            self.about_capabilities_card,
+            0,
+            0,
+            Qt.AlignmentFlag.AlignTop,
+        )
+        self.about_workspace_layout.addWidget(
+            self.about_privacy_card,
+            0,
+            1,
+            Qt.AlignmentFlag.AlignTop,
+        )
+        self.about_workspace_layout.setColumnStretch(0, 1)
+        self.about_workspace_layout.setColumnStretch(1, 1)
+        layout.addWidget(self.about_workspace)
+
+        self.about_runtime_card = make_card(
+            object_name="AboutRuntimeCard"
+        )
+        runtime_layout = make_card_layout(
+            self.about_runtime_card,
+            left=20,
+            top=18,
+            right=20,
+            bottom=20,
+            spacing=12,
+        )
+        runtime_layout.addWidget(
+            make_icon_title(
+                "Runtime & paths",
+                NAV_SETTINGS_ICON_PATH,
+                object_name="AboutCardTitleRow",
+                text_object_name="AboutCardTitle",
+                icon_object_name="AboutCardTitleIcon",
+                icon_size=18,
             )
         )
 
-        footer = QLabel("Built for fast AI-context workflow.")
+        runtime_grid_host = QWidget()
+        runtime_grid_host.setObjectName("TransparentWidget")
+        self.about_runtime_grid = QGridLayout(runtime_grid_host)
+        self.about_runtime_grid.setContentsMargins(0, 0, 0, 0)
+        self.about_runtime_grid.setHorizontalSpacing(12)
+        self.about_runtime_grid.setVerticalSpacing(10)
+
+        runtime_specs = (
+            ("config", "Config file", r"%USERPROFILE%\.xcc\config.json"),
+            ("history", "History file", r"%USERPROFILE%\.xcc\history.json"),
+            ("startup", "Start with Windows", "—"),
+            ("restore", "Restore / Show", "—"),
+            ("collect", "Collect & Copy", "—"),
+            ("handoff", "Attachment Handoff", "—"),
+        )
+        self.about_runtime_value_labels: dict[str, QLabel] = {}
+        self.about_runtime_rows: list[QFrame] = []
+        for key, label, value in runtime_specs:
+            row = self._about_info_row(label, value)
+            self.about_runtime_rows.append(row)
+            self.about_runtime_value_labels[key] = row.value_label
+
+        split = (len(self.about_runtime_rows) + 1) // 2
+        for index, row in enumerate(self.about_runtime_rows):
+            column = 0 if index < split else 1
+            grid_row = index if column == 0 else index - split
+            self.about_runtime_grid.addWidget(row, grid_row, column)
+        self.about_runtime_grid.setColumnStretch(0, 1)
+        self.about_runtime_grid.setColumnStretch(1, 1)
+        runtime_layout.addWidget(runtime_grid_host)
+
+        footer = QLabel(
+            "XCC · X-Series · Local tooling for AI-assisted development."
+        )
         footer.setObjectName("AboutFooter")
-        card_layout.addWidget(footer)
+        footer.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        )
+        runtime_layout.addWidget(footer)
 
-        layout.addWidget(card)
+        layout.addWidget(self.about_runtime_card)
         layout.addStretch(1)
 
         scroll.setWidget(page)
+        self._refresh_about_page()
         return scroll
 
     def _section_title(self, text: str) -> QLabel:
@@ -4650,31 +7177,102 @@ class XccMainWindow(QMainWindow):
     def _card_layout(self, card: QFrame) -> QVBoxLayout:
         return make_card_layout(card)
 
-    def _add_history_entry(self, record: CollectionRunRecord) -> None:
-        self.history_entries.insert(0, record)
+    def _add_history_entry(self, record: CollectionRunRecord | AttachmentTransferRecord) -> None:
+        safe_record = sanitize_history_record(record)
+        self.history_entries.insert(0, safe_record)
+        self.history_entries = self.history_entries[:HISTORY_MAX_RECORDS]
+        try:
+            saved = save_history(self.history_entries)
+        except OSError as exc:
+            self._set_event_status(f"History persistence failed: {exc}")
+        else:
+            self.history_entries = list(saved)
         self._render_history_entries()
 
+    def _clear_history(self) -> None:
+        if not self.history_entries:
+            return
+        response = QMessageBox.question(
+            self,
+            "Clear Runtime History",
+            (
+                "Clear all persistent Runtime History metadata?\n\n"
+                "This does not delete collected source files, attachments, or generated bundles."
+            ),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            save_history(())
+        except OSError as exc:
+            QMessageBox.warning(self, "XCC History", f"Could not clear history: {exc}")
+            self._set_event_status("History clear failed.")
+            return
+        self.history_entries = []
+        self._render_history_entries()
+        self._set_event_status("Runtime History cleared.")
+
+    def _export_history_json(self) -> None:
+        if not self.history_entries:
+            return
+        default_name = f"XCC-Runtime-History-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
+        selected, _ = QFileDialog.getSaveFileName(
+            self,
+            "Export Runtime History",
+            str(Path.home() / default_name),
+            "JSON files (*.json)",
+        )
+        if not selected:
+            self._set_event_status("History export cancelled.")
+            return
+        target = Path(selected)
+        if target.suffix.lower() != ".json":
+            target = target.with_suffix(".json")
+        try:
+            export_history_json(self.history_entries, target)
+        except OSError as exc:
+            QMessageBox.warning(self, "XCC History", f"Could not export history: {exc}")
+            self._set_event_status("History export failed.")
+            return
+        self._set_event_status(f"Runtime History exported · {target.name}")
+
     def _render_history_entries(self) -> None:
+        if not hasattr(self, "history_list_layout"):
+            return
         while self.history_list_layout.count():
             item = self.history_list_layout.takeAt(0)
             widget = item.widget()
-
             if widget is not None:
                 widget.deleteLater()
+
+        count = len(self.history_entries)
+        if hasattr(self, "history_count_label"):
+            self.history_count_label.setText(
+                f"{count}/{HISTORY_MAX_RECORDS} event{'s' if count != 1 else ''}"
+            )
+        if hasattr(self, "history_export_button"):
+            self.history_export_button.setEnabled(bool(count))
+        if hasattr(self, "history_clear_button"):
+            self.history_clear_button.setEnabled(bool(count))
 
         if not self.history_entries:
             self.history_list_layout.addWidget(self.history_empty_label)
             self.history_list_layout.addStretch(1)
             return
 
-        for record in self.history_entries[:20]:
-            self.history_list_layout.addWidget(
-                self._history_entry_widget(record)
-            )
+        for record in self.history_entries:
+            self.history_list_layout.addWidget(self._history_entry_widget(record))
 
         self.history_list_layout.addStretch(1)
 
-    def _history_entry_widget(self, record: CollectionRunRecord) -> QWidget:
+    def _history_entry_widget(
+        self,
+        record: CollectionRunRecord | AttachmentTransferRecord,
+    ) -> QWidget:
+        if isinstance(record, AttachmentTransferRecord):
+            return self._attachment_history_entry_widget(record)
         row = QFrame()
         row.setObjectName("HistoryEntry")
         row.setMinimumHeight(142)
@@ -4688,7 +7286,7 @@ class XccMainWindow(QMainWindow):
         top_row.setContentsMargins(0, 0, 0, 0)
         top_row.setSpacing(8)
 
-        time_label = QLabel(record.timestamp)
+        time_label = QLabel(history_timestamp_for_display(record.timestamp))
         time_label.setObjectName("HistoryTime")
 
         outcome_label = QLabel(record.health_label)
@@ -4749,11 +7347,75 @@ class XccMainWindow(QMainWindow):
 
         return row
 
+
+    def _attachment_history_entry_widget(
+        self,
+        record: AttachmentTransferRecord,
+    ) -> QWidget:
+        row = QFrame()
+        row.setObjectName("HistoryEntry")
+        row.setMinimumHeight(118)
+        row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(16, 12, 16, 12)
+        layout.setSpacing(7)
+
+        top_row = QHBoxLayout()
+        top_row.setContentsMargins(0, 0, 0, 0)
+        top_row.setSpacing(8)
+
+        time_label = QLabel(history_timestamp_for_display(record.timestamp))
+        time_label.setObjectName("HistoryTime")
+
+        outcome_label = QLabel(record.health_label)
+        outcome_label.setObjectName("HistoryOutcomeCapsule")
+        outcome_label.setFixedHeight(26)
+        set_widget_state(
+            outcome_label,
+            {"SUCCESS": "success", "CANCELLED": "warning", "FAILED": "error"}.get(
+                record.outcome,
+                "neutral",
+            ),
+        )
+
+        mode_label = QLabel(record.transfer_type)
+        mode_label.setObjectName("HistoryModeCapsule")
+        mode_label.setFixedHeight(26)
+
+        top_row.addWidget(time_label)
+        top_row.addWidget(outcome_label)
+        top_row.addStretch(1)
+        top_row.addWidget(mode_label)
+
+        stats_label = QLabel(
+            f"Files {record.file_count} · Total size "
+            f"{format_attachment_size(record.total_bytes)}"
+        )
+        stats_label.setObjectName("HistoryStats")
+
+        details = [
+            f"Duration {record.duration_label}",
+            f"Filename warnings {record.warning_count}",
+        ]
+        if record.bundle_name:
+            details.append(f"Bundle {record.bundle_name}")
+        detail_label = QLabel(" · ".join(details))
+        detail_label.setObjectName("HistoryHealth")
+        detail_label.setWordWrap(True)
+        detail_label.setMinimumWidth(0)
+
+        layout.addLayout(top_row)
+        layout.addWidget(stats_label)
+        layout.addWidget(detail_label)
+        return row
+
     def _about_info_row(self, label: str, value: str) -> QFrame:
         row = QFrame()
         row.setObjectName("AboutInfoRow")
         row.setMinimumHeight(42)
         row.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        row.setAccessibleName(label)
 
         layout = QHBoxLayout(row)
         layout.setContentsMargins(14, 6, 14, 6)
@@ -4766,18 +7428,78 @@ class XccMainWindow(QMainWindow):
         value_widget.setObjectName("AboutInfoValue")
         value_widget.setWordWrap(True)
         value_widget.setMinimumWidth(0)
-        value_widget.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        value_widget.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        value_widget.setAccessibleName(f"{label} value")
 
         layout.addWidget(label_widget)
         layout.addWidget(value_widget, 1)
 
+        row.value_label = value_widget
         return row
-    
+
+    def _about_detail_row(self, title: str, description: str) -> QFrame:
+        row = QFrame()
+        row.setObjectName("AboutDetailRow")
+        row.setMinimumHeight(48)
+        row.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Minimum,
+        )
+        row.setAccessibleName(title)
+        row.setAccessibleDescription(description)
+
+        layout = QVBoxLayout(row)
+        layout.setContentsMargins(13, 8, 13, 8)
+        layout.setSpacing(2)
+
+        title_label = QLabel(title)
+        title_label.setObjectName("AboutDetailTitle")
+
+        description_label = QLabel(description)
+        description_label.setObjectName("AboutDetailDescription")
+        description_label.setWordWrap(True)
+        description_label.setMinimumWidth(0)
+
+        layout.addWidget(title_label)
+        layout.addWidget(description_label)
+        return row
+
+    def _refresh_about_page(self) -> None:
+        values = getattr(self, "about_runtime_value_labels", None)
+        if not values:
+            return
+
+        values["config"].setText(r"%USERPROFILE%\.xcc\config.json")
+        values["history"].setText(r"%USERPROFILE%\.xcc\history.json")
+        values["startup"].setText(
+            "Enabled · shell:startup"
+            if self.app_settings.start_with_windows
+            else "Disabled"
+        )
+        values["restore"].setText(
+            self._hotkey_status_message
+            if self.app_settings.restore_hotkey_enabled
+            else "Disabled"
+        )
+        values["collect"].setText(
+            self._collect_hotkey_status_message
+            if self.app_settings.collect_hotkey_enabled
+            else "Disabled"
+        )
+        values["handoff"].setText(
+            self._attachment_handoff_hotkey_status_message
+            if self.app_settings.attachment_handoff_hotkey_enabled
+            else "Disabled"
+        )
+
     def _about_badge(self, text: str) -> QLabel:
         badge = QLabel(text)
         badge.setObjectName("AboutBadge")
         badge.setFixedHeight(28)
         badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        badge.setAccessibleName(text)
         return badge
 
     def _build_metric_group(
@@ -4831,7 +7553,8 @@ class XccMainWindow(QMainWindow):
 
 
 def run_gui() -> None:
-    startup_settings = load_settings_result().settings
+    startup_result = load_settings_result()
+    startup_settings = startup_result.settings
     apply_interface_scale_environment(startup_settings.interface_scale)
 
     app = QApplication(sys.argv)
@@ -4872,7 +7595,11 @@ def run_gui() -> None:
 
         tray_ready = hasattr(window, "tray_icon") and window.tray_icon.isVisible()
 
-        if window.app_settings.start_minimized_to_tray and tray_ready:
+        if (
+            window.app_settings.start_minimized_to_tray
+            and tray_ready
+            and not startup_result.first_run
+        ):
             window.hide()
         else:
             window._show_main_window()
@@ -4882,6 +7609,7 @@ def run_gui() -> None:
     finally:
         if window is not None:
             window._shutdown_collection_worker()
+            window._shutdown_attachment_bundle_worker()
             window._cleanup_global_hotkey()
 
         instance_lock.unlock()

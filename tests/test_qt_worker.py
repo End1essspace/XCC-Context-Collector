@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -5,7 +6,7 @@ from pathlib import Path
 from PySide6.QtCore import QCoreApplication
 
 from xcc.pipeline import CollectionRequest
-from xcc.qt_worker import CollectionWorker
+from xcc.qt_worker import AttachmentBundleWorker, CollectionWorker
 
 
 def _request(tmp_path: Path) -> CollectionRequest:
@@ -51,3 +52,19 @@ def test_qt_worker_emits_failure_with_duration(tmp_path: Path) -> None:
     message, duration = emitted[0]
     assert "Project folder not found" in message
     assert duration >= 0
+
+
+def test_attachment_bundle_worker_emits_cancelled_for_pre_cancelled_job(tmp_path: Path) -> None:
+    app = QCoreApplication.instance() or QCoreApplication([])
+    source = tmp_path / "asset.bin"
+    source.write_bytes(b"asset")
+    worker = AttachmentBundleWorker([source], directory=tmp_path / "bundles")
+    emitted: list[float] = []
+    worker.cancelled.connect(lambda duration: emitted.append(duration))
+
+    worker.request_cancel()
+    worker.run()
+
+    assert app is not None
+    assert len(emitted) == 1
+    assert emitted[0] >= 0

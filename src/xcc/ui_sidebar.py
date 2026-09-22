@@ -1,3 +1,4 @@
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -112,8 +113,8 @@ class SidebarNavigation(QFrame):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        if len(items) != 4:
-            raise ValueError("sidebar requires Collect, History, Settings, and About")
+        if len(items) != 5:
+            raise ValueError("sidebar requires Collect, Attachments, History, Settings, and About")
 
         self.setObjectName("Sidebar")
         self.setFixedWidth(228)
@@ -135,20 +136,20 @@ class SidebarNavigation(QFrame):
         group.setExclusive(True)
         self._button_group = group
 
-        for index, (icon_path, title) in enumerate(items[:3]):
+        for index, (icon_path, title) in enumerate(items[:4]):
             button = self._make_button(index, title, icon_path)
             group.addButton(button, index)
             layout.addWidget(button)
-            if index < 2:
+            if index < 3:
                 layout.addSpacing(8)
 
         layout.addStretch(1)
         layout.addWidget(self._separator())
         layout.addSpacing(12)
 
-        about_icon, about_title = items[3]
-        about_button = self._make_button(3, about_title, about_icon)
-        group.addButton(about_button, 3)
+        about_icon, about_title = items[4]
+        about_button = self._make_button(4, about_title, about_icon)
+        group.addButton(about_button, 4)
         layout.addWidget(about_button)
 
         # Treat the complete navigation column as one wheel-navigation surface,
