@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import os
@@ -20,6 +19,24 @@ def qapp() -> QApplication:
     if app is None:
         app = QApplication([])
     return app
+
+
+@pytest.fixture(autouse=True)
+def clear_qt_clipboard(
+    qapp: QApplication,
+    tmp_path: Path,
+):
+    """Release clipboard file URLs before pytest removes temporary files."""
+
+    clipboard = qapp.clipboard()
+    clipboard.clear()
+    qapp.processEvents()
+
+    try:
+        yield
+    finally:
+        clipboard.clear()
+        qapp.processEvents()
 
 
 def test_copy_files_to_clipboard_publishes_local_file_urls_in_order(
